@@ -6,7 +6,7 @@ The dataset has been added to this repository in the folder [data/ResOpsES](../.
 
 * Subfolder _attributes_ contains CSV files with the static attributes. The field _SNCZI_ is the connection between all these files. The number of reservoirs in the CSV files differed depending on the availability of the specific source.
 
-* Subfolder _timeseries_ contains the daily time series associated to the 305 reservoirs selected. The time series are both in CSV or NetCDF format. The file name is the _SNCZI_ code needed to connect the time series and the static attributes. The following time series are included:
+* Subfolder _timeseries_ contains the daily time series associated to the 304 reservoirs selected. The time series are both in CSV or NetCDF format. The file name is the _SNCZI_ code needed to connect the time series and the static attributes. The time series expand from January 1st 1990 (the start of EFASv5 long run) to present, even tough records were available from before. The following time series are included:
 
    * _level_ (meters above sea level), _storage_ (hm³) and _outflow_ (m³/s) are the oberved time series. Depending on the availability, some of these variables may be missing in some reservoirs.
    * _dis_efas5_ is the inflow time series as specific discharge (mm/d).
@@ -79,7 +79,7 @@ Once the databases are connected, I could assess the actual number of reservoirs
 * Total storage must be greater than or equal to 10 hm³.
 * Catchment area must be greater than or equal to 25 km², which represents approximately 10 pixels in EFASv5.
 
-Both conditions were selected subjectively. The condition on storage proved to be more limiting, especially in the most comprehensive databases such as CEDEX and ICOLD. After filtering, a total of 509 reservoirs were selected. From those, observed time series are available for 305. 
+Both conditions were selected subjectively. The condition on storage proved to be more limiting, especially in the most comprehensive databases such as CEDEX and ICOLD. After filtering, a total of 509 reservoirs were selected. From those, observed time series are available for 304. 
 
 ***Table 1**. Summary of the selection of reservoirs for the ResOpsES dataset. Each row represents a different source, and total represents their combination (not the sum). "Initially" indicates the number of reservoirs in the raw database, "filtered" the number of reservoirs that fulfil the storage and catchment area conditions, and "time series" the number of filtered reservoirs for which observed time series are available.*
 
@@ -89,13 +89,13 @@ Both conditions were selected subjectively. The condition on storage proved to b
 | EFAS      |       245 |      242 |         223 |
 | ICOLD     |      1013 |      329 |         279 |
 | GRanD     |       262 |      253 |         214 |
-| **total** |  **3272** |  **509** |     **305** |
+| **total** |  **3272** |  **509** |     **304** |
 
-In a first version, ResOpsES will include only the 305 reservoirs that fulfil the two conditions and for which records are available, because these are the reservoirs with all the information needed to train the LISFLOOD reservoir routine. In the future, the dataset can be extended to the 509 reservoirs that fulfil the conditions; since records are not available for this reservoirs, they will only be used as PUB (prediction in ungauged basins).
+In a first version, ResOpsES will include only the 304 reservoirs that fulfil the two conditions and for which records are available, because these are the reservoirs with all the information needed to train the LISFLOOD reservoir routine. In the future, the dataset can be extended to the 509 reservoirs that fulfil the conditions; since records are not available for this reservoirs, they will only be used as PUB (prediction in ungauged basins).
 
 <img src='map_selected_reservoirs.jpg' width='700'>
 
-***Figure 1**. Map of the 305 reservoirs included in the ResOpsES dataset. The size of the dots represent reservoir storage, and the colour the catchment area (yellow for smaller and puple for larger catchments).*
+***Figure 1**. Map of the 304 reservoirs included in the ResOpsES dataset. The size of the dots represent reservoir storage, and the colour the catchment area (yellow for smaller and purple for larger catchments).*
 
 ### 2.3 Reservoir attributes
 
@@ -122,11 +122,11 @@ The catchment attributes are areal (polygon) statistics of either LISFLOOD stati
 
 The first step is to define the catchments of each of the reservoirs included in ResOpsES. After several tries, the most appropriate procedure is simply to apply `cutmaps` on the *upArea.nc* map (upstream area) iteratively on each of the reservoirs. The location of the reservoirs must be coherent with LISFLOOD *ldd.nc* map (local direction drainage); I did this step manually on GIS. The output of `cutmaps` is a set of mask NetCDF files for all the reservoirs in the dataset.
 
-After creating the catchment masks, the notebook [6_create_dataset.ipynb](6_create_dataset.ipynb) generates catchment statistics from the **LISFLOOD static maps**. The statistics are specific for each "category" of static maps: geomorphology, land use, crop coefficient, streams, soil properties, LAI, water demand. They include mean, standard deviation, mininum and maximum, but the functions applied. In the case of time series (LAI and water demand), monthly and yearly aggregates were computed. The result is the file *attributes_EFAS_static_maps.csv*.
+After creating the catchment masks, the notebook [6_create_dataset.ipynb](6_create_dataset.ipynb) generates catchment statistics from the **LISFLOOD static maps**. The statistics are specific for each "category" of static maps: geomorphology, land use, crop coefficient, streams, soil properties, LAI, water demand. They include mean, standard deviation, mininum and maximum, but the functions applied. In the case of time series (LAI and water demand), monthly and yearly aggregates were computed. The result is a table of 110 attributes for the 304 reservoirs saved in the file *attributes_EFAS_static_maps.csv*.
 
-Similarly, I have computed catchment statistics from the **LISFLOOD model parameter maps**. In this case the only statistic is the mean. The result is the file *attributes_EFAS_model_parameters.csv*.
+Similarly, I have computed catchment statistics from the **LISFLOOD model parameter maps**. In this case the only statistic is the mean. The result is a table with 14 attributes for the 304 reservoirs saved in the file *attributes_EFAS_model_parameters.csv*.
 
-Moreover, I have added to the ResOpsES dataset catchment statistics from **EMO-1**. To do so I have developed a new tool named `catchstats` in the [lisflood-utilities](https://github.com/ec-jrc/lisflood-utilities) repository. Using this tool I have computed monthly and yearly averages of the three meterological variables in EMO-1: precipitation, air temperature and open water evaporation.
+Moreover, I have added to the ResOpsES dataset catchment statistics from **EMO-1** and **EFAS5**. To generate catchment statistics from EMO-1 I have developed a new tool named `catchstats` in the [lisflood-utilities](https://github.com/ec-jrc/lisflood-utilities) repository. Using this tool I have computed monthly and yearly averages of the three meterological variables in EMO-1: precipitation, air temperature and open water evaporation. From EFAS5, I used the inflow time series extracted from the long run (see following section) to calculate monthly average inflow and average, minimum and maximum annual inflow. In total, there are 54 meterological attributes saved in the file *attribues_EFAS_hydrometeorology.csv*.
 
 ### 2.5 Input time series: inflow and meteorology
 
