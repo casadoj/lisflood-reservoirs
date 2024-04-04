@@ -1,6 +1,18 @@
 # Reservoir Operations Spain (ResOpsES)
 
-This document explains the process of creation of the data set _Reservoir Operations Spain_ (ResOpsES) that will be later on to train the LISFLOOD reservoir routine.
+This document explains the process of creation of the data set _Reservoir Operations Spain_ (ResOpsES) that will be later on used to train the LISFLOOD reservoir routine.
+
+The dataset has been added to this repository in the folder [data/ResOpsES](../../data/ResOpsES/). The structure of the dataset is the following:
+
+* Subfolder _attributes_ contains CSV files with the static attributes. The field _SNCZI_ is the connection between all these files. The number of reservoirs in the CSV files differed depending on the availability of the specific source.
+
+* Subfolder _timeseries_ contains the daily time series associated to the 305 reservoirs selected. The time series are both in CSV or NetCDF format. The file name is the _SNCZI_ code needed to connect the time series and the static attributes. The following time series are included:
+
+   * _level_ (meters above sea level), _storage_ (hm³) and _outflow_ (m³/s) are the oberved time series. Depending on the availability, some of these variables may be missing in some reservoirs.
+   * _dis_efas5_ is the inflow time series as specific discharge (mm/d).
+   * _e0_emo1_ (mm), _pr_emo1_ (mm) and _ta_emo1_ (°C) are the time series derived from EMO-1: open water evaporation, precipitation and air temperature.
+   
+> **Note**. Units may need to be changed. For instance, _outflow_ may be converted to mm/d for consistency with _dis_efas_5_.
 
 ## 1 Data
 
@@ -118,14 +130,6 @@ Moreover, I have added to the ResOpsES dataset catchment statistics from **EMO-1
 
 ### 2.5 Input time series: inflow and meteorology
 
+Reservoir inflow time series were extracted from EFASv5 long run. The tool `ncextract` in the lisflood-utilities repository could be used to carry out this task, but it kept failing at reading some of the EFAS NetCDF files. Instead, as the tool is rather simple, I have applied the same procedure in the notebook [4_EFASv5_inflow.ipynb](4_EFASv5_inflow.ipynb).
 
-
-
-Starting from the corrected reservoir point layer.
-* `ncextract` using the EFAS5 long run to create the inflow time series.
-* `catchstats`  to create areal meteorological time series (precipitation, air temperature and open water evaporation). From these time series I have created some catchment attributes with montly and annual means.
-
-
-
-
-
+The meteorological time series by applying the `catchstats` tool, as first step in the computation of catchment meteorological attributes explained in the previous section.
