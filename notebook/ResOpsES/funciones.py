@@ -7,7 +7,7 @@ from shapely.geometry import mapping, Point
 import xarray as xr
 #import rioxarray
 from tqdm.notebook import tqdm
-from typing import Union, List, Dict, Optional, Tuple
+from typing import Union, List, Dict, Optional, Tuple, Literal
 from pathlib import Path
 import random
 import matplotlib.pyplot as plt
@@ -81,7 +81,7 @@ def read_static_map(path: Union[Path, str],
 
 def mask_statistics(maps: Union[xr.DataArray, xr.Dataset],
                     masks: Dict[int, xr.DataArray],
-                    func: Union[str, List[str]],
+                    func: Union[Literal['mean', 'median', 'std', 'min', 'max', 'count'], List[Literal['mean', 'median', 'std', 'min', 'max', 'count']]],
                     x_dim: str = 'lon',
                     y_dim: str = 'lat',
                     weight: Optional[xr.DataArray] = None
@@ -96,7 +96,7 @@ def mask_statistics(maps: Union[xr.DataArray, xr.Dataset],
     masks: dictionary of xr.DataArray
         a set of catchment masks. For isntance, the tool `cutmaps` in the library `lisflood-utilities` can be used
     func: str or list.
-        statistics to be computed from "maps" in each catchment: 'mean', 'median', 'std', 'min', 'max'
+        statistics to be computed from "maps" in each catchment: 'mean', 'median', 'std', 'min', 'max', 'count'
     x_dim: str
         name of the dimension in "maps" that defines coordinate X
     y_dim: str
@@ -151,7 +151,7 @@ def mask_statistics(maps: Union[xr.DataArray, xr.Dataset],
                         x = getattr(weighted_maps, f)(dim=[x_dim, y_dim])[var].data
                     else:
                         x = getattr(masked_maps, f)(dim=[x_dim, y_dim])[var].data
-                elif f in ['min', 'max', 'median']:
+                elif f in ['min', 'max', 'median', 'count']:
                     x = getattr(masked_maps, f)(dim=[x_dim, y_dim])[var].data
                 else:
                     print(f'ERROR. La función "{f}" no está entre las que calcula esta función')
