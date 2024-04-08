@@ -604,3 +604,43 @@ def filter_reservoirs(catchment: pd.Series, volume: pd.Series, catch_thr: Option
                                              vol_thr))
     
     return mask_catch & mask_vol
+
+
+
+def upstream_pixel(lat: float, lon: float, upArea: xr.DataArray) -> (float, float):
+    """This function finds the upstream coordinates of a given point
+    
+    Parameteres:
+    ------------
+    lat: float
+        latitude of the input point
+    lon: float
+        longitued of the input point
+    upArea: xarray.DataArray
+        map of upstream area
+        
+    Returns:
+    --------
+    lat: float
+        latitude of the inmediate upstream pixel
+    lon: float
+        longitued of the inmediate upstream pixel
+    """
+    
+    # upstream area of the input coordinates
+    area = fac.sel(lat=lat, lon=lon, method='nearest').values
+    
+    # spatial resolution of the input map
+    resolution = np.mean(np.diff(fac.lon.values))
+    
+    # window around the input pixel
+    window = np.array([-1.5 * resolution, 1.5 * resolution])
+    upArea_ = upArea.sel(lat=slice(*window[::-1] + lat)).sel(lon=slice(*window + lon))
+    
+    # remove pixels with area equal or greater than the input pixel
+    mask = upArea_.where(upArea_ < area, np.nan)
+    
+    # from the remaining, find pixel with the highest upstream area
+    pixel = upArea_.where(upArea_ == mask.max(), drop=True)
+    
+    return pixel.lat.data[0].round(4), pixel.lon.data[0].round(4)
