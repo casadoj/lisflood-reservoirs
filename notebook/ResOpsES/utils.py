@@ -79,241 +79,241 @@ def read_static_map(path: Union[Path, str],
 
 
 
-def mask_statistics(maps: Union[xr.DataArray, xr.Dataset],
-                    masks: Dict[int, xr.DataArray],
-                    func: Union[Literal['mean', 'median', 'std', 'min', 'max', 'count'], List[Literal['mean', 'median', 'std', 'min', 'max', 'count']]],
-                    x_dim: str = 'lon',
-                    y_dim: str = 'lat',
-                    weight: Optional[xr.DataArray] = None
-                   ) -> xr.Dataset:
-    """
-    Given a map (or set of maps) in Rioxarray format and a dictionary of catchment masks, it computes catchment statistics. Both maps and masks must be in the same coordinate reference system
+# def mask_statistics(maps: Union[xr.DataArray, xr.Dataset],
+#                     masks: Dict[int, xr.DataArray],
+#                     func: Union[Literal['mean', 'median', 'std', 'min', 'max', 'count'], List[Literal['mean', 'median', 'std', 'min', 'max', 'count']]],
+#                     x_dim: str = 'lon',
+#                     y_dim: str = 'lat',
+#                     weight: Optional[xr.DataArray] = None
+#                    ) -> xr.Dataset:
+#     """
+#     Given a map (or set of maps) in Rioxarray format and a dictionary of catchment masks, it computes catchment statistics. Both maps and masks must be in the same coordinate reference system
 
-    Parameters:
-    -----------
-    maps: xarray.DataArray or xarray.Dataset
-        map or set of maps from which catchment statistics will be computed. Library Rioxarray must have been used to define the coordinate reference system and the dimensions
-    masks: dictionary of xr.DataArray
-        a set of catchment masks. For isntance, the tool `cutmaps` in the library `lisflood-utilities` can be used
-    func: str or list.
-        statistics to be computed from "maps" in each catchment: 'mean', 'median', 'std', 'min', 'max', 'count'
-    x_dim: str
-        name of the dimension in "maps" that defines coordinate X
-    y_dim: str
-        name of the dimension in "maps" that defines coordinate Y
-    weight: optional or xr.DataArray
-        map used to weight each pixel in "maps" before computing the statistics. It is meant to weight pixels by their different pixel area in geographic projections
+#     Parameters:
+#     -----------
+#     maps: xarray.DataArray or xarray.Dataset
+#         map or set of maps from which catchment statistics will be computed. Library Rioxarray must have been used to define the coordinate reference system and the dimensions
+#     masks: dictionary of xr.DataArray
+#         a set of catchment masks. For isntance, the tool `cutmaps` in the library `lisflood-utilities` can be used
+#     func: str or list.
+#         statistics to be computed from "maps" in each catchment: 'mean', 'median', 'std', 'min', 'max', 'count'
+#     x_dim: str
+#         name of the dimension in "maps" that defines coordinate X
+#     y_dim: str
+#         name of the dimension in "maps" that defines coordinate Y
+#     weight: optional or xr.DataArray
+#         map used to weight each pixel in "maps" before computing the statistics. It is meant to weight pixels by their different pixel area in geographic projections
 
-    Returns:
-    --------
-    xr.Dataset
-        Catchment statistics extracted from "maps"
-    """
+#     Returns:
+#     --------
+#     xr.Dataset
+#         Catchment statistics extracted from "maps"
+#     """
     
-    if isinstance(maps, xr.DataArray):
-        maps = xr.Dataset({maps.name: maps})
+#     if isinstance(maps, xr.DataArray):
+#         maps = xr.Dataset({maps.name: maps})
 
-    if isinstance(func, str):
-        func = {var: [func] for var in maps}
-    elif isinstance(func, list):
-        func = {var: func for var in maps}
+#     if isinstance(func, str):
+#         func = {var: [func] for var in maps}
+#     elif isinstance(func, list):
+#         func = {var: func for var in maps}
 
-    # define the Dataset where results will be stored
-    dims = dict(maps.dims)
-    del dims[x_dim]
-    del dims[y_dim]
-    coords = {dim: maps[dim] for dim in dims}
-    coords.update({'id': list(masks.keys())})
-    vars = [f'{var}_{f}' for var, fs in func.items() for f in fs]
-    ds = xr.Dataset({var: xr.DataArray(coords=coords, dims=coords.keys()) for var in vars})
+#     # define the Dataset where results will be stored
+#     dims = dict(maps.dims)
+#     del dims[x_dim]
+#     del dims[y_dim]
+#     coords = {dim: maps[dim] for dim in dims}
+#     coords.update({'id': list(masks.keys())})
+#     vars = [f'{var}_{f}' for var, fs in func.items() for f in fs]
+#     ds = xr.Dataset({var: xr.DataArray(coords=coords, dims=coords.keys()) for var in vars})
 
-    # compute catchment statistics
-    for id in tqdm(ds.id.data, desc='catchments'):
+#     # compute catchment statistics
+#     for id in tqdm(ds.id.data, desc='catchments'):
 
-        # apply mask to the maps
-        mask = masks[id]
-        masked_maps = maps.sel({x_dim: mask[x_dim], y_dim: mask[y_dim]}).where(mask == 1)
+#         # apply mask to the maps
+#         mask = masks[id]
+#         masked_maps = maps.sel({x_dim: mask[x_dim], y_dim: mask[y_dim]}).where(mask == 1)
         
-        if weight is not None:
-            # apply mask to the weights
-            masked_weight = weight.sel({x_dim: mask[x_dim], y_dim: mask[y_dim]}).where(mask == 1)
-            # apply weighing
-            weighted_maps = masked_maps.weighted(masked_weight.fillna(0))        
+#         if weight is not None:
+#             # apply mask to the weights
+#             masked_weight = weight.sel({x_dim: mask[x_dim], y_dim: mask[y_dim]}).where(mask == 1)
+#             # apply weighing
+#             weighted_maps = masked_maps.weighted(masked_weight.fillna(0))        
 
-        # compute statistics
-        for var, fs in func.items(): 
-            if var not in maps:
-                print(f'ERROR. Variable "{var}" is not in "maps".')
-                continue
-            for f in fs:
-                if f in ['mean', 'sum', 'std', 'var']:
-                    if weight is not None:
-                        x = getattr(weighted_maps, f)(dim=[x_dim, y_dim])[var].data
-                    else:
-                        x = getattr(masked_maps, f)(dim=[x_dim, y_dim])[var].data
-                elif f in ['min', 'max', 'median', 'count']:
-                    x = getattr(masked_maps, f)(dim=[x_dim, y_dim])[var].data
-                else:
-                    print(f'ERROR. La función "{f}" no está entre las que calcula esta función')
-                    continue
-                # save value
-                ds[f'{var}_{f}'].loc[{'id': id}] = x
-                del x
-        del mask, masked_maps
+#         # compute statistics
+#         for var, fs in func.items(): 
+#             if var not in maps:
+#                 print(f'ERROR. Variable "{var}" is not in "maps".')
+#                 continue
+#             for f in fs:
+#                 if f in ['mean', 'sum', 'std', 'var']:
+#                     if weight is not None:
+#                         x = getattr(weighted_maps, f)(dim=[x_dim, y_dim])[var].data
+#                     else:
+#                         x = getattr(masked_maps, f)(dim=[x_dim, y_dim])[var].data
+#                 elif f in ['min', 'max', 'median', 'count']:
+#                     x = getattr(masked_maps, f)(dim=[x_dim, y_dim])[var].data
+#                 else:
+#                     print(f'ERROR. La función "{f}" no está entre las que calcula esta función')
+#                     continue
+#                 # save value
+#                 ds[f'{var}_{f}'].loc[{'id': id}] = x
+#                 del x
+#         del mask, masked_maps
 
-    return ds
-
-
-
-def polygon_statistics(mapa: Union[xr.DataArray, xr.Dataset], poligonos: gpd.GeoDataFrame, func: str = Union[str, List[str]], x_dim: str = 'lon', y_dim: str = 'lat', ponderacion: xr.DataArray = None) -> xr.Dataset:
-    """Dado un mapa en formato Rioxarray y una capa de polígonos, calcula el estadístico agregado de cada cuenca. Es imprescindible que tanto el mapa como los polígonos estén en el mismo sistema de referencia.
-
-    Parámetros:
-    ----------
-    mapa:        xarray.DataArray o xarray.Dataset
-        Mapa o serie de mapas a recortar. Debe de haberse utilizado la librería Rioxarray para definir el sistema de referencia de coordenadas y las dimensiones que definen las coordenadas
-    poligonos:   geopandas.GeoDataFrame
-        Tabla con los polígonos.
-    func:        str o list.
-        Funciones estadísticas a aplicar sobre el recorte del mapa de cada polígono. Los nombres han de ser los utilizados en Xarray: 'mean', 'median', 'std', 'min', 'max'
-    x_dim:       str
-        Nombre de la dimensión de "mapa" correspondiente a la dimensión X
-    y_dim:       str
-        Nombre de la dimensión de "mapa" correspondiente a la dimensión Y
-    ponderacion: xr.DataArray
-        Mapa utilizado para ponderar el peso de cada celda en el cálculo del estadístico. Está específicamente pensado para ponderar las celdas por su área en el caso de que ésta no sea idéntica (coordenadas geográficas)
-
-    Devuelve:
-    ---------
-    xr.Dataset
-        Matriz con los estadísticos areales del mapa de entrada para cada uno de los polígonos
-    """
-
-    assert poligonos.crs == mapa.rio.crs, '"mapa" y "poligonos" han de tener el mismo sistema de coordenadas de referencia (CRS).'
-    if ponderacion is not None:
-        assert mapa.rio.crs == ponderacion.rio.crs, '"ponderacion" ha de ser un xarray.DataArray similar a "mapa"'
-
-    if isinstance(mapa, xr.DataArray):
-        crs = mapa.rio.crs
-        mapa = xr.Dataset({mapa.name: mapa})
-        mapa = mapa.rio.write_crs(crs)
-        mapa = mapa.rio.set_spatial_dims(x_dim=x_dim, y_dim=y_dim)
-
-    if isinstance(func, str):
-        func = {var: [func] for var in mapa}
-    elif isinstance(func, list):
-        func = {var: func for var in mapa}
-
-    # definir el Dataset donde se guardarán los resultados
-    dims = dict(mapa.dims)
-    del dims[x_dim]
-    del dims[y_dim]
-    coords = {dim: mapa[dim] for dim in dims}
-    coords.update({'id': poligonos.index.to_list()})
-    vars = [f'{var}_{f}' for var, fs in func.items() for f in fs]
-    ds = xr.Dataset({var: xr.DataArray(coords=coords, dims=coords.keys()) for var in vars})
-
-    # calcular estadísticos areales
-    for id in tqdm(ds.id.data):
-
-        # recortar mapa al polígono
-        poligono = poligonos.loc[[id]]
-        recorte = mapa.rio.clip(poligono.geometry.apply(mapping), poligono.crs, drop=True)
-        recorte = recorte.compute()
-
-        # ponderar el mapa
-        if ponderacion is not None:
-            # recortar el mapa de ponderación
-            pond_pol = ponderacion.rio.clip(poligono.geometry.apply(mapping), poligono.crs, drop=True)
-            # aplicar ponderación
-            recorte = recorte.weighted(pond_pol.fillna(0))
-
-        # calcular estadísticos
-        for var, fs in func.items(): 
-            if var not in mapa:
-                print(f'ERROR. La variable "{var}" no está en "mapa".')
-            for f in fs:
-                if f == 'mean':
-                    x = recorte.mean([x_dim, y_dim])[var].data
-                elif f == 'median':
-                    x = recorte.median([x_dim, y_dim])[var].data
-                elif f == 'std':
-                    x = recorte.std([x_dim, y_dim])[var].data
-                elif f == 'max':
-                    x = recorte.max([x_dim, y_dim])[var].data
-                elif f == 'min':
-                    x = recorte.min([x_dim, y_dim])[var].data
-                elif f == 'sum':
-                    x = recorte.sum([x_dim, y_dim])[var].data
-                else:
-                    print(f'ERROR. La función "{f}" no está entre las que calcula esta función')
-                    continue
-
-                ds[f'{var}_{f}'].loc[{'id': id}] = x
-                del x
-        del poligono, recorte
-
-    return ds
+#     return ds
 
 
 
-def point_polygon_statistics(puntos: gpd.GeoDataFrame, poligonos: gpd.GeoDataFrame, func: str = 'mean') -> pd.DataFrame:
-    """Dadas una capa de puntos y una capa de polígonos, calcula el estadístico agregado de cada cuenca. Es imprescindible que ambas capas estén en el mismo sistema de referencia.
+# def polygon_statistics(mapa: Union[xr.DataArray, xr.Dataset], poligonos: gpd.GeoDataFrame, func: str = Union[str, List[str]], x_dim: str = 'lon', y_dim: str = 'lat', ponderacion: xr.DataArray = None) -> xr.Dataset:
+#     """Dado un mapa en formato Rioxarray y una capa de polígonos, calcula el estadístico agregado de cada cuenca. Es imprescindible que tanto el mapa como los polígonos estén en el mismo sistema de referencia.
 
-    Atributos:
-    ----------
-    puntos:      geopandas.GeoDataFrame. Tabla con los puntos.
-    poligonos:   geopandas.GeoDataFrame. Tabla con los polígonos.
-    func:        str o list. Funciones estadísticas a aplicar sobre la selección de puntos de cada polígono. Los nombres han de ser los utilizados en Pandas: 'mean', 'median', 'std', 'min', 'max'
-    """
+#     Parámetros:
+#     ----------
+#     mapa:        xarray.DataArray o xarray.Dataset
+#         Mapa o serie de mapas a recortar. Debe de haberse utilizado la librería Rioxarray para definir el sistema de referencia de coordenadas y las dimensiones que definen las coordenadas
+#     poligonos:   geopandas.GeoDataFrame
+#         Tabla con los polígonos.
+#     func:        str o list.
+#         Funciones estadísticas a aplicar sobre el recorte del mapa de cada polígono. Los nombres han de ser los utilizados en Xarray: 'mean', 'median', 'std', 'min', 'max'
+#     x_dim:       str
+#         Nombre de la dimensión de "mapa" correspondiente a la dimensión X
+#     y_dim:       str
+#         Nombre de la dimensión de "mapa" correspondiente a la dimensión Y
+#     ponderacion: xr.DataArray
+#         Mapa utilizado para ponderar el peso de cada celda en el cálculo del estadístico. Está específicamente pensado para ponderar las celdas por su área en el caso de que ésta no sea idéntica (coordenadas geográficas)
 
-    try:
-        if poligonos.crs != puntos.crs:
-            return 'ERROR. Los puntos y los polígonos no están en el mismo sistema de referencia de coordenadas.'
-    except:
-        return 'ERROR. O los puntos o los polígonos no tienen definido el sistema de referencia de coordenadas.'
+#     Devuelve:
+#     ---------
+#     xr.Dataset
+#         Matriz con los estadísticos areales del mapa de entrada para cada uno de los polígonos
+#     """
 
-    if isinstance(func, str):
-        func = {var: [func] for var in puntos.columns}
-    elif isinstance(func, list):
-        func = {var: func for var in puntos.columns}
+#     assert poligonos.crs == mapa.rio.crs, '"mapa" y "poligonos" han de tener el mismo sistema de coordenadas de referencia (CRS).'
+#     if ponderacion is not None:
+#         assert mapa.rio.crs == ponderacion.rio.crs, '"ponderacion" ha de ser un xarray.DataArray similar a "mapa"'
 
-    df = pd.DataFrame(index=poligonos.index)
-    for id in tqdm(df.index):
+#     if isinstance(mapa, xr.DataArray):
+#         crs = mapa.rio.crs
+#         mapa = xr.Dataset({mapa.name: mapa})
+#         mapa = mapa.rio.write_crs(crs)
+#         mapa = mapa.rio.set_spatial_dims(x_dim=x_dim, y_dim=y_dim)
 
-        # extraer polígono de la cuenca
-        poligono = poligonos.loc[[id]]
-        # encontrar embalses en la cuenca
-        puntos_sel = gpd.sjoin(puntos, poligono, how='inner', predicate='within')
-        if puntos_sel.shape[0] > 0:
+#     if isinstance(func, str):
+#         func = {var: [func] for var in mapa}
+#     elif isinstance(func, list):
+#         func = {var: func for var in mapa}
 
-            for var, fs in func.items(): 
-                if var not in puntos_sel.columns:
-                    print(f'ERROR. La variable "{var}" no está en "puntos".')
-                for f in fs:
-                    # calcular estadístico
-                    if f == 'mean':
-                        x = puntos_sel[var].mean()
-                    elif f == 'median':
-                        x = puntos_sel[var].median()
-                    elif f == 'std':
-                        x = puntos_sel[var].std()
-                    elif f == 'max':
-                        x = puntos_sel[var].max()
-                    elif f == 'min':
-                        x = puntos_sel[var].min()
-                    elif f == 'sum':
-                        x = puntos_sel[var].sum()
-                    elif f == 'count':
-                        x = puntos_sel[var].count()
-                    else:
-                        print(f'ERROR. La función "{f}" no está entre las que calcula esta función')
-                        continue
-                    df.loc[id, f'{var}_{f}'] = x
+#     # definir el Dataset donde se guardarán los resultados
+#     dims = dict(mapa.dims)
+#     del dims[x_dim]
+#     del dims[y_dim]
+#     coords = {dim: mapa[dim] for dim in dims}
+#     coords.update({'id': poligonos.index.to_list()})
+#     vars = [f'{var}_{f}' for var, fs in func.items() for f in fs]
+#     ds = xr.Dataset({var: xr.DataArray(coords=coords, dims=coords.keys()) for var in vars})
+
+#     # calcular estadísticos areales
+#     for id in tqdm(ds.id.data):
+
+#         # recortar mapa al polígono
+#         poligono = poligonos.loc[[id]]
+#         recorte = mapa.rio.clip(poligono.geometry.apply(mapping), poligono.crs, drop=True)
+#         recorte = recorte.compute()
+
+#         # ponderar el mapa
+#         if ponderacion is not None:
+#             # recortar el mapa de ponderación
+#             pond_pol = ponderacion.rio.clip(poligono.geometry.apply(mapping), poligono.crs, drop=True)
+#             # aplicar ponderación
+#             recorte = recorte.weighted(pond_pol.fillna(0))
+
+#         # calcular estadísticos
+#         for var, fs in func.items(): 
+#             if var not in mapa:
+#                 print(f'ERROR. La variable "{var}" no está en "mapa".')
+#             for f in fs:
+#                 if f == 'mean':
+#                     x = recorte.mean([x_dim, y_dim])[var].data
+#                 elif f == 'median':
+#                     x = recorte.median([x_dim, y_dim])[var].data
+#                 elif f == 'std':
+#                     x = recorte.std([x_dim, y_dim])[var].data
+#                 elif f == 'max':
+#                     x = recorte.max([x_dim, y_dim])[var].data
+#                 elif f == 'min':
+#                     x = recorte.min([x_dim, y_dim])[var].data
+#                 elif f == 'sum':
+#                     x = recorte.sum([x_dim, y_dim])[var].data
+#                 else:
+#                     print(f'ERROR. La función "{f}" no está entre las que calcula esta función')
+#                     continue
+
+#                 ds[f'{var}_{f}'].loc[{'id': id}] = x
+#                 del x
+#         del poligono, recorte
+
+#     return ds
+
+
+
+# def point_polygon_statistics(puntos: gpd.GeoDataFrame, poligonos: gpd.GeoDataFrame, func: str = 'mean') -> pd.DataFrame:
+#     """Dadas una capa de puntos y una capa de polígonos, calcula el estadístico agregado de cada cuenca. Es imprescindible que ambas capas estén en el mismo sistema de referencia.
+
+#     Atributos:
+#     ----------
+#     puntos:      geopandas.GeoDataFrame. Tabla con los puntos.
+#     poligonos:   geopandas.GeoDataFrame. Tabla con los polígonos.
+#     func:        str o list. Funciones estadísticas a aplicar sobre la selección de puntos de cada polígono. Los nombres han de ser los utilizados en Pandas: 'mean', 'median', 'std', 'min', 'max'
+#     """
+
+#     try:
+#         if poligonos.crs != puntos.crs:
+#             return 'ERROR. Los puntos y los polígonos no están en el mismo sistema de referencia de coordenadas.'
+#     except:
+#         return 'ERROR. O los puntos o los polígonos no tienen definido el sistema de referencia de coordenadas.'
+
+#     if isinstance(func, str):
+#         func = {var: [func] for var in puntos.columns}
+#     elif isinstance(func, list):
+#         func = {var: func for var in puntos.columns}
+
+#     df = pd.DataFrame(index=poligonos.index)
+#     for id in tqdm(df.index):
+
+#         # extraer polígono de la cuenca
+#         poligono = poligonos.loc[[id]]
+#         # encontrar embalses en la cuenca
+#         puntos_sel = gpd.sjoin(puntos, poligono, how='inner', predicate='within')
+#         if puntos_sel.shape[0] > 0:
+
+#             for var, fs in func.items(): 
+#                 if var not in puntos_sel.columns:
+#                     print(f'ERROR. La variable "{var}" no está en "puntos".')
+#                 for f in fs:
+#                     # calcular estadístico
+#                     if f == 'mean':
+#                         x = puntos_sel[var].mean()
+#                     elif f == 'median':
+#                         x = puntos_sel[var].median()
+#                     elif f == 'std':
+#                         x = puntos_sel[var].std()
+#                     elif f == 'max':
+#                         x = puntos_sel[var].max()
+#                     elif f == 'min':
+#                         x = puntos_sel[var].min()
+#                     elif f == 'sum':
+#                         x = puntos_sel[var].sum()
+#                     elif f == 'count':
+#                         x = puntos_sel[var].count()
+#                     else:
+#                         print(f'ERROR. La función "{f}" no está entre las que calcula esta función')
+#                         continue
+#                     df.loc[id, f'{var}_{f}'] = x
     
-    # df.replace(np.nan, 0, inplace=True)
+#     # df.replace(np.nan, 0, inplace=True)
 
-    return df
+#     return df
 
 
 
