@@ -10,9 +10,104 @@ import numpy as np
 import pandas as pd
 from pathlib import Path
 from typing import Union, Dict, List, Tuple
+from statsmodels.distributions.empirical_distribution import ECDF
 
 # from utils import Decomposition
-from .metrics import KGEmod
+from .metrics import KGEmod, KGE
+        
+        
+
+def compare_flows(storage: pd.Series,
+                  outflow: pd.Series,
+                  inflow1: pd.Series,
+                  inflow2: pd.Series,
+                  save: Union[str, Path] = None,
+                  **kwargs):
+    """
+    It creates a figure with four plots. Three of them are scatter plots comparing pair-wisely the time series of outflow and inflows. The fourth plot shows the empirical cumulative of the three flow time series. Storage is only used in the colour scale.
+    
+    Parameters:
+    -----------
+    storage: pandas.Series
+        Time series of observed reservoir storage
+    outflow: pandas.Series
+        Time series of observed reservoir outflow
+    inflow1: pandas.Series
+        One of the time series of reservoir inflow to be compared
+    inflow2: pandas.Series
+        The other time series of reservoir inflow to be compared
+    save: string or pathlib.Path
+        If provided, the file where the plot will be saved
+        
+    Returns:
+    --------
+    The plot is either printed on screen (default) or saved on disk (if "save" is provided)
+    """
+    
+    figsize = kwargs.get('figsize', (8, 8))
+    cmap = kwargs.get('cmap', 'coolwarm_r')
+    s = kwargs.get('size', 4)
+    a = kwargs.get('alpha', .5)
+    
+    df = pd.concat((storage, outflow, inflow1, inflow2), axis=1)
+    columns = df.columns
+    
+    fig, ax = plt.subplots(ncols=2, nrows=2, figsize=figsize, sharey=True)
+    
+    vmax = df.iloc[:,1:].max().max()
+    r = len(str(int(vmax)))
+    vmax = np.ceil(vmax / 10**r) * 10**r
+    vmin = 0.001
+    
+    for c, x in enumerate([columns[2], columns[1]]):
+        for r, y in enumerate([columns[1], columns[3]]):
+            if c == 1 and r == 0:
+                continue
+                
+            sct = ax[r,c].scatter(df[x], df[y], c=df[colums[0]], cmap=cmap, s=s, alpha=a)
+            ax[r,c].plot([vmin, vmax], [vmin, vmax], '--k', lw=.5, zorder=0)
+            
+            try:
+                kge, alpha, beta, rho = KGE(df[x], df[y])
+                ax[r,c].text(.01, .99, f'KGE={kge:.2f}', transform=ax[r,c].transAxes, ha='left', va='top')
+                ax[r,c].text(.01, .94, f'α={alpha:.2f}', transform=ax[r,c].transAxes, ha='left', va='top')
+                ax[r,c].text(.01, .89, f'β={beta:.2f}', transform=ax[r,c].transAxes, ha='left', va='top')
+                ax[r,c].text(.01, .84, f'ρ={rho:.2f}', transform=ax[r,c].transAxes, ha='left', va='top')
+            except:
+                pass
+            
+            ax[r,c].set(xlim=(vmin, vmax),
+                        xscale=scale, 
+                        ylim=(vmin, vmax),
+                        yscale=scale)
+            if r == 1:
+                ax[r,c].set_xlabel('{0} (m3/s)'.format(x))
+            if c == 0:
+                ax[r,c].set_ylabel('{0} (m3/s)'.format(y))
+                if r == 0:
+                    ax[r,c].set_xticklabels([])
+    
+    # ecdf
+    for col, ls in zip(columns[1:], ['-', '--', ':']):
+        ecdf = ECDF(df[col])
+        ax[0,1].plot(ecdf.y, ecdf.x, c='k', ls=ls, lw=1, label=col)
+    ax[0,1].set(xlabel='ECDF (-)',
+                ylabel='flow (m3/s)',
+                xlim=(-.02, 1.02),
+                ylim=(vmin, vmax),
+                yscale=scale)
+    ax[0,1].legend(frameon=False);
+
+    cbar_ax = fig.add_axes([0.33, 0.02, 0.33, 0.015])
+    plt.colorbar(sct, cax=cbar_ax, orientation='horizontal', label='storage (hm3)')
+    
+    if 'title' in kwargs:
+        fig.text(0.5, .925, kwargs['title'], ha='center', va='top', fontsize=12)
+    
+    if save is not None:
+        plt.savefig(save, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+        
         
         
 def create_cmap(cmap: str, bounds: List, name: str = '', specify_color: Tuple = None):
