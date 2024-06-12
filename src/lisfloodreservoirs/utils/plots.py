@@ -64,7 +64,7 @@ def compare_flows(storage: pd.Series,
             if c == 1 and r == 0:
                 continue
                 
-            sct = ax[r,c].scatter(df[x], df[y], c=df[colums[0]], cmap=cmap, s=s, alpha=a)
+            sct = ax[r,c].scatter(df[x], df[y], c=df[columns[0]], cmap=cmap, s=s, alpha=a)
             ax[r,c].plot([vmin, vmax], [vmin, vmax], '--k', lw=.5, zorder=0)
             
             try:
