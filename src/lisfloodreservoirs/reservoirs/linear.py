@@ -8,11 +8,11 @@ from tqdm.notebook import tqdm
 from typing import Union, List, Tuple, Dict
 from pathlib import Path
 
-from plots import reservoir_analysis
-from metrics import KGEmod
+from ..utils.plots import reservoir_analysis
+from ..utils.metrics import KGEmod
 
 class Linear:
-    """Representation of a reservoir according to Hanazaki, Yamazaki & Yoshimura (2021)."""
+    """Representation of a linear reservoir"""
     
     def __init__(self, Vmin: float, Vtot: float, Qmin: float, T: int, At: int = 86400):
         """        
@@ -81,7 +81,7 @@ class Linear:
         inflow: pd.Series
             Time series of flow coming into the reservoir (m3/s)
         Vo: float
-            Initial value of reservoir storage (m3). If not provided, it is assumed that the normal storage is the initial condition
+            Initial value of reservoir storage (m3). If not provided, it is assumed that the reservoir is half full at the beginning of the simulation
             
         Returns:
         --------
