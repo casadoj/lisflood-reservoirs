@@ -8,8 +8,8 @@ from tqdm.notebook import tqdm
 from typing import Union, List, Tuple, Dict
 from pathlib import Path
 
-from plots import reservoir_analysis
-from metrics import KGEmod
+from ..utils.plots import reservoir_analysis
+from ..utils.metrics import KGEmod
 
 
 class Lisflood:
