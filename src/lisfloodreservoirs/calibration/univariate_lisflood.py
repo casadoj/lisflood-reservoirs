@@ -12,8 +12,8 @@ import numpy as np
 import pandas as pd
 from spotpy.objectivefunctions import kge
 from spotpy.parameter import Uniform
-from typing import List
-from reservoirs import Lisflood
+from typing import List, Literal, Optional
+from ..reservoirs.lisflood import Lisflood
 
 
 class univariate_3pars(object):
@@ -160,7 +160,16 @@ class univariate_6pars(object):
     gamma = Uniform(name='gamma', low=0.001, high=0.999)
     k = Uniform(name='k', low=1.0, high=5.0)
 
-    def __init__(self, inflow: pd.Series, storage: pd.Series, outflow: pd.Series, Vc: float, Vtot: float, Qmin: float, target: str = 'outflow', obj_func=kge):
+    def __init__(self,
+                 inflow: pd.Series,
+                 storage: pd.Series, 
+                 outflow: pd.Series, 
+                 Vc: float, 
+                 Vtot: float, 
+                 Qmin: float, 
+                 target: Literal['storage', 'outflow'], 
+                 obj_func=kge
+                ):
         """
         Parameters:
         -----------
@@ -169,7 +178,7 @@ class univariate_6pars(object):
         storage: pd.Series
             Time series of reservoir storage
         outflow: pd.Series
-            Observed outflow time series that will be the target in the calibration
+            Observed outflow time series
         Vc: float
             Volume (m3) associated to the conservative storage
         Vtot: float
@@ -196,7 +205,11 @@ class univariate_6pars(object):
         self.target = target
         self.obj_func = obj_func       
 
-    def simulation(self, pars: List[float], inflow: pd.Series = None, storage_init: float = None, spinup: int = None):
+    def simulation(self,
+                   pars: List[float],
+                   inflow: Optional[pd.Series] = None,
+                   storage_init: Optional[float] = None,
+                   spinup: Optional[int] = None):
         """Given a parameter set, it declares the reservoir and runs the simulation.
         
         Inputs:

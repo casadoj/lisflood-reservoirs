@@ -13,7 +13,7 @@ import pandas as pd
 from spotpy.objectivefunctions import kge
 from spotpy.parameter import Uniform
 from typing import List
-from reservoirs import Lisflood
+from ..reservoirs.lisflood import Lisflood
   
     
     
