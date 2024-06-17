@@ -8,6 +8,7 @@ from ..utils.metrics import KGEmod
 from ..utils.plots import reservoir_analysis
 
 
+
 class Reservoir:
     """Parent class to model reservoirs"""
     
@@ -38,11 +39,25 @@ class Reservoir:
         self.Qf = Qf
         self.At = At
 
-    def timestep(self,
-                 I: float,
+    def timestep(self, 
+                 I: float, 
                  V: float
-                ) -> float:
-        # Common timestep logic (if applicable)
+                ) -> List[float]:
+        """Given an inflow and an initial storage values, it computes the corresponding outflow
+        
+        Parameters:
+        -----------
+        I: float
+            Inflow (m3/s)
+        V: float
+            Volume stored in the reservoir (m3)
+            
+        Returns:
+        --------
+        Q, V: List[float]
+            Outflow (m3/s) and updated storage (m3)
+        """
+        
         pass
     
     def simulate(self,
@@ -77,6 +92,17 @@ class Reservoir:
             Vo = V
 
         return pd.concat((storage, inflow, outflow), axis=1)
+    
+    def get_params(self) -> Dict:
+        """It generates a dictionary with the reservoir parameters
+        
+        Returns:
+        --------
+        params: Dict
+            A dictionary with the name and value of the reservoir parameters
+        """
+
+        pass
 
     def normalize_timeseries(self,
                              timeseries: pd.DataFrame
@@ -96,7 +122,8 @@ class Reservoir:
 
         ts_norm = timeseries.copy()
         ts_norm.storage /= self.Vtot
-        ts_norm[['inflow', 'outflow']] /= self.Qnd
+        if self.Qf is not None:
+            ts_norm[['inflow', 'outflow']] /= self.Qf
 
         return ts_norm
     
@@ -111,8 +138,8 @@ class Reservoir:
                ):
         """It compares two reservoir timeseries (inflow, outflow and storage) using the function 'reservoir_analysis'. If only 1 time series is given, the plot will simply show the reservoir behaviour of that set of time series.
         
-        Inputs:
-        -------
+        Parameters:
+        -----------
         series1: pd.DataFrame
             A table with the time series of 'inflow', 'outflow' and 'storage'
         series2: pd.DataFrame

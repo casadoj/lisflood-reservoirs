@@ -1,15 +1,11 @@
-import os
-os.environ['USE_PYGEOS'] = '0'
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-from tqdm.notebook import tqdm
 from typing import Union, List, Tuple, Dict
 from pathlib import Path
 
 from ..utils.plots import reservoir_analysis
-from ..utils.metrics import KGEmod
 from .reservoir import Reservoir
 
        
@@ -39,23 +35,17 @@ class Hanazaki(Reservoir):
             Simulation time step in seconds.
         """
         
-        super().__init__(Vmin, Vtot, Qmin, Qf, At=At)
+        super().__init__(Vmin, Vtot, Qmin, Qf, At)
         
         # storage limits
-        # self.Vmin = Vmin
         self.Vf = Vf
         self.Ve = Ve
-        # self.Vtot = Vtot
         
         # outflow limits
         self.Qn = Qn
-        # self.Qf = Qf
         
         # release coefficient
         self.k = max(1 - 5 * (Vtot - Vf) / A, 0)
-        
-        # time step duration in seconds
-        # self.At = At
         
     def timestep(self, I: float, V: float, verbose: bool = False) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
@@ -99,46 +89,13 @@ class Hanazaki(Reservoir):
             if verbose:
                 if V > self.Vtot:
                     print(f'{V} m3 is greater than the reservoir capacity of {self.Vtot} m3')
-            
-        # 
-        
+                    
         # update reservoir storage with the outflow volume
         AV = np.min([Q * self.At, V])
         AV = np.max([AV, V - self.Vtot])
         V -= AV
         
         return Q, V
-        
-#     def simulate(self, inflow: pd.Series, Vo: float = None):
-#         """Given a inflow time series (m3/s) and an initial storage (m3), it computes the time series of outflow (m3/s) and storage (m3)
-        
-#         Parameters:
-#         -----------
-#         inflow: pd.Series
-#             Time series of flow coming into the reservoir (m3/s)
-#         Vo: float
-#             Initial value of reservoir storage (m3). If not provided, it is assumed that the normal storage is the initial condition
-            
-#         Returns:
-#         --------
-#         pd.DataFrame
-#             A table that concatenates the storage, inflow and outflow time series.
-#         """
-        
-#         if Vo is None:
-#             Vo = self.Qn
-        
-#         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
-#         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
-#         for ts in tqdm(inflow.index):
-#             # compute outflow and new storage
-#             Q, V = self.timestep(inflow[ts], Vo)
-#             storage[ts] = V
-#             outflow[ts] = Q
-#             # update current storage
-#             Vo = V
-
-#         return pd.concat((storage, inflow, outflow), axis=1)
     
     def routine(self, V: pd.Series, I: Union[float, pd.Series], modified: bool = True):
         """Given a time series of reservoir storage (m3) and a value or a time series of inflow (m3/s), it computes the ouflow (m3/s). This function is only meant for explanatory purposes; since the volume time series is given, the computed outflow does not update the reservoir storage. If the intention is to simulate the behaviour of the reservoir, refer to the function "simulate"
@@ -254,26 +211,6 @@ class Hanazaki(Reservoir):
                ylim=(0, None),
                ylabel='outflow (m3/s)')
         ax.legend(frameon=False, loc=2)
-        
-    def normalize_timeseries(self, timeseries: pd.DataFrame) -> pd.DataFrame:
-        """It normalizes the timeseries using the total reservoir capacity and the outflow associated to the flood limit. In this way, the storage time series ranges between 0 and 1, and the inflow and outflow time series are in the order of units.
-        
-        Parameters:
-        -----------
-        timeseries: pd.DataFrame
-            A table with three columns ('storage', 'inflow', 'outflow') with the time series of a reservoir
-            
-        Returns:
-        --------
-        ts_norm: pd.DataFrame
-            Table similar to the original but with normalized values
-        """
-
-        ts_norm = timeseries.copy()
-        ts_norm.storage /= self.Vtot
-        ts_norm[['inflow', 'outflow']] /= self.Qf
-
-        return ts_norm
     
     def get_params(self):
         """It generates a dictionary with the reservoir paramenters in the Hanazaki model."""
