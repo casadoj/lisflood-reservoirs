@@ -8,12 +8,13 @@ from tqdm.notebook import tqdm
 from typing import Union, List, Tuple, Dict
 from pathlib import Path
 
-from plots import reservoir_analysis
-from metrics import KGEmod
+from ..utils.plots import reservoir_analysis
+from ..utils.metrics import KGEmod
+from .reservoir import Reservoir
 
        
         
-class Hanazaki:
+class Hanazaki(Reservoir):
     """Representation of a reservoir according to Hanazaki, Yamazaki & Yoshimura (2021)."""
     
     def __init__(self, Vc: float, Vf:float, Ve: float, Vtot: float, Qn: float, Qf: float, A: int, At: int = 86400):
@@ -106,36 +107,36 @@ class Hanazaki:
         
         return Q, V
         
-    def simulate(self, inflow: pd.Series, Vo: float = None):
-        """Given a inflow time series (m3/s) and an initial storage (m3), it computes the time series of outflow (m3/s) and storage (m3)
+#     def simulate(self, inflow: pd.Series, Vo: float = None):
+#         """Given a inflow time series (m3/s) and an initial storage (m3), it computes the time series of outflow (m3/s) and storage (m3)
         
-        Parameters:
-        -----------
-        inflow: pd.Series
-            Time series of flow coming into the reservoir (m3/s)
-        Vo: float
-            Initial value of reservoir storage (m3). If not provided, it is assumed that the normal storage is the initial condition
+#         Parameters:
+#         -----------
+#         inflow: pd.Series
+#             Time series of flow coming into the reservoir (m3/s)
+#         Vo: float
+#             Initial value of reservoir storage (m3). If not provided, it is assumed that the normal storage is the initial condition
             
-        Returns:
-        --------
-        pd.DataFrame
-            A table that concatenates the storage, inflow and outflow time series.
-        """
+#         Returns:
+#         --------
+#         pd.DataFrame
+#             A table that concatenates the storage, inflow and outflow time series.
+#         """
         
-        if Vo is None:
-            Vo = self.Qn
+#         if Vo is None:
+#             Vo = self.Qn
         
-        storage = pd.Series(index=inflow.index, dtype=float, name='storage')
-        outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
-        for ts in tqdm(inflow.index):
-            # compute outflow and new storage
-            Q, V = self.timestep(inflow[ts], Vo)
-            storage[ts] = V
-            outflow[ts] = Q
-            # update current storage
-            Vo = V
+#         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
+#         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
+#         for ts in tqdm(inflow.index):
+#             # compute outflow and new storage
+#             Q, V = self.timestep(inflow[ts], Vo)
+#             storage[ts] = V
+#             outflow[ts] = Q
+#             # update current storage
+#             Vo = V
 
-        return pd.concat((storage, inflow, outflow), axis=1)
+#         return pd.concat((storage, inflow, outflow), axis=1)
     
     def routine(self, V: pd.Series, I: Union[float, pd.Series], modified: bool = True):
         """Given a time series of reservoir storage (m3) and a value or a time series of inflow (m3/s), it computes the ouflow (m3/s). This function is only meant for explanatory purposes; since the volume time series is given, the computed outflow does not update the reservoir storage. If the intention is to simulate the behaviour of the reservoir, refer to the function "simulate"
