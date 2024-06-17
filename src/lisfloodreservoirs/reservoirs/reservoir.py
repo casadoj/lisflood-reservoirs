@@ -1,26 +1,50 @@
 import pandas as pd
 from typing import List, Tuple, Literal, Dict, Optional, Union
 from pathlib import Path
-from lisfloodreservoirs.utils.metrics import KGEmod
+import matplotlib.pyplot as plt
+from tqdm.auto import tqdm
+
+from ..utils.metrics import KGEmod
+from ..utils.plots import reservoir_analysis
 
 
 class Reservoir:
     """Parent class to model reservoirs"""
     
     def __init__(self,
+                 Vmin: float,
                  Vtot: float,
+                 Qmin: Optional[float] = None,
+                 Qf: Optional[float] = None,
                  At: int = 86400):
         """
         Parameters:
         -----------
+        Vmin: float
+            Volume (m3) associated to the conservative storage
         Vtot: float
             Total reservoir storage capacity (m3)
+        Qmin: float, optional
+            Minimum outflow (m3/s)
+        Qf: float, optional
+            Non-damaging outflow (m3/s)
         At: int
             Simulation time step in seconds.
         """
+        
+        self.Vmin = Vmin
         self.Vtot = Vtot
+        self.Qmin = Qmin
+        self.Qf = Qf
         self.At = At
 
+    def timestep(self,
+                 I: float,
+                 V: float
+                ) -> float:
+        # Common timestep logic (if applicable)
+        pass
+    
     def simulate(self,
                  inflow: pd.Series,
                  Vo: float = None):
@@ -53,13 +77,6 @@ class Reservoir:
             Vo = V
 
         return pd.concat((storage, inflow, outflow), axis=1)
-
-    def timestep(self,
-                 I: float,
-                 V: float
-                ) -> float:
-        # Common timestep logic (if applicable)
-        pass
 
     def normalize_timeseries(self,
                              timeseries: pd.DataFrame

@@ -17,11 +17,11 @@ from .reservoir import Reservoir
 class Hanazaki(Reservoir):
     """Representation of a reservoir according to Hanazaki, Yamazaki & Yoshimura (2021)."""
     
-    def __init__(self, Vc: float, Vf:float, Ve: float, Vtot: float, Qn: float, Qf: float, A: int, At: int = 86400):
+    def __init__(self, Vmin: float, Vf:float, Ve: float, Vtot: float, Qn: float, Qf: float, A: int, At: int = 86400):
         """        
         Parameters:
         -----------
-        Vc: float
+        Vmin: float
             Volume (m3) associated to the conservative storage
         Vf: float
             Volume (m3) associated to the flood storage
@@ -39,21 +39,23 @@ class Hanazaki(Reservoir):
             Simulation time step in seconds.
         """
         
+        super().__init__(Vmin, Vtot, Qmin, Qf, At=At)
+        
         # storage limits
-        self.Vc = Vc
+        # self.Vmin = Vmin
         self.Vf = Vf
         self.Ve = Ve
-        self.Vtot = Vtot
+        # self.Vtot = Vtot
         
         # outflow limits
         self.Qn = Qn
-        self.Qf = Qf
+        # self.Qf = Qf
         
         # release coefficient
         self.k = max(1 - 5 * (Vtot - Vf) / A, 0)
         
         # time step duration in seconds
-        self.At = At
+        # self.At = At
         
     def timestep(self, I: float, V: float, verbose: bool = False) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
@@ -77,16 +79,16 @@ class Hanazaki(Reservoir):
         V += I * self.At
         
         # ouflow depending on the inflow and storage level
-        if V < self.Vc:
+        if V < self.Vmin:
             Q = V * self.Qn / self.Vf
         elif V < self.Vf:
             if I < self.Qf:
-                Q = self.Vc / self.Vf * self.Qn + ((V - self.Vc) / (self.Ve - self.Vc))**2 * (self.Qf - self.Vc / self.Vf * self.Qn)
+                Q = self.Vmin / self.Vf * self.Qn + ((V - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
             elif I >= self.Qf:
-                Q = self.Vc / self.Vf * self.Qn + (V - self.Vc) / (self.Vf - self.Vc) * (self.Qf - self.Vc / self.Vf * self.Qn)
+                Q = self.Vmin / self.Vf * self.Qn + (V - self.Vmin) / (self.Vf - self.Vmin) * (self.Qf - self.Vmin / self.Vf * self.Qn)
         elif V < self.Ve:
             if I < self.Qf:
-                Q = self.Vc / self.Vf * self.Qn + ((V - self.Vc) / (self.Ve - self.Vc))**2 * (self.Qf - self.Vc / self.Vf * self.Qn)
+                Q = self.Vmin / self.Vf * self.Qn + ((V - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
             elif I >= self.Qf:
                 Q = self.Qf + self.k * (V - self.Vf) / (self.Ve - self.Vf) * (I - self.Qf)
         elif self.Ve <= V:
@@ -148,7 +150,7 @@ class Hanazaki(Reservoir):
         I: Union[float, pd.Series]
             Reservor inflow (m3/s)
         modified: bool
-            Whether to use the modified (default) of the orinigal Hanazaki's routine. The modified routine avoids the breaks in the outflow function at Vc, Vf and Ve.
+            Whether to use the modified (default) of the orinigal Hanazaki's routine. The modified routine avoids the breaks in the outflow function at Vmin, Vf and Ve.
             
         Returns:
         --------
@@ -161,8 +163,8 @@ class Hanazaki(Reservoir):
             I = pd.Series(I, index=V.index)
 
         maskI = I < self.Qf
-        maskV1 = V < self.Vc
-        maskV2 = (self.Vc <= V) & (V < self.Vf)
+        maskV1 = V < self.Vmin
+        maskV2 = (self.Vmin <= V) & (V < self.Vf)
         maskV3 = (self.Vf <= V) & (V < self.Ve)
         maskV4 = self.Ve <= V
 
@@ -176,9 +178,9 @@ class Hanazaki(Reservoir):
         mask = (maskI & maskV2) | (maskI & maskV3)
         if np.sum(mask) > 0:
             if modified:
-                O[mask] = self.Vc / self.Vf * self.Qn + ((V[mask] - self.Vc) / (self.Ve - self.Vc))**2 * (self.Qf - self.Vc / self.Vf * self.Qn)
+                O[mask] = self.Vmin / self.Vf * self.Qn + ((V[mask] - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
             else:
-                O[mask] = .5 * self.Qn + ((V[mask] - self.Vc) / (self.Ve - self.Vc))**2 * (self.Qf - self.Qn)
+                O[mask] = .5 * self.Qn + ((V[mask] - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Qn)
         # ... and storage above emergency level
         O[maskI & maskV4] = self.Qf
 
@@ -187,9 +189,9 @@ class Hanazaki(Reservoir):
         mask = ~maskI & maskV2
         if np.sum(mask) > 0:
             if modified:
-                O[mask] = self.Vc / self.Vf * self.Qn + (V[mask] - self.Vc) / (self.Vf - self.Vc) * (self.Qf - self.Vc / self.Vf * self.Qn)
+                O[mask] = self.Vmin / self.Vf * self.Qn + (V[mask] - self.Vmin) / (self.Vf - self.Vmin) * (self.Qf - self.Vmin / self.Vf * self.Qn)
             else:
-                O[mask] = .5 * self.Qn + (V[mask] - self.Vc) / (self.Vf - self.Vc) * (self.Qf - self.Qn)
+                O[mask] = .5 * self.Qn + (V[mask] - self.Vmin) / (self.Vf - self.Vmin) * (self.Qf - self.Qn)
         # ... and storage in flood level
         mask = ~maskI & maskV3
         if np.sum(mask) > 0:
@@ -205,7 +207,7 @@ class Hanazaki(Reservoir):
         Parameters:
         -----------
         modified: bool
-            Whether to use the modified (default) of the orinigal Hanazaki's routine. The modified routine avoids the breaks in the outflow function at Vc, Vf and Ve.
+            Whether to use the modified (default) of the orinigal Hanazaki's routine. The modified routine avoids the breaks in the outflow function at Vmin, Vf and Ve.
         ax: Axes
             If provided, the plot will be added to the given axes
         """
@@ -226,9 +228,9 @@ class Hanazaki(Reservoir):
         ax.scatter(V, outflow2, s=.05, c='C1', label=r'$I \geq Q_f$')
 
         # reference storages and outflows
-        vs = [self.Vc, self.Vf, self.Ve]
+        vs = [self.Vmin, self.Vf, self.Ve]
         if modified:
-            qs = [self.Vc / self.Vf * self.Qn, self.Qf, self.Qf]
+            qs = [self.Vmin / self.Vf * self.Qn, self.Qf, self.Qf]
         else:
             qs = [.5 * self.Qn, self.Qf, self.Qf]
         
@@ -242,7 +244,7 @@ class Hanazaki(Reservoir):
         else:
             ax.text(0, qs[0], r'$0.5 Q_n$', ha='left', va='bottom')
         ax.text(0, qs[1], r'$Q_f$', ha='left', va='bottom')
-        ax.text(self.Vc, 0, r'$V_c$', rotation=90, ha='left', va='bottom')
+        ax.text(self.Vmin, 0, r'$V_c$', rotation=90, ha='left', va='bottom')
         ax.text(self.Vf, 0, r'$V_f$', rotation=90, ha='right', va='bottom')
         ax.text(self.Ve, 0, r'$V_e$', rotation=90, ha='right', va='bottom')
         
@@ -276,7 +278,7 @@ class Hanazaki(Reservoir):
     def get_params(self):
         """It generates a dictionary with the reservoir paramenters in the Hanazaki model."""
 
-        params = {'Vc': self.Vc,
+        params = {'Vmin': self.Vmin,
                   'Vf': self.Vf,
                   'Ve': self.Ve,
                   'Vtot': self.Vtot,
@@ -309,10 +311,10 @@ class Hanazaki(Reservoir):
         """
         
         # storage limits
-        Vlims = np.array([self.Vc, self.Vf, self.Ve]) / self.Vtot
+        Vlims = np.array([self.Vmin, self.Vf, self.Ve]) / self.Vtot
         
         # outflow limits
-        Qlims = np.array([self.Vc / self.Vf * self.Qn, self.Qf, self.Qf]) / self.Qf
+        Qlims = np.array([self.Vmin / self.Vf * self.Qn, self.Qf, self.Qf]) / self.Qf
         
         # plot analysis
         series1_norm = self.normalize_timeseries(series1)

@@ -16,11 +16,11 @@ from .reservoir import Reservoir
 class Lisflood(Reservoir):
     """Representation of a reservoir in the LISFLOOD-OS hydrological model."""
     
-    def __init__(self, Vc: float, Vn: float, Vn_adj: float, Vf: float, Vtot: float, Qmin: float, Qn: float, Qnd: float, At: int = 86400):
+    def __init__(self, Vmin: float, Vn: float, Vn_adj: float, Vf: float, Vtot: float, Qmin: float, Qn: float, Qf: float, At: int = 86400):
         """
         Parameters:
         -----------
-        Vc: float
+        Vmin: float
             Volume (m3) associated to the conservative storage
         Vn: float
             Volume (m3) associated to the normal storage
@@ -34,25 +34,25 @@ class Lisflood(Reservoir):
             Minimum outflow (m3/s)
         Qn: float
             Normal outflow (m3/s)
-        Qnd: float
+        Qf: float
             Non-damaging outflow (m3/s)
         At: int
             Simulation time step in seconds.
         """
         
-        super().__init__(Vtot, At)
+        super().__init__(Vmin, Vtot, Qmin, Qf, At)
         
         # storage limits
-        self.Vc = Vc
+        # self.Vmin = Vmin
         self.Vn = Vn
         self.Vn_adj = Vn_adj
         self.Vf = Vf
         # self.Vtot = Vtot
         
         # outflow limits
-        self.Qmin = Qmin
+        # self.Qmin = Qmin
         self.Qn = Qn
-        self.Qnd = Qnd
+        # self.Qf = Qf
         
         # time step duration in seconds
         # self.At = At
@@ -83,16 +83,16 @@ class Lisflood(Reservoir):
         V += I * self.At
         
         # ouflow depending on the storage level
-        if V < 2 * self.Vc:
+        if V < 2 * self.Vmin:
             Q = np.min((self.Qmin, V / self.At))
         elif V < self.Vn:
-            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vc) / (self.Vn - 2 * self.Vc)
+            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vmin) / (self.Vn - 2 * self.Vmin)
         elif V < self.Vn_adj:
             Q = self.Qn
         elif V < self.Vf:
-            Q = self.Qn + (self.Qnd - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
+            Q = self.Qn + (self.Qf - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
         elif V > self.Vf:
-            Q = np.max([(V - self.Vf - .01 * self.Vtot) / self.At, np.min([self.Qnd, np.max([1.2 * I, self.Qn])])])
+            Q = np.max([(V - self.Vf - .01 * self.Vtot) / self.At, np.min([self.Qf, np.max([1.2 * I, self.Qn])])])
             if verbose:
                 if V > self.Vtot:
                     print(f'{V} m3 is greater than the reservoir capacity of {self.Vtot} m3')
@@ -103,7 +103,7 @@ class Lisflood(Reservoir):
                 if type == 1:
                     Q = np.min([Q, np.max([k * I, self.Qn])])
                 elif type == 2:
-                    Q = np.min([self.Qnd, np.max([k * I, self.Qn])])
+                    Q = np.min([self.Qf, np.max([k * I, self.Qn])])
 
         # update reservoir storage with the outflow volume
         AV = np.min([Q * self.At, V])
@@ -172,21 +172,21 @@ class Lisflood(Reservoir):
         O1[O1 > self.Qmin] = self.Qmin
         O = O1.copy()
         
-        O2 = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vc) / (self.Vn - 2 * self.Vc)
-        maskV2 = (2 * self.Vc <= V) & (V < self.Vn)
+        O2 = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vmin) / (self.Vn - 2 * self.Vmin)
+        maskV2 = (2 * self.Vmin <= V) & (V < self.Vn)
         O[maskV2] = O2[maskV2]
         
         O3 = pd.Series(self.Qn, index=V.index)
         maskV3 = (self.Vn <= V) & (V < self.Vn_adj)
         O[maskV3] = O3[maskV3]
         
-        O4 = self.Qn + (self.Qnd - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
+        O4 = self.Qn + (self.Qf - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
         maskV4 = (self.Vn_adj <= V) & (V < self.Vf)
         O[maskV4] = O4[maskV4]
         
         Omax = 1.2 * I
         Omax[Omax < self.Qn] = self.Qn
-        Omax[Omax > self.Qnd] = self.Qnd
+        Omax[Omax > self.Qf] = self.Qf
         O5 = pd.concat(((V - self.Vf - .01 * self.Vtot) / self.At, Omax), axis=1).max(axis=1)
         maskV5 = self.Vf <= V
         O[maskV5] = O5[maskV5]
@@ -220,12 +220,12 @@ class Lisflood(Reservoir):
             fig, ax = plt.subplots(figsize=kwargs.get('figsize', (5, 5)))
 
         # outflow
-        outflow = self.routine(V, I=self.Qnd)
+        outflow = self.routine(V, I=self.Qf)
         ax.plot(V, outflow, lw=1, c='C0')
 
         # reference storages and outflows
-        vs = [self.Vc, 2 * self.Vc, self.Vn, self.Vn_adj, self.Vf]
-        qs = [self.Qmin, self.Qmin, self.Qn, self.Qn, self.Qnd]
+        vs = [self.Vmin, 2 * self.Vmin, self.Vn, self.Vn_adj, self.Vf]
+        qs = [self.Qmin, self.Qmin, self.Qn, self.Qn, self.Qf]
         for v, q in zip(vs, qs):
             ax.vlines(v, 0, q, color='k', ls=':', lw=.5, zorder=0)
             ax.hlines(q, 0, v, color='k', ls=':', lw=.5, zorder=0)
@@ -233,7 +233,7 @@ class Lisflood(Reservoir):
         # labels
         ax.text(0, self.Qmin, r'$Q_{min}$', ha='left', va='bottom')
         ax.text(0, self.Qn, r'$Q_{n,adj}$', ha='left', va='bottom')
-        ax.text(0, self.Qnd, r'$Q_{nd}$', ha='left', va='bottom')
+        ax.text(0, self.Qf, r'$Q_{nd}$', ha='left', va='bottom')
         ax.text(self.Vn, 0, r'$V_n$', rotation=90, ha='right', va='bottom')
         ax.text(self.Vn_adj, 0, r'$V_{n,adj}$', rotation=90, ha='right', va='bottom')
         ax.text(self.Vf, 0, r'$V_f$', rotation=90, ha='right', va='bottom')
@@ -261,7 +261,7 @@ class Lisflood(Reservoir):
 
         ts_norm = timeseries.copy()
         ts_norm.storage /= self.Vtot
-        ts_norm[['inflow', 'outflow']] /= self.Qnd
+        ts_norm[['inflow', 'outflow']] /= self.Qf
 
         return ts_norm
         
@@ -270,11 +270,11 @@ class Lisflood(Reservoir):
 class Lisflood(Reservoir):
     """Representation of a reservoir in the LISFLOOD-OS hydrological model."""
     
-    def __init__(self, Vc: float, Vn: float, Vn_adj: float, Vf: float, Vtot: float, Qmin: float, Qn: float, Qnd: float, At: int = 86400):
+    def __init__(self, Vmin: float, Vn: float, Vn_adj: float, Vf: float, Vtot: float, Qmin: float, Qn: float, Qf: float, At: int = 86400):
         """
         Parameters:
         -----------
-        Vc: float
+        Vmin: float
             Volume (m3) associated to the conservative storage
         Vn: float
             Volume (m3) associated to the normal storage
@@ -288,7 +288,7 @@ class Lisflood(Reservoir):
             Minimum outflow (m3/s)
         Qn: float
             Normal outflow (m3/s)
-        Qnd: float
+        Qf: float
             Non-damaging outflow (m3/s)
         At: int
             Simulation time step in seconds.
@@ -297,7 +297,7 @@ class Lisflood(Reservoir):
         super().__init__(Vtot, At)
         
         # storage limits
-        self.Vc = Vc
+        self.Vmin = Vmin
         self.Vn = Vn
         self.Vn_adj = Vn_adj
         self.Vf = Vf
@@ -306,7 +306,7 @@ class Lisflood(Reservoir):
         # outflow limits
         self.Qmin = Qmin
         self.Qn = Qn
-        self.Qnd = Qnd
+        self.Qf = Qf
         
         # time step duration in seconds
         # self.At = At
@@ -335,24 +335,24 @@ class Lisflood(Reservoir):
         V += I * self.At
         
         # ouflow depending on the storage level
-        if V < 2 * self.Vc:
+        if V < 2 * self.Vmin:
             Q = self.Qmin
         elif V < self.Vn:
-            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vc) / (self.Vn - 2 * self.Vc)
+            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vmin) / (self.Vn - 2 * self.Vmin)
         elif V < self.Vn_adj:
             Q = self.Qn
         elif V < self.Vf:
-            Q = self.Qn + (self.Qnd - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
+            Q = self.Qn + (self.Qf - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
             if limit_Q:
                 if Q > k * I:
                     Q = np.max([k * I, self.Qn])
-                    # # Q <= Qnd at this storage zone, so this second approach (from the documentation) makes no sense
-                    # Q = np.min([self.Qnd, np.max([k * I, self.Qn])])
+                    # # Q <= Qf at this storage zone, so this second approach (from the documentation) makes no sense
+                    # Q = np.min([self.Qf, np.max([k * I, self.Qn])])
         elif V > self.Vf:
-            Q = np.max([(V - self.Vf) / self.At, np.min([self.Qnd, np.max([k * I, self.Qn])])])
+            Q = np.max([(V - self.Vf) / self.At, np.min([self.Qf, np.max([k * I, self.Qn])])])
         
         # limit outflow so the final storage is between 0 and 1
-        Q = np.max([np.min([Q, (V - self.Vc) / self.At]), (V - self.Vtot) / self.At])
+        Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), (V - self.Vtot) / self.At])
 
         # update reservoir storage with the outflow volume
         V -= Q * self.At
@@ -388,19 +388,19 @@ class Lisflood(Reservoir):
         V += I * self.At
         
         # ouflow depending on the storage level
-        if V < 2 * self.Vc:
+        if V < 2 * self.Vmin:
             Q = self.Qmin
         elif V < self.Vn:
-            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vc) / (self.Vn - 2 * self.Vc)
+            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vmin) / (self.Vn - 2 * self.Vmin)
         elif V < self.Vn_adj:
             Q = self.Qn
         elif V < self.Vf:
-            Q = self.Qn + (self.Qnd - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
+            Q = self.Qn + (self.Qf - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
         elif V > self.Vf:
-            Q = np.min([(V - self.Vf) / self.At, np.max([self.Qnd, k * I])])
+            Q = np.min([(V - self.Vf) / self.At, np.max([self.Qf, k * I])])
             
         # limit outflow so the final storage is between 0 and 1
-        Q = np.max([np.min([Q, (V - self.Vc) / self.At]), (V - self.Vtot) / self.At])
+        Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), (V - self.Vtot) / self.At])
 
         # update reservoir storage with the outflow volume
         # AV = np.min([Q * self.At, V])
@@ -436,24 +436,24 @@ class Lisflood(Reservoir):
         V += I * self.At
         
         # ouflow depending on the storage level
-        if V < 2 * self.Vc:
+        if V < 2 * self.Vmin:
             Q = self.Qmin
         elif V < self.Vn:
-            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vc) / (self.Vn - 2 * self.Vc)
+            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vmin) / (self.Vn - 2 * self.Vmin)
         elif V < self.Vn_adj:
             Q = self.Qn
         elif V < self.Vf:
-            Q = self.Qn + (self.Qnd - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
+            Q = self.Qn + (self.Qf - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
             if limit_Q:
                 if Q > k * I:
                     Q = np.max([k * I, self.Qn])
-                    # # Q <= Qnd at this storage zone, so this second approach (from the documentation) makes no sense
-                    # Q = np.min([self.Qnd, np.max([k * I, self.Qn])])
+                    # # Q <= Qf at this storage zone, so this second approach (from the documentation) makes no sense
+                    # Q = np.min([self.Qf, np.max([k * I, self.Qn])])
         elif V > self.Vf:
-            Q = np.min([self.Qnd, np.max([k * I, self.Qn])])
+            Q = np.min([self.Qf, np.max([k * I, self.Qn])])
         
         # limit outflow so the final storage is between 0 and 1
-        Q = np.max([np.min([Q, (V - self.Vc) / self.At]), (V - self.Vtot) / self.At])
+        Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), (V - self.Vtot) / self.At])
 
         # update reservoir storage with the outflow volume
         V -= Q * self.At
@@ -487,24 +487,24 @@ class Lisflood(Reservoir):
         V += I * self.At
         
         # ouflow depending on the storage level
-        if V < 2 * self.Vc:
+        if V < 2 * self.Vmin:
             Q = self.Qmin
         elif V < self.Vn:
-            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vc) / (self.Vn - 2 * self.Vc)
+            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vmin) / (self.Vn - 2 * self.Vmin)
         elif V < self.Vn_adj:
             Q = self.Qn
         elif V < self.Vf:
-            Q = self.Qn + (self.Qnd - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
+            Q = self.Qn + (self.Qf - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
             if limit_Q:
                 if Q > k * I:
                     Q = np.max([k * I, self.Qn])
-                    # # Q <= Qnd at this storage zone, so this second approach (from the documentation) makes no sense
-                    # Q = np.min([self.Qnd, np.max([k * I, self.Qn])])
+                    # # Q <= Qf at this storage zone, so this second approach (from the documentation) makes no sense
+                    # Q = np.min([self.Qf, np.max([k * I, self.Qn])])
         elif V > self.Vf:
-            Q = np.max([np.min([(V - self.Vf) / self.At, p * self.Qnd]), np.min([self.Qnd, np.max([k * I, self.Qn])])])
+            Q = np.max([np.min([(V - self.Vf) / self.At, p * self.Qf]), np.min([self.Qf, np.max([k * I, self.Qn])])])
         
         # limit outflow so the final storage is between 0 and 1
-        Q = np.max([np.min([Q, (V - self.Vc) / self.At]), (V - self.Vtot) / self.At])
+        Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), (V - self.Vtot) / self.At])
 
         # update reservoir storage with the outflow volume
         V -= Q * self.At
@@ -538,24 +538,24 @@ class Lisflood(Reservoir):
         V += I * self.At
         
         # ouflow depending on the storage level
-        if V < 2 * self.Vc:
-            Q = np.min([self.Qmin, (V - self.Vc) / self.At])
+        if V < 2 * self.Vmin:
+            Q = np.min([self.Qmin, (V - self.Vmin) / self.At])
         elif V < self.Vn:
-            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vc) / (self.Vn - 2 * self.Vc)
+            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vmin) / (self.Vn - 2 * self.Vmin)
         elif V < self.Vn_adj:
             Q = self.Qn
         elif V < self.Vf:
-            Q = self.Qn + (self.Qnd - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
+            Q = self.Qn + (self.Qf - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
             if limit_Q:
                 if Q > k * I:
                     Q = np.max([k * I, self.Qn])
         elif V > self.Vf:
-            # Q = np.max([(V - self.Vf - tol * self.Vtot) / self.At, np.min([self.Qnd, np.max([1.2 * I, self.Qn])])])
-            Q = np.max([self.Qnd, I])
+            # Q = np.max([(V - self.Vf - tol * self.Vtot) / self.At, np.min([self.Qf, np.max([1.2 * I, self.Qn])])])
+            Q = np.max([self.Qf, I])
             
         # limit outflow so the final storage is between 0 and 1
-        Q = np.max([np.min([Q, (V - self.Vc) / self.At]), (V - self.Vtot) / self.At])
-        # Q = np.max([np.min([Q, (V - self.Vc) / self.At]), I])
+        Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), (V - self.Vtot) / self.At])
+        # Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), I])
 
         # update reservoir storage with the outflow volume
         # AV = np.min([Q * self.At, V])
@@ -591,25 +591,25 @@ class Lisflood(Reservoir):
         V += I * self.At
         
         # ouflow depending on the storage level
-        if V < 2 * self.Vc:
+        if V < 2 * self.Vmin:
             Q = self.Qmin
         elif V < self.Vn:
-            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vc) / (self.Vn - 2 * self.Vc)
+            Q = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vmin) / (self.Vn - 2 * self.Vmin)
         elif V < self.Vn_adj:
             Q = self.Qn
         elif V < self.Vf:
-            Q = self.Qn + (self.Qnd - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
+            Q = self.Qn + (self.Qf - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
             if limit_Q:
                 if Q > k * I:
                     Q = np.max([k * I, self.Qn])
         elif V > self.Vf:
             if I > Io:
-                Q = np.max([self.Qnd, I / k])
+                Q = np.max([self.Qf, I / k])
             else:
-                Q = np.max([self.Qnd, k * I])
+                Q = np.max([self.Qf, k * I])
             
         # limit outflow so the final storage is between 0 and 1
-        Q = np.max([np.min([Q, (V - self.Vc) / self.At]), (V - self.Vtot) / self.At])
+        Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), (V - self.Vtot) / self.At])
 
         # update reservoir storage with the outflow volume
         V -= Q * self.At
@@ -698,21 +698,21 @@ class Lisflood(Reservoir):
         O1[O1 > self.Qmin] = self.Qmin
         O = O1.copy()
         
-        O2 = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vc) / (self.Vn - 2 * self.Vc)
-        maskV2 = (2 * self.Vc <= V) & (V < self.Vn)
+        O2 = self.Qmin + (self.Qn - self.Qmin) * (V - 2 * self.Vmin) / (self.Vn - 2 * self.Vmin)
+        maskV2 = (2 * self.Vmin <= V) & (V < self.Vn)
         O[maskV2] = O2[maskV2]
         
         O3 = pd.Series(self.Qn, index=V.index)
         maskV3 = (self.Vn <= V) & (V < self.Vn_adj)
         O[maskV3] = O3[maskV3]
         
-        O4 = self.Qn + (self.Qnd - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
+        O4 = self.Qn + (self.Qf - self.Qn) * (V - self.Vn_adj) / (self.Vf - self.Vn_adj)
         maskV4 = (self.Vn_adj <= V) & (V < self.Vf)
         O[maskV4] = O4[maskV4]
         
         Omax = 1.2 * I
         Omax[Omax < self.Qn] = self.Qn
-        Omax[Omax > self.Qnd] = self.Qnd
+        Omax[Omax > self.Qf] = self.Qf
         O5 = pd.concat(((V - self.Vf - .01 * self.Vtot) / self.At, Omax), axis=1).max(axis=1)
         maskV5 = self.Vf <= V
         O[maskV5] = O5[maskV5]
@@ -746,12 +746,12 @@ class Lisflood(Reservoir):
             fig, ax = plt.subplots(figsize=kwargs.get('figsize', (5, 5)))
 
         # outflow
-        outflow = self.routine(V, I=self.Qnd)
+        outflow = self.routine(V, I=self.Qf)
         ax.plot(V, outflow, lw=1, c='C0')
 
         # reference storages and outflows
-        vs = [self.Vc, 2 * self.Vc, self.Vn, self.Vn_adj, self.Vf]
-        qs = [self.Qmin, self.Qmin, self.Qn, self.Qn, self.Qnd]
+        vs = [self.Vmin, 2 * self.Vmin, self.Vn, self.Vn_adj, self.Vf]
+        qs = [self.Qmin, self.Qmin, self.Qn, self.Qn, self.Qf]
         for v, q in zip(vs, qs):
             ax.vlines(v, 0, q, color='k', ls=':', lw=.5, zorder=0)
             ax.hlines(q, 0, v, color='k', ls=':', lw=.5, zorder=0)
@@ -759,7 +759,7 @@ class Lisflood(Reservoir):
         # labels
         ax.text(0, self.Qmin, r'$Q_{min}$', ha='left', va='bottom')
         ax.text(0, self.Qn, r'$Q_{n,adj}$', ha='left', va='bottom')
-        ax.text(0, self.Qnd, r'$Q_nd$', ha='left', va='bottom')
+        ax.text(0, self.Qf, r'$Q_nd$', ha='left', va='bottom')
         ax.text(self.Vn, 0, r'$V_n$', rotation=90, ha='right', va='bottom')
         ax.text(self.Vn_adj, 0, r'$V_{n,adj}$', rotation=90, ha='right', va='bottom')
         ax.text(self.Vf, 0, r'$V_f$', rotation=90, ha='right', va='bottom')
@@ -787,7 +787,7 @@ class Lisflood(Reservoir):
 
         ts_norm = timeseries.copy()
         ts_norm.storage /= self.Vtot
-        ts_norm[['inflow', 'outflow']] /= self.Qnd
+        ts_norm[['inflow', 'outflow']] /= self.Qf
 
         return ts_norm
     
@@ -821,17 +821,17 @@ class Lisflood(Reservoir):
 #         """
         
 #         # storage limits
-#         Vlims = np.array([2 * self.Vc, self.Vn, self.Vn_adj, self.Vf])
+#         Vlims = np.array([2 * self.Vmin, self.Vn, self.Vn_adj, self.Vf])
         
 #         # outflow limits
-#         Qlims = np.array([self.Qmin, self.Qn, self.Qn, self.Qnd])
+#         Qlims = np.array([self.Qmin, self.Qn, self.Qn, self.Qf])
         
 #         if norm:
 #             series1_ = self.normalize_timeseries(series1)
 #             if series2 is not None:
 #                 series2_ = self.normalize_timeseries(series2)
 #             Vlims /= self.Vtot
-#             Qlims /= self.Qnd
+#             Qlims /= self.Qf
 #             x1lim = (-.02, 1.02)
 #         else:
 #             series1_ = series1
@@ -867,10 +867,10 @@ class Lisflood(Reservoir):
 
 #         variables = {'outflow': {'unit': 'm3',
 #                                  'factor': 1,
-#                                  'thresholds': [self.Qmin, self.Qn, self.Qnd]},
+#                                  'thresholds': [self.Qmin, self.Qn, self.Qf]},
 #                      'storage': {'unit': 'hm3',
 #                                  'factor': 1e-6,
-#                                  'thresholds': [self.Vc, self.Vn, self.Vn_adj, self.Vf, self.Vtot]}}
+#                                  'thresholds': [self.Vmin, self.Vn, self.Vn_adj, self.Vf, self.Vtot]}}
 
 #         for ax, (var, dct) in zip(axes, variables.items()):
 #             f = dct['factor']
@@ -911,13 +911,13 @@ class Lisflood(Reservoir):
             A dictionary with the name and value of the reservoir parameters
         """
 
-        params = {'Vc': self.Vc,
+        params = {'Vmin': self.Vmin,
                   'Vn': self.Vn,
                   'Vn_adj': self.Vn_adj,
                   'Vf': self.Vf,
                   'Vtot': self.Vtot,
                   'Qmin': self.Qmin,
                   'Qn': self.Qn,
-                  'Qnd': self.Qnd}
+                  'Qf': self.Qf}
 
         return params

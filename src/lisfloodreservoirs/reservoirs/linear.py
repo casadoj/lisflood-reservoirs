@@ -15,7 +15,12 @@ from .reservoir import Reservoir
 class Linear(Reservoir):
     """Representation of a linear reservoir"""
     
-    def __init__(self, Vmin: float, Vtot: float, Qmin: float, T: int, At: int = 86400):
+    def __init__(self,
+                 Vmin: float,
+                 Vtot: float,
+                 Qmin: float,
+                 T: int,
+                 At: int = 86400):
         """        
         Parameters:
         -----------
@@ -31,7 +36,7 @@ class Linear(Reservoir):
             Simulation time step in seconds.
         """
         
-        super().__init__(Vtot, At)
+        super().__init__(Vmin, Vtot, Qmin, Qf=None, At=At)
         
         # storage limits
         self.Vmin = Vmin
