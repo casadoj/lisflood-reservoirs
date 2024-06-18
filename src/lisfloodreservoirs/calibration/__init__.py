@@ -1,23 +1,30 @@
-from typing import Optional, List, Tuple
-from . import bivariate_lisflood
-from . import univariate_lisflood
-from . import univariate_linear
+from .linear import Linear_calibrator
+from .lisflood import Lisflood_calibrator
 
 
-def get_optimizer(model: str, n_targets: int):#, n_pars: Optional[int] = None):
+
+def get_calibrator(model_name: str, *args, **kwargs):
     """
+    Creates an instance of the specific calibration class for the reservoir model.
+    
+    Parameters:
+    -----------
+    model_name: str
+        The name of the model class to instantiate.
+    *args:
+        Positional arguments to pass to the calibrator class constructor.
+    **kwargs:
+        Keyword arguments to pass to the calibrator class constructor.
+        
+    Returns:
+    --------
+    An instance of the specified calibrator class.
     """
     
-    if model.lower() == 'lisflood':
-        if n_targets == 1:
-            optimizer = univariate_lisflood.univariate_6pars
-        elif n_targets == 2:
-            optimizer =  bivariate_lisflood.bivariate_6pars
-        else:
-            raise NotImplementedError(f'{n_targets} target calibration is not implemented for {model}')
-    elif model.lower() == 'linear':
-        optimizer = univariate_linear
+    if model_name.lower() == 'linear':
+        return Linear_calibrator(*args, **kwargs)
+    elif model_name.lower() == 'lisflood':
+        return Lisflood_calibrator(*args, **kwargs)
     else:
-        raise NotImplementedError(f'Model {model} is not implemented in "get_optimizer()"')
-        
-    return optimizer
+        raise ValueError("Invalid model name. Please choose either 'linear' or 'lisflood'.")
+
