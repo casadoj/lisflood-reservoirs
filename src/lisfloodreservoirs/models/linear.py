@@ -67,10 +67,13 @@ class Linear(Reservoir):
         # update reservoir storage with the outflow volume
         V -= Q * self.At
         
+        assert 0 <= V, 'The volume at the end of the timestep is negative.'
+        assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
+        
         return Q, V
     
     def get_params(self):
-        """It generates a dictionary with the reservoir paramenters in the Hanazaki model."""
+        """It generates a dictionary with the reservoir paramenters in the model."""
 
         params = {'Vmin': self.Vmin,
                   'Vtot': self.Vtot,

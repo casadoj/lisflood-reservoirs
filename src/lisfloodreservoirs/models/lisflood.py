@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-from tqdm.notebook import tqdm
+from tqdm.auto import tqdm
 from typing import Union, List, Tuple, Dict
 
 from .basemodel import Reservoir
@@ -12,7 +12,16 @@ from .basemodel import Reservoir
 class Lisflood(Reservoir):
     """Representation of a reservoir in the LISFLOOD-OS hydrological model."""
     
-    def __init__(self, Vmin: float, Vn: float, Vn_adj: float, Vf: float, Vtot: float, Qmin: float, Qn: float, Qf: float, At: int = 86400):
+    def __init__(self,
+                 Vmin: float,
+                 Vn: float,
+                 Vn_adj: float,
+                 Vf: float,
+                 Vtot: float,
+                 Qmin: float,
+                 Qn: float,
+                 Qf: float,
+                 At: int = 86400):
         """
         Parameters:
         -----------
@@ -46,7 +55,12 @@ class Lisflood(Reservoir):
         # outflow limits
         self.Qn = Qn
     
-    def timestep(self, I: float, V: float, limit_Q: bool = True, k: float  = 1.2) -> List[float]:
+    def timestep(self,
+                 I: float,
+                 V: float,
+                 limit_Q: bool = True,
+                 k: float  = 1.2
+                ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
         
         Parameters:

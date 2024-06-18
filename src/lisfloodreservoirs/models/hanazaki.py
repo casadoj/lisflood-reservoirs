@@ -13,7 +13,15 @@ from .basemodel import Reservoir
 class Hanazaki(Reservoir):
     """Representation of a reservoir according to Hanazaki, Yamazaki & Yoshimura (2021)."""
     
-    def __init__(self, Vmin: float, Vf:float, Ve: float, Vtot: float, Qn: float, Qf: float, A: int, At: int = 86400):
+    def __init__(self,
+                 Vmin: float,
+                 Vf:float,
+                 Ve: float,
+                 Vtot: float,
+                 Qn: float,
+                 Qf: float,
+                 A: int,
+                 At: int = 86400):
         """        
         Parameters:
         -----------
@@ -47,7 +55,11 @@ class Hanazaki(Reservoir):
         # release coefficient
         self.k = max(1 - 5 * (Vtot - Vf) / A, 0)
         
-    def timestep(self, I: float, V: float, verbose: bool = False) -> List[float]:
+    def timestep(self,
+                 I: float,
+                 V: float,
+                 verbose: bool = False
+                ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
         
         Parameters:

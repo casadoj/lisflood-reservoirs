@@ -62,15 +62,19 @@ class Reservoir:
     
     def simulate(self,
                  inflow: pd.Series,
-                 Vo: float = None):
-        """Given a inflow time series (m3/s) and an initial storage (m3), it computes the time series of outflow (m3/s) and storage (m3)
+                 Vo: Optional[float ]= None,
+                 demand: Optional[pd.Series] = None,
+                ) -> pd.DataFrame:
+        """Given an inflow time series (m3/s) and an initial storage (m3), it computes the time series of outflow (m3/s) and storage (m3)
         
         Parameters:
         -----------
         inflow: pd.Series
             Time series of flow coming into the reservoir (m3/s)
-        Vo: float
+        Vo: float (optional)
             Initial value of reservoir storage (m3). If not provided, it is assumed that the normal storage is the initial condition
+        demand: pandas.Series (optional)
+            Time series of total water demand
             
         Returns:
         --------
@@ -80,12 +84,18 @@ class Reservoir:
         
         if Vo is None:
             Vo = self.Qtot * .5
+            
+        if demand is not None and not isinstance(demand, pd.Series):
+            raise ValueError('"demand" must be a pandas Series representing a time series of water demand.')
         
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
         for ts in tqdm(inflow.index):
             # compute outflow and new storage
-            Q, V = self.timestep(inflow[ts], Vo)
+            if demand is None:
+                Q, V = self.timestep(inflow[ts], Vo)
+            else:
+                Q, V = self.timestep(inflow[ts], Vo, demand[ts])
             storage[ts] = V
             outflow[ts] = Q
             # update current storage
@@ -219,7 +229,7 @@ class Reservoir:
         
         fig, axes = plt.subplots(nrows=2, figsize=figsize, sharex=True)
 
-        variables = {'outflow': {'unit': 'm3',
+        variables = {'outflow': {'unit': 'm3/s',
                                  'factor': 1,
                                  'thresholds': Qlims},
                      'storage': {'unit': 'hm3',
