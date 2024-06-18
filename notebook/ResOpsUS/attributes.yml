@@ -1,0 +1,43 @@
+catchments:
+    path: Z:/nahaUsers/casadje/GloFASv4/LisfloodPL/
+    IDs: catchments.txt
+    mask_file: my_mask.nc
+static_maps:
+    path: Z:/nahaUsers/grimast/GloFAS_3arcminmaps_JRC_catalogue_UPLOAD/v1.1.1/
+    geomorphology:
+        subfolder: Catchments_morphology_and_river_network
+        statistics: 
+            elv: [mean, std, min, max]
+            gradient: [mean, std]
+            upArea: [max]
+            # pixarea: [sum]
+    land_use:
+        subfolder: Land_use
+        statistics: [mean]
+    crops:
+        subfolder: Vegetation_properties
+        statistics:
+            cropcoef: [mean, std]
+    streams:
+        subfolder: Catchments_morphology_and_river_network
+        statistics:
+            chanbnkf: [mean]
+            chanbw: [mean]
+            changrad: [mean]
+            chanlength: [sum]
+            chanman: [mean]
+    soils:
+        subfolder: Soil_properties
+        statistics: [mean]
+    lai:
+        subfolder: Vegetation_properties
+        statistics: [mean]
+    reservoirs:
+        subfolder: Lakes_Reservoirs_ID_tables
+        variable: res
+        statistics: [count, sum]
+    lakes:
+        subfolder: Lakes_Reservoirs_ID_tables
+        variable: lakes
+        statistics: [count, sum]
+        
