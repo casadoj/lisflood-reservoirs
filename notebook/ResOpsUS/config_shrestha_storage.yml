@@ -1,7 +1,7 @@
 paths:
     # static map of reservoir ID
     reservoirs:
-        netcdf: ../../data/reservoirs/GloFAS/20220802_reservoirs_Global_03min.nc
+        netcdf: Z:/nahaUsers/casadje/GloFASv4/static_maps/20220802_reservoirs_Global_03min.nc
         shapefile: '../../GIS/reservoirs_analysis_US.shp'
     # directory with the NetCDFs generated in the Lisflood run
     timeseries: Z:/nahaUsers/casadje/GloFASv4/long_run/rsfil/
@@ -19,7 +19,7 @@ model: Shrestha
     
 calibration:
     algorithm: SCEUA
-    target: 
+    target:
         - storage
     max_iter: 1000
     complexes: 4
