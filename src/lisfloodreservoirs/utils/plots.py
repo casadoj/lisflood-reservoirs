@@ -751,6 +751,7 @@ def reservoir_analysis(sim: pd.DataFrame, obs: pd.DataFrame = None, x1: str = 's
     
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight')
+        plt.close(fig)
         
         
         
