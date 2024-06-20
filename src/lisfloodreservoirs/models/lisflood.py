@@ -411,8 +411,9 @@ class Lisflood(Reservoir):
                         Q, V = routines[routine](inflow[ts], inflow[ts], Vo, limit_Q=limit_Q, k=k)
                 else:
                     Q, V = routines[routine](inflow[ts], Vo, limit_Q=limit_Q, k=k)
-            except:
+            except Exception as e:
                 print(ts)
+                print(e)
                 return pd.concat((storage, inflow, outflow), axis=1)
             storage[ts] = V
             outflow[ts] = Q

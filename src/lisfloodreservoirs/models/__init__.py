@@ -1,11 +1,13 @@
 from .linear import Linear
 from .lisflood import Lisflood
 from .hanazaki import Hanazaki
+from .shrestha import Shrestha
 
 model_classes = {
     'linear': Linear,
     'lisflood': Lisflood,
     'hanazaki': Hanazaki,
+    'shrestha': Shrestha,
 }
 
 def get_model(model_name: str, *args, **kwargs):

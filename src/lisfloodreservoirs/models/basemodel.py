@@ -269,3 +269,4 @@ class Reservoir:
         
         if save is not None:
             plt.savefig(save, dpi=300, bbox_inches='tight')
+            plt.close(fig)

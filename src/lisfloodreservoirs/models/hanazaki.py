@@ -43,7 +43,7 @@ class Hanazaki(Reservoir):
             Simulation time step in seconds.
         """
         
-        super().__init__(Vmin, Vtot, Qmin, Qf, At)
+        super().__init__(Vmin, Vtot, None, Qf, At)
         
         # storage limits
         self.Vf = Vf
