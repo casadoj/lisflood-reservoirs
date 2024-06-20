@@ -19,7 +19,11 @@ path_out: Z:/nahaUsers/casadje/GloFASv4/US/rsfil/
 #     end: 2019-12-31
     
 simulation:
-    model: linear
+    model: lisflood
+    config:
+        limit_Q: True
+        routine: 5
+        k: 2
     
 calibration:
     algorithm: SCEUA
