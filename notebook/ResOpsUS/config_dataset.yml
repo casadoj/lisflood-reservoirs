@@ -1,0 +1,20 @@
+version: v1.0
+
+paths:
+    GloFAS: 
+        root: Z:/nahaUsers/casadje/GloFASv4/
+        timeseries: long_run/rsfil/
+    ResOpsUS: 
+        root: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/
+        obs_timeseries: raw/time_series_all/
+        sim_timeseries: ancillary/LISFLOOD/
+    GRanD: Z:/nahaUsers/casadje/datasets/reservoirs/GRanD/v1_3/
+
+period:
+    start: 1982-01-01
+    end: 2019-12-31
+
+conditions:
+    min_area: 250 # km²
+    min_volume: 10 # hm3
+    min_length: 8 # years
