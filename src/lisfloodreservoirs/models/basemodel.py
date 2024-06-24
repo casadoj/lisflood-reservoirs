@@ -62,7 +62,7 @@ class Reservoir:
     
     def simulate(self,
                  inflow: pd.Series,
-                 Vo: Optional[float ]= None,
+                 Vo: Optional[float ] = None,
                  demand: Optional[pd.Series] = None,
                 ) -> pd.DataFrame:
         """Given an inflow time series (m3/s) and an initial storage (m3), it computes the time series of outflow (m3/s) and storage (m3)
@@ -83,7 +83,7 @@ class Reservoir:
         """
         
         if Vo is None:
-            Vo = self.Qtot * .5
+            Vo = self.Vtot * .5
             
         if demand is not None and not isinstance(demand, pd.Series):
             raise ValueError('"demand" must be a pandas Series representing a time series of water demand.')

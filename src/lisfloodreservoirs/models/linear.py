@@ -1,3 +1,4 @@
+import numpy as np
 import pandas as pd
 from typing import Union, List, Tuple, Dict
 
@@ -36,7 +37,7 @@ class Linear(Reservoir):
         self.Qmin = Qmin
         
         # release coefficient
-        self.k = 1 / (T * 24 * 3600)
+        self.k = 1 / (T * self.At)
         
     def timestep(self, 
                  I: float, 
@@ -57,18 +58,22 @@ class Linear(Reservoir):
             Outflow (m3/s) and updated storage (m3)
         """
         
+        eps = 1e-1
+        
         # update reservoir storage with the inflow volume
         V += I * self.At
         
         # ouflow depending on the inflow and storage level
-        Qmin = min(self.Qmin, (V - self.Vmin) / self.At)
-        Q = max(Qmin, V * self.k, (V - self.Vtot) / self.At)
+        Q = V * self.k
+        
+        # limit outflow so the final storage is between 0 and 1
+        Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), (V - self.Vtot) / self.At + eps])
         
         # update reservoir storage with the outflow volume
         V -= Q * self.At
         
         assert 0 <= V, 'The volume at the end of the timestep is negative.'
-        assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
+        assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
         
         return Q, V
     
@@ -78,6 +83,6 @@ class Linear(Reservoir):
         params = {'Vmin': self.Vmin,
                   'Vtot': self.Vtot,
                   'Qmin': self.Qmin,
-                  'T': 1 / (self.k * 24 * 3600)}
+                  'T': 1 / (self.k * self.At)}
 
         return params
