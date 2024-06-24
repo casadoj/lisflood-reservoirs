@@ -12,7 +12,7 @@ paths:
 
 period:
     start: 1982-01-01
-    end: 2019-12-31
+    end: 2019-12-30
 
 conditions:
     min_area: 250 # km²

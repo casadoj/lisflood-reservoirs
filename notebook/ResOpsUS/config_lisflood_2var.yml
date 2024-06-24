@@ -22,7 +22,7 @@ simulation:
     model: lisflood
     config:
         limit_Q: True
-        routine: 5
+        routine: 1
         k: 2
     
 calibration:
