@@ -27,7 +27,7 @@ In reservoirs with high water stress ($\frac{\overline{D}}{\overline{I}} \gt 1 -
 
 $$\hat{D}_t = \omega \cdot \overline{I} + \left( 1 - \omega \right) \frac{D_t}{\overline{D}} \cdot \overline{I}$$
 
-In reservoirs with lower water stress ($\frac{\overline{D}}{\overline{I}} \lt 1 - \omega$), the hedged demand is the average surplus of inflow plus the current demand. This means 
+In reservoirs with lower water stress ($\frac{\overline{D}}{\overline{I}} \lt 1 - \omega$), the hedged demand is the average surplus of inflow plus the current demand. 
 
 $$\hat{D}_t = \overline{I} - \overline{D} + D_t$$
 
