@@ -9,7 +9,7 @@ from ..models import get_model
 
 
 
-class Shrestha_calibrator(Calibrator):
+class mHM_calibrator(Calibrator):
     """This class allows for calibrating 5 parameters in the mHM reservoir routine, 3 related to the storage limits, 2 to the outflow limits and the last one to the relation between inflow and outflow.
     
     FFn: fraction filled normal. The proportion of reservoir capacity that defines the lower limit of the normal storage zone
@@ -28,7 +28,7 @@ class Shrestha_calibrator(Calibrator):
     
     def __init__(self,
              inflow: pd.Series,
-             demand: pd.Series
+             demand: pd.Series,
              storage: pd.Series, 
              outflow: pd.Series, 
              Vmin: float, 
