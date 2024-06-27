@@ -7,7 +7,7 @@ from .basemodel import Reservoir
 
 
 class mHM(Reservoir):
-    """Representation of a reservoir as in Shresthat et al (2024)"""
+    """Representation of reservoir routing in the Mesoscale Hydrological Model (mHM) as explained in Shrestha et al (2024)"""
     
     def __init__(self,
                  Vmin: float,
