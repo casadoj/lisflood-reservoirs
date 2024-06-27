@@ -46,3 +46,5 @@ mHM considers $\omega$ a model parameter, but previous studies used fixed values
 | $\beta$ | Indirectly controls the partition of releases in demand-based and inflow-based | | 2 | 1 | calibrated | calibrated |
 | $\gamma$ | Fraction filled representing the normal storage | [0, 1] | - | 0.85 | calibrated | calibrated |
 | $\lambda$ | Controls hedging based on current reservoir filling | | 1 | 1 | 1 | calibrated |
+
+> **Note**. The paper mentions that the mHM reservoir routine has 8 parameters, but from the formulation I only identify 5.
