@@ -21,7 +21,7 @@ where $V_n$ is the normal filling of the reservoir (mHM estimates this value wit
 
 ## Demand hedging
 
-The hedged demand ($\hat{D}_t$) is a transformation of the actual daily demand ($D_t$) based on the average inflow ($\overline{I}$) and average demand ($\overline{D}$). The $\omega$ parameter represents the excess of water with repect to demands and it is used to classify reservoirs in water-stressed or non-water-stressed.
+The hedged demand ($\hat{D}_t$) is a transformation of the actual daily demand ($D_t$) based on the average inflow ($\overline{I}$) and average demand ($\overline{D}$). The $\omega$ parameter represents the annual excess of water with repect to demands and it is used to classify reservoirs in water-stressed or non-water-stressed.
 
 In reservoirs with high water stress ($\frac{\overline{D}}{\overline{I}} \gt 1 - \omega$), the hedged demand is a combination of a fixed percentage of the mean inflow, and a varying term depending on the ratio between the current and the average demand.
 
