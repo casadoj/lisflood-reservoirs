@@ -77,8 +77,11 @@ class Linear_calibrator(Calibrator):
             storage_init = self.observed['storage'].iloc[0]
             
         # declare the reservoir with the effect of the parameters in 'x'
-        args = [self.Vmin, self.Vtot, self.Qmin, pars[0]]
-        res = get_model('linear', *args)
+        reservoir_kwargs = {'Vmin': self.Vmin,
+                            'Vtot': self.Vtot,
+                            'Qmin': self.Qmin,
+                            'T': pars[0]}
+        res = get_model('linear', **reservoir_kwargs)
         self.reservoir = res
         
         # simulate

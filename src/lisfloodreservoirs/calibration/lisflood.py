@@ -100,12 +100,21 @@ class Lisflood_calibrator(Calibrator):
         Qn = pars[4] * Qf
             
         # declare the reservoir with the effect of the parameters in 'x'
-        args = [self.Vmin, Vn, Vn_adj, Vf, self.Vtot, self.Qmin, Qn, Qf]
-        res = get_model('lisflood', *args)
+        reservoir_kwargs = {'Vmin': self.Vmin, 
+                            'Vn': Vn, 
+                            'Vn_adj': Vn_adj,
+                            'Vf': Vf,
+                            'Vtot': self.Vtot,
+                            'Qmin': self.Qmin, 
+                            'Qn': Qn,
+                            'Qf': Qf}
+        res = get_model('lisflood', **reservoir_kwargs)
         self.reservoir = res
         
         # simulate
-        sim = res.simulate(inflow, storage_init, limit_Q=True, k=pars[5])
+        simulation_kwargs = {'limit_Q': True,
+                             'k': pars[5]}
+        sim = res.simulate(inflow, storage_init, **simulation_kwargs)
         if spinup is not None:
             sim = sim.iloc[spinup:]
         

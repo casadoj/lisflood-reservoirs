@@ -25,6 +25,8 @@ def get_calibrator(model_name: str, *args, **kwargs):
         return Linear_calibrator(*args, **kwargs)
     elif model_name.lower() == 'lisflood':
         return Lisflood_calibrator(*args, **kwargs)
+    elif model_name.lower() == 'shrestha':
+        return Shrestha_calibrator(*args, **kwargs)
     else:
-        raise ValueError("Invalid model name. Please choose either 'linear' or 'lisflood'.")
+        raise ValueError("Invalid model name. Please choose either 'linear', 'lisflood' or 'shrestha'.")
 
