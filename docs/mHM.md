@@ -47,4 +47,4 @@ mHM considers $\omega$ a model parameter, but previous studies used fixed values
 | $\gamma$ | Fraction filled representing the normal storage | [0, 1] | - | 0.85 | calibrated | calibrated |
 | $\lambda$ | Controls hedging based on current reservoir filling | | 1 | 1 | 1 | calibrated |
 
-> **Note**. The paper mentions that the mHM reservoir routine has 8 parameters, but from the formulation I only identify 5.
+> **Note**. The paper mentions that the mHM reservoir routine has 8 parameters, but from the formulation I only identify 5. It could be that they consider parameters the storage capacity ($V$), average inflow ($\overline{I}$) and average demand ($\overline{D}$), which need to be defined when instantiating a reservoir, but those are not calibration parameters.
