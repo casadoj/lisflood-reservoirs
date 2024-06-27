@@ -6,7 +6,7 @@ from .basemodel import Reservoir
 
 
 
-class Shrestha(Reservoir):
+class mHM(Reservoir):
     """Representation of a reservoir as in Shresthat et al (2024)"""
     
     def __init__(self,

@@ -1,22 +1,22 @@
 from .linear import Linear
 from .lisflood import Lisflood
 from .hanazaki import Hanazaki
-from .shrestha import Shrestha
+from .mhm import mHM
 
 model_classes = {
     'linear': Linear,
     'lisflood': Lisflood,
     'hanazaki': Hanazaki,
-    'shrestha': Shrestha,
+    'mhm': mHM,
 }
 
-def get_model(model_name: str, *args, **kwargs):
+def get_model(model_name: Literal['linear', 'lisflood', 'hanazaki', 'mhm'], *args, **kwargs):
     """
     Creates an instance of the specified model class.
     
     Parameters:
     -----------
-    model_name: str
+    model_name: string
         The name of the model class to instantiate.
     *args:
         Positional arguments to pass to the model class constructor.
