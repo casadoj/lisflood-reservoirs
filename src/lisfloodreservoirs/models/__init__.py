@@ -1,3 +1,5 @@
+from typing import Literal
+
 from .linear import Linear
 from .lisflood import Lisflood
 from .hanazaki import Hanazaki
