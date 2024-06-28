@@ -54,24 +54,27 @@ class mHM(Reservoir):
         
         super().__init__(Vmin, Vtot, Qmin, Qf=None, At=At)
         
-        # normal storage
-        self.Vn = gamma * Vtot
-        
         # demand and degree of regulation
         self.avg_inflow = avg_inflow
         self.avg_demand = avg_demand
-        self.dor = Vtot / avg_inflow # called c in Shrestha et al. (2024)
+        self.dor = Vtot / (avg_inflow * 365 *24 * 3600) # called c in Shrestha et al. (2024)
         
         # reservoir parameters
         self.w = w
         self.alpha = alpha
-        self.rho = min(1, (self.dor / self.alpha)**beta)
+        self.beta = beta
+        self.gamma = gamma
         self.lambda_ = lambda_
+        
+        # normal storage
+        self.Vn = gamma * Vtot
+        # partition coefficient betweee demand-controlled (rho == 1) and non-demand-controlled reservoirs
+        self.rho = min(1, (self.dor / alpha)**beta)
     
     def timestep(self,
                  I: float,
                  V: float,
-                 demand: float = 0.0
+                 D: float = 0.0
                 ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
         
@@ -81,7 +84,7 @@ class mHM(Reservoir):
             Inflow (m3/s)
         V: float
             Volume stored in the reservoir (m3)
-        demand: float
+        D: float
             Water demand (m3). It defaults to zero
             
         Returns:
@@ -90,28 +93,32 @@ class mHM(Reservoir):
             Outflow (m3/s) and updated storage (m3)
         """
         
+        eps = 1e-3
+        
         # hedged demand
         exploitation = self.avg_demand / self.avg_inflow
         if exploitation >= 1 - self.w:
-            hedged_demand = self.w * self.avg_inflow + (1 - self.w) * demand / exploitation
+            hedged_demand = self.w * self.avg_inflow + (1 - self.w) * D / exploitation
         else:
-            hedged_demand = demand + self.avg_inflow - self.avg_demand       
-        
-        # kappa
-        kappa = (V / self.Vn)**self.lambda_
+            hedged_demand = D + self.avg_inflow - self.avg_demand             
             
         # outflow
-        if 0 <= self.dor < self.alpha:
-            Q = self.rho * kappa * hedged_demand + (1 - self.rho) * I
-        elif self.dor > self.alpha:
-            Q = kappa * hedged_demand
+        kappa = (V / self.Vn)**self.lambda_
+        Q = self.rho * kappa * hedged_demand + (1 - self.rho) * I
             
         # update reservoir storage with the inflow volume
         V += I * self.At
         
-        # ouflow depending on the inflow and storage level
-        Qmin = min(self.Qmin, (V - self.Vmin) / self.At)
-        Q = max(Qmin, Q, (V - self.Vtot) / self.At)
+        # ouflow depending on the minimum outflow and storage level
+        Q = max(self.Qmin, Q)
+        if V - Q * self.At > self.Vtot:
+            Q = (V - self.Vtot) / self.At + eps
+        elif V - Q * self.At < self.Vmin:
+            Q = (V - self.Vmin) / self.At - eps
+                
+        # # ouflow depending on the inflow and storage level
+        # Qmin = min(self.Qmin, (V - self.Vmin) / self.At - eps)
+        # Qmax = max(Q, (V - self.Vtot) / self.At + eps)
             
         # update reservoir storage with the inflow volume
         V -= Q * self.At
@@ -130,7 +137,9 @@ class mHM(Reservoir):
                   'Qmin': self.Qmin,
                   'w': self.w,
                   'alpha': self.alpha,
-                  'rho': self.rho,
-                  'lambda': self.lambda_}
+                  'beta': self.beta,
+                  'gamma': self.gamma,
+                  'lambda': self.lambda_,
+                  'rho': self.rho}
 
         return params
