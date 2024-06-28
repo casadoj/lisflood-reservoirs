@@ -1,0 +1,17 @@
+paths:
+    ResOpsUS: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.0/
+    
+simulation:
+    model: mHM
+    
+calibration:
+    algorithm: SCEUA
+    input:
+        - inflow
+    target:
+        - storage
+        - outflow
+    max_iter: 1000
+    complexes: 4
+    train_size: 0.7
+    # path_out: ./calibration
