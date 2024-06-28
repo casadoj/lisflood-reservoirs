@@ -7,7 +7,7 @@ from typing import List, Literal, Optional
 from .basecalibrator import Calibrator
 from ..models import get_model
 
-
+np.random.seed(0)
 
 class mHM_calibrator(Calibrator):
     """This class allows for calibrating 5 parameters in the mHM reservoir routine, 3 related to the storage limits, 2 to the outflow limits and the last one to the relation between inflow and outflow.
@@ -20,6 +20,7 @@ class mHM_calibrator(Calibrator):
     k: release coefficient. A factor of the inflow that limits the outflow
     """
     
+    seed = 0
     w = Uniform(name='w', low=0.0, high=1.0)
     alpha = Uniform(name='alpha', low=0.0, high=5.0)
     beta = Uniform(name='beta', low=0.5, high=3.0)
@@ -111,7 +112,7 @@ class mHM_calibrator(Calibrator):
                             'beta': pars[2],
                             'gamma': pars[3],
                             'lambda_': pars[4]}
-        res = get_model('shrestha', **reservoir_kwargs)
+        res = get_model('mhm', **reservoir_kwargs)
         self.reservoir = res
         
         # simulate
