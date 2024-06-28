@@ -9,7 +9,7 @@ import cartopy.feature as cf
 import numpy as np
 import pandas as pd
 from pathlib import Path
-from typing import Union, Dict, List, Tuple
+from typing import Union, Dict, List, Tuple, Optional
 from statsmodels.distributions.empirical_distribution import ECDF
 
 # from utils import Decomposition
@@ -137,8 +137,12 @@ def create_cmap(cmap: str, bounds: List, name: str = '', specify_color: Tuple = 
 
 
 
-def plot_resops(storage: pd.Series = None, elevation: pd.Series = None, inflow: pd.Series = None, outflow: pd.Series = None, capacity: Union[List[float], float] = None,
-                   save: Union[str, Path] = None, **kwargs):
+def plot_resops(storage: pd.Series = None,
+                elevation: pd.Series = None,
+                inflow: pd.Series = None,
+                outflow: pd.Series = None,
+                capacity: Union[List[float], float] = None,
+                save: Union[str, Path] = None, **kwargs):
     """It creates a plot with two graphs that shows the reservoir time series. The first graph is the storage-elevation curve of the reservoir (if both storage and elevation time series are available). The second graph is the time series of storage, inflow and outflow.
     
     Parameters:
@@ -202,6 +206,7 @@ def plot_resops(storage: pd.Series = None, elevation: pd.Series = None, inflow: 
     
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight')
+        plt.close(fig)
         
         
         
@@ -347,7 +352,8 @@ def plot_decomposition(sim: pd.DataFrame, obs: pd.DataFrame = None, lims: List[f
         fig.text(.5, 1, kwargs['title'], fontsize=11, ha='center');
 
     if save is not None:
-        plt.savefig(save, dpi=300, bbox_inches='tight');
+        plt.savefig(save, dpi=300, bbox_inches='tight')
+        plt.close(fig)
         
         
 
@@ -476,8 +482,7 @@ def plot_decomposition(sim: pd.DataFrame, obs: pd.DataFrame = None, lims: List[f
         
         
 def reservoir_scatter(sim: pd.DataFrame, x: str, y: str, obs: pd.DataFrame = None, x_thr: List = None, y_thr: List = None, legend: bool = True, ax: Axes = None, **kwargs):
-    """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line
-    represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
+    """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
     
     Parameters:
     -----------
@@ -571,8 +576,7 @@ def reservoir_scatter(sim: pd.DataFrame, x: str, y: str, obs: pd.DataFrame = Non
         
         
 def reservoir_kde(sim: pd.DataFrame, obs: pd.DataFrame = None, x: str = None, y: str = None, thr: List = None, ax: Axes = None, **kwargs):
-    """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line
-    represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
+    """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
     
     Parameters:
     -----------
@@ -700,6 +704,8 @@ def reservoir_analysis(sim: pd.DataFrame, obs: pd.DataFrame = None, x1: str = 's
         Point size in the scatter plot
     title:     str
         Title of the figure
+    x1lim:     Tuple(2,)
+        Limits of the "x1" axis
     """
     
     # extract kwargs
