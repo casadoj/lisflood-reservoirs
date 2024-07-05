@@ -72,8 +72,9 @@ class Linear(Reservoir):
         # update reservoir storage with the outflow volume
         V -= Q * self.At
         
-        assert 0 <= V, 'The volume at the end of the timestep is negative.'
+        assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
         assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
+        assert 0 <= Q, 'The simulated outflow is negative'
         
         return Q, V
     

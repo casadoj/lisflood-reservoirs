@@ -106,6 +106,10 @@ class Hanazaki(Reservoir):
         AV = np.min([Q * self.At, V])
         AV = np.max([AV, V - self.Vtot])
         V -= AV
+
+        assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
+        assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
+        assert 0 <= Q, 'The simulated outflow is negative'
         
         return Q, V
     

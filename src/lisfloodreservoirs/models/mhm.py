@@ -115,6 +115,7 @@ class mHM(Reservoir):
             Q = (V - self.Vtot) / self.At + eps
         elif V - Q * self.At < self.Vmin:
             Q = (V - self.Vmin) / self.At - eps
+        Q = max(0, Q)
                 
         # # ouflow depending on the inflow and storage level
         # Qmin = min(self.Qmin, (V - self.Vmin) / self.At - eps)
@@ -123,8 +124,9 @@ class mHM(Reservoir):
         # update reservoir storage with the inflow volume
         V -= Q * self.At
         
-        assert 0 <= V, 'The volume at the end of the timestep is negative.'
-        assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
+        assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
+        assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
+        assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
         
         return Q, V
     
