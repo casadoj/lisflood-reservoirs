@@ -1,5 +1,5 @@
 paths:
-    ResOpsUS: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.0/
+    ResOpsUS: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.1/
     
 simulation:
     model: mHM
