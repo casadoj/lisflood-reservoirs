@@ -1,3 +1,5 @@
+import os
+os.environ['USE_PYGEOS'] = '0'
 import matplotlib as mpl
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
