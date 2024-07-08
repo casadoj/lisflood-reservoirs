@@ -1,11 +1,11 @@
 data:
-    path: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.1/
-    reservoirs: reservoirs.txt
+    path: /media/sf_nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.1/
+    reservoirs: reservoirs_test.txt
     periods: periods.pkl
-    
+
 simulation:
     model: mHM
-    
+
 calibration:
     # algorithm: SCEUA
     input:
