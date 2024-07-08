@@ -57,7 +57,7 @@ def RMSE(serie1, serie2):
     return rmse
 
 
-def sesgo(observado, simulado):
+def bias(observado, simulado):
     """Calcula el sesgo del hidrograma, es decir, el porcentaje de error en el volumen simulado.
     
     sesgo = (Vsim - Vobs) / Vobs * 100
@@ -331,3 +331,31 @@ def pareto_front(of1: pd.Series, of2: pd.Series) -> pd.DataFrame:
 
     # Convert the Pareto front list to a new DataFrame
     return pd.DataFrame(pareto_front)
+
+
+def compute_performance(obs: pd.DataFrame, sim: pd.DataFrame):
+    """It computes the performance in terms of KGEmod of all variables included in both the observed and simulated timeseries
+    
+    Parameters:
+    -----------
+    obs: pandas.DataFrame
+        Observed time series
+    sim: pandas.DataFrame
+        Simualted time series
+        
+    Returns:
+    --------
+    performance: pandas.DataFrame
+        Performance table that includes the modified KGE and its components for each of the variables both in the observed and simulated time series
+    """
+    
+    variables = obs.columns.intersection(sim.columns)
+    performance = pd.DataFrame(index=['KGE', 'alpha', 'beta', 'rho'], columns=variables)
+    for var in variables:
+        try:
+            performance[var] = KGEmod(obs[var], sim[var])
+        except Exception as e:
+            print(f'The performance of variable {var} could not be computed:\n{e}')
+            continue
+            
+    return performance
