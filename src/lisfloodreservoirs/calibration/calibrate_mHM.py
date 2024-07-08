@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf-8
 
-# # Simulate the mHM reservoir routine
+# # Calibrate the mHM reservoir routine
 # ***
 #
 # **Author:** Chus Casado Rodríguez<br>
@@ -34,16 +34,17 @@ import pickle
 import copy
 import argparse
 
-from . import Config
-from .models import get_model
-from .utils.metrics import KGEmod, compute_performance
+from .. import Config
+from ..models import get_model
+from ..utils.metrics import KGEmod, compute_performance
 # from lisfloodreservoirs.utils.utils import get_normal_value, return_period
-from .utils.timeseries import create_demand, define_period
-from .utils.plots import plot_resops
-from .calibration import get_calibrator, read_results
+from ..utils.timeseries import create_demand, define_period
+from ..utils.plots import plot_resops
+from . import get_calibrator, read_results
 
 
 def main():
+
     # ## Configuration
 
     # read argument specifying the configuration file
@@ -62,9 +63,6 @@ def main():
 
     # ### Attributes
 
-    # In[4]:
-
-
     # list of reservoirs to be trained
     reservoirs = pd.read_csv(cfg.RESERVOIRS_FILE, header=None).squeeze().tolist()
 
@@ -77,18 +75,16 @@ def main():
         attributes = attributes.loc[reservoirs]
     except Exception as e:
         raise ValueError(f'ERROR while reading attribute tables from directory {cfg.PATH_DATA}: {e}') from e
-    print(f'{attributes.shape[0]} reservoirs in the attribute tables')
+    print(f'\n{attributes.shape[0]} reservoirs in the attribute tables')
 
 
     # #### Time series
-
-    # In[5]:
-
 
     # training periods
     with open(cfg.PERIODS_FILE, 'rb') as file:
         periods = pickle.load(file)
 
+    # read time series
     path_ts = cfg.PATH_DATA / 'time_series' / 'csv'
     timeseries = {}
     for grand_id in attributes.index:
@@ -110,14 +106,11 @@ def main():
         # save time series
         timeseries[grand_id] = ts
 
-    print(f'\n{len(timeseries)} reservoirs with timeseries')
+    print(f'{len(timeseries)} reservoirs with timeseries\n')
 
 
     # ## Reservoir routine
     # ### Simulate all reservoirs
-
-    # In[6]:
-
 
     # id_def = list(np.unique([int(file.stem.split('_')[0]) for file in cfg.PATH_DEF.glob('*performance.csv')]))
     id_calib = list(np.unique([int(file.stem.split('_')[0]) for file in cfg.PATH_CALIB.glob('*performance.csv')]))
