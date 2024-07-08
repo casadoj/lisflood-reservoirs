@@ -3,23 +3,23 @@
 
 # # Simulate the mHM reservoir routine
 # ***
-# 
+#
 # **Author:** Chus Casado Rodríguez<br>
 # **Date:** 08-07-2024<br>
-# 
+#
 # **Introduction:**<br>
 # This code simulates all the reservoirs included both in GloFASv4 and ResOpsUS according to the reservoir routine defined in the configuration file (attribute `simulation>model`).
-# 
+#
 # The inflow time series is taken from GloFASv4 simulations, and the initial storage from the observed records.
-# 
+#
 # >Note. The `Shrestha` reservoir routine requires a time series of water demand as input. Since that time series is not available, the code creates a fake demand by a transformation of the input time series.
-# 
+#
 # **To do:**<br>
-# 
+#
 # * [ ] Select the reservoirs with good enough time series in the notebook [0.2_time_series-clean_data.ipynb](0.2_time_series-clean_data.ipynb0.2_time_series-clean_data.ipynb)
-# 
+#
 # **Ideas:**<br>
-# 
+#
 
 # In[1]:
 
@@ -77,7 +77,7 @@ try:
                            join='outer')
     attributes = attributes.loc[reservoirs]
 except Exception as e:
-    raise ValueError('ERROR while reading attribute tables: {}'.format(e)) from e
+    raise ValueError(f'ERROR while reading attribute tables from directory {cfg.PATH_DATA}: {e}') from e
 print(f'{attributes.shape[0]} reservoirs in the attribute tables')
 
 
@@ -92,7 +92,7 @@ with open(cfg.PERIODS_FILE, 'rb') as file:
 
 path_ts = cfg.PATH_DATA / 'time_series' / 'csv'
 timeseries = {}
-for grand_id in tqdm(attributes.index, desc='reading time series'):
+for grand_id in attributes.index:
     # read time series
     file = path_ts / f'{grand_id}.csv'
     if file.is_file():
@@ -100,17 +100,17 @@ for grand_id in tqdm(attributes.index, desc='reading time series'):
     else:
         print(f"File {file} doesn't exist")
         continue
-                
+
     # select study period
     start, end = [periods[grand_id][x] for x in ['start', 'end']]
     ts = ts.loc[start:end, variables]
-    
+
     # convert storage to m3
     ts.iloc[:, ts.columns.str.contains('storage')] *= 1e6
-    
+
     # save time series
     timeseries[grand_id] = ts
-    
+
 print(f'\n{len(timeseries)} reservoirs with timeseries')
 
 
@@ -124,17 +124,17 @@ id_def = list(np.unique([int(file.stem.split('_')[0]) for file in cfg.PATH_DEF.g
 id_calib = list(np.unique([int(file.stem.split('_')[0]) for file in cfg.PATH_CALIB.glob('*performance.csv')]))
 
 for grand_id, obs in tqdm(timeseries.items(), desc='simulating reservoir'):
-       
+
     if (grand_id in id_def) and (grand_id in id_calib):
         print(f'Reservoir {grand_id} has already been simulated with default parameters and calibrated. Skipping reservoir.')
         continue
-    
+
     # create a demand time series
     bias = obs.outflow.mean() / obs.inflow.mean()
     demand = create_demand(obs.outflow,
                            water_stress=min(1, bias),
                            window=28)
-    
+
     # reservoir attributes
     reservoir_attrs = {
         # storage attributes (m3)
@@ -145,7 +145,7 @@ for grand_id, obs in tqdm(timeseries.items(), desc='simulating reservoir'):
         'avg_inflow': obs.inflow.mean(),
         'avg_demand': demand.mean()
     }
-    
+
     # plot observed time series
     plot_resops(obs.storage,
                 obs.elevation if 'elevation' in obs.columns else None,
@@ -158,9 +158,9 @@ for grand_id, obs in tqdm(timeseries.items(), desc='simulating reservoir'):
 
     # SIMULATION WITH DEFAULT PARAMETERS
     # ----------------------------------
-    
+
     if grand_id not in id_def:
-    
+
         # declare the reservoir
         default_attrs = copy.deepcopy(reservoir_attrs)
         default_attrs.update({'gamma': obs.storage.quantile(.9) / obs.storage.max()})
@@ -187,30 +187,30 @@ for grand_id, obs in tqdm(timeseries.items(), desc='simulating reservoir'):
                     save=cfg.PATH_DEF / f'{grand_id}_scatter.jpg',
                    )
 
-        res.lineplot({#'GloFAS': glofas, 
+        res.lineplot({#'GloFAS': glofas,
                       'sim': sim_def},
                      obs,
                      figsize=(12, 6),
                      save=cfg.PATH_DEF / f'{grand_id}_line.jpg',
                    )
-        
+
     else:
         print(f'Reservoir {grand_id} has already been simulated with default parameters. Skipping simulation.')
 
     # CALIBRATION
     # -----------
-    
+
     if grand_id not in id_calib:
         dbname = f'{cfg.PATH_CALIB}/{grand_id}_samples'
 
         # initialize the calibration setup of the LISFLOOD reservoir routine
         setup = get_calibrator(cfg.MODEL,
                                inflow=obs.inflow,
-                               storage=obs.storage, 
+                               storage=obs.storage,
                                outflow=obs.outflow,
-                               Vmin=Vmin,
-                               Vtot=Vtot,
-                               Qmin=Qmin,
+                               Vmin=reservoir_attrs['Vmin'],
+                               Vtot=reservoir_attrs['Vtot'],
+                               Qmin=reservoir_attrs['Qmin'],
                                target=cfg.TARGET,
                                obj_func=KGEmod,
                                **{'demand': demand})
@@ -247,15 +247,14 @@ for grand_id, obs in tqdm(timeseries.items(), desc='simulating reservoir'):
                     title=f'grand_id: {grand_id}',
                     save=cfg.PATH_CALIB / f'{grand_id}_scatter.jpg',
                    )
-        res.lineplot({'default': sim_def, 
+        res.lineplot({'default': sim_def,
                       'calibrated': sim_cal},
                      obs,
                      figsize=(12, 6),
                      save=cfg.PATH_CALIB / f'{grand_id}_line.jpg',
                    )
-        
+
         del res, setup, sceua, sim_def, sim_cal, default_attrs, calibrated_attrs, performance_def, performance_cal, simulation_kwargs
-        
+
     else:
         print(f'Reservoir {grand_id} has already been calibrated. Skipping calibration.')
-
