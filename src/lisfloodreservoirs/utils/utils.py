@@ -13,19 +13,30 @@ from scipy.stats import gumbel_r, gaussian_kde
 
 
 
-def select_reservoirs(df: pd.DataFrame, sort: str, storage: str, target: float, plot: bool = True, **kwargs) -> pd.DataFrame:
+def select_reservoirs(df: gpd.GeoDataFrame,
+                      sort: str,
+                      storage: str,
+                      target: float,
+                      plot: bool = True,
+                      **kwargs
+                     ) -> gpd.GeoDataFrame:
     """It selects reservoirs that fulfil a target total storage capacity by prioritizing based on another characteristic
     
     Inputs:
     -------
-    df:    pandas.DataFrame. Table of reservoirs
-    sort:  string. Name of the field in 'df' that will be use to sort (prioritize) the selection
-    storage: string. Name of the field in 'df' that contains the reservoir storage capacity
-    plot:    boolean. If True, a map of the selected reservoirs will be plotted. The size of the dots represents the reservoir storage capacity and the colours the sorting field.
+    df:    geopandas.GeoDataFrame
+        Table of reservoirs
+    sort:  string
+        Name of the field in 'df' that will be use to sort (prioritize) the selection
+    storage: string
+        Name of the field in 'df' that contains the reservoir storage capacity
+    plot:    boolean
+        If True, a map of the selected reservoirs will be plotted. The size of the dots represents the reservoir storage capacity and the colours the sorting field.
     
     Outputs:
     --------
-    df_sel: pandas.DataFrame. A subset of 'df' with the selection of reservoirs.
+    df_sel: geopandas.DataFrame
+        A subset of 'df' with the selection of reservoirs.
     """
     
     mask = df.sort_values(sort, ascending=False)[storage].cumsum() <= target

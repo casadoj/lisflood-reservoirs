@@ -316,3 +316,51 @@ def create_demand(outflow: pd.Series,
     demand = pd.Series({date: demand_d.loc[date.dayofyear] for date in outflow.index})
     
     return demand
+
+
+
+def define_period(series: Union[pd.Series, pd.DataFrame],
+                  # years: int = 8
+                 ) -> Tuple[np.datetime64, np.datetime64]:
+    """
+    If finds the beginning and end of the longest period with available data. If that period does not exceed a minimum number of years, the function skips the computation
+    
+    Parameters:
+    -----------
+    series: pandas.Series or pandas.DataFrame
+        Time series to be checked
+    years: integer
+        Minimum length in years necessary to consider the time series 
+    
+    Returns:
+    --------
+    start: numpy.datetime64
+        Beginning of the longest period
+    end: numpy.datetime64
+        End of the longest period
+    """
+
+    # assert years > 0, '"years" must be a positive integer'
+
+    # boolean series of available data
+    available = ~series.isnull()
+    if isinstance(available, pd.DataFrame):
+        available = available.all(axis=1)
+    
+    # find starts and ends of periods of years with enough inflow data
+    diff = available.astype(int).diff()
+    diff.iloc[0] = available.iloc[0].astype(int)
+    starts = diff[diff == 1].index.values
+    ends = diff[diff == -1].index.values
+    if len(starts) == len(ends) + 1:
+        ends = np.hstack((ends, diff.index.values[-1]))
+
+    # return start and end of the longest period
+    durations = (ends - starts) / np.timedelta64(1, 'D')
+    if len(durations) > 0:
+        dmax, imax = durations.max(), durations.argmax()
+        # if dmax >= years * 365:
+        #     start, end = starts[imax], ends[imax]
+        return starts[imax], ends[imax]
+    else:
+        return np.nan, np.nan
