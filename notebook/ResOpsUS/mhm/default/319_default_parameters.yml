@@ -1,5 +1,5 @@
-Qmin: 0.5029999999999272
-Vmin: 5606999.999999997
+Qmin: 0.503
+Vmin: 5636000.0
 Vn: !!python/object/apply:numpy.core.multiarray.scalar
 - &id001 !!python/object/apply:numpy.dtype
   args:
@@ -16,14 +16,14 @@ Vn: !!python/object/apply:numpy.core.multiarray.scalar
   - -1
   - 0
 - !!binary |
-  AQAAoBtcmkE=
-Vtot: 122348000.00000001
+  AAAAQLDgmkE=
+Vtot: 122206000.0
 alpha: 0.5
 beta: 1
 gamma: !!python/object/apply:numpy.core.multiarray.scalar
 - *id001
 - !!binary |
-  dwsSfMjq7D8=
+  bIndOv+E7T8=
 lambda: 1
-rho: 0.37619802308206307
+rho: 0.3891261808922884
 w: 0.1
