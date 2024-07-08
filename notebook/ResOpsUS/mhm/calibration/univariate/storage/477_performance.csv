@@ -1,0 +1,5 @@
+,storage,inflow,outflow,elevation,evaporation,year,month,weekofyear,dayofyear,dayofweek
+KGE,0.817,1.000,0.807,,,,,,,
+alpha,1.022,1.000,0.969,,,,,,,
+beta,1.051,1.000,1.009,,,,,,,
+rho,0.825,1.000,0.810,,,,,,,
