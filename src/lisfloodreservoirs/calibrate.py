@@ -116,6 +116,7 @@ def main():
                 'Qf': Qf,
                 'A': A
             })
+            del reservoir_attrs['Qmin']
         elif cfg.MODEL == 'mhm':
             # create a demand time series
             bias = ts.outflow.mean() / ts.inflow.mean()
