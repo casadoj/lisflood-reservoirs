@@ -15,7 +15,7 @@ class Config:
         
         # model configuration
         self.MODEL = self.cfg['simulation']['model'].lower()
-        self.MODEL_CFG = self.cfg['simulation'].get('config', {})
+        self.SIMULATION_CFG = self.cfg['simulation'].get('config', {})
         self.PATH_DEF = Path(f'{self.MODEL}/default')
         self.PATH_DEF.mkdir(parents=True, exist_ok=True)
         
