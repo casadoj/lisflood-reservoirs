@@ -1,0 +1,26 @@
+Qf: 790.6409566412646
+Qn: 73.56548209267085
+Ve: !!python/object/apply:numpy.core.multiarray.scalar
+- &id001 !!python/object/apply:numpy.dtype
+  args:
+  - f8
+  - false
+  - true
+  state: !!python/tuple
+  - 3
+  - <
+  - null
+  - null
+  - null
+  - -1
+  - -1
+  - 0
+- !!binary |
+  AAAATL+03EE=
+Vf: !!python/object/apply:numpy.core.multiarray.scalar
+- *id001
+- !!binary |
+  AAAACN4pyEE=
+Vmin: 116212000.0
+Vtot: 2205339000.0
+k: 0
