@@ -151,7 +151,7 @@ def get_normal_value(series: pd.Series):
 
 
 
-def return_period(series: pd.Series, T: float = 100):
+def return_period(series: pd.Series, T: float = 100) -> float:
     """It estimates the value associated to a specific return period based on the observed time series and the Gumbel distribution
     
     Input:
@@ -180,7 +180,7 @@ def return_period(series: pd.Series, T: float = 100):
     # discharge associated to return period
     x = gumbel_r.ppf(1 - 1 / T, *pars)
     
-    return x
+    return float(x)
 
 
 
