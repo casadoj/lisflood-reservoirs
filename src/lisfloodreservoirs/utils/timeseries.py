@@ -204,7 +204,7 @@ def clean_inflow(inflow: pd.Series,
                 ) -> pd.Series:
     """It prepares the time series of inflow to be used as input for the reservoir model, i.e., it removes erroneous peaks and it fills in the gaps.
     
-        - To remove peaks, it uses two error identifies. When both conditions identify an error in the inflow time series, that time step is converted into a NaN:
+        - To remove peaks, it uses two error identifiers. When both conditions identify an error in the inflow time series, that time step is converted into a NaN:
             1. If a storage and an outflow time series are provided, we can estimate the mass balance error. It this error exceeds an acceptable value ("balance_thr"), that time step is identified as a possible inflow error.
             2. The gradient (the difference between the current and the previous inflow). Time steps were the absolute gradient exceeds a maximum acceptable value ("grad_thr") are identified as possible inflow errors.
     
@@ -320,7 +320,6 @@ def create_demand(outflow: pd.Series,
 
 
 def define_period(series: Union[pd.Series, pd.DataFrame],
-                  # years: int = 8
                  ) -> Tuple[np.datetime64, np.datetime64]:
     """
     If finds the beginning and end of the longest period with available data. If that period does not exceed a minimum number of years, the function skips the computation
@@ -328,9 +327,7 @@ def define_period(series: Union[pd.Series, pd.DataFrame],
     Parameters:
     -----------
     series: pandas.Series or pandas.DataFrame
-        Time series to be checked
-    years: integer
-        Minimum length in years necessary to consider the time series 
+        Time series to be checked 
     
     Returns:
     --------
@@ -339,8 +336,6 @@ def define_period(series: Union[pd.Series, pd.DataFrame],
     end: numpy.datetime64
         End of the longest period
     """
-
-    # assert years > 0, '"years" must be a positive integer'
 
     # boolean series of available data
     available = ~series.isnull()
@@ -359,8 +354,6 @@ def define_period(series: Union[pd.Series, pd.DataFrame],
     durations = (ends - starts) / np.timedelta64(1, 'D')
     if len(durations) > 0:
         dmax, imax = durations.max(), durations.argmax()
-        # if dmax >= years * 365:
-        #     start, end = starts[imax], ends[imax]
-        return starts[imax], ends[imax]
+        return starts[imax], ends[imax] - np.timedelta64(1, 'D')
     else:
         return np.nan, np.nan
