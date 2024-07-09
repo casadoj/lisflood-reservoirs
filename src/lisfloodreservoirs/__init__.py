@@ -1,5 +1,7 @@
 import yaml
 from pathlib import Path
+from typing import Union, Optional, List, Dict
+import pandas as pd
 
 class Config:
     def __init__(self, config_file):
@@ -32,3 +34,87 @@ class Config:
         else:
             raise ValueError('ERROR. Only univariate or bivariate calibrations are supported')
         self.PATH_CALIB.mkdir(parents=True, exist_ok=True)
+        
+        
+        
+def read_attributes(path: Union[str, Path],
+                    reservoirs: Optional[List] = None
+                   ) -> pd.DataFrame:
+    """It reads all the attribute tables from the specified dataset and, if provided, filters the selected reservoirs.
+    
+    Parameters:
+    -----------
+    path: string or pathlib.Path
+        Directory where the dataset is stored
+    reservoirs: list (optional)
+        List of the reservoir ID selected
+        
+    Returns:
+    --------
+    attributes: pandas.DataFrame
+        Concatenation of all the attributes in the dataset
+    """
+    
+    # import all tables of attributes
+    try:
+        attributes = pd.concat([pd.read_csv(file, index_col=0) for file in path.glob('*.csv')],
+                               axis=1,
+                               join='outer')
+        if reservoirs is not None:
+            attributes = attributes.loc[reservoirs]
+    except Exception as e:
+        raise ValueError(f'ERROR while reading attribute tables from directory {path}: {e}') from e
+        
+    return attributes
+
+
+
+def read_timeseries(path: Union[str, Path],
+                    reservoirs: Optional[List[int]] = None,
+                    periods: Optional[Dict[int, Dict[str, pd.Timestamp]]] = None,
+                    ) -> Dict[int, pd.DataFrame]:
+    """It reads the time series in the dataset and saves them in a dictionary.
+    
+    Parameters:
+    -----------
+    path: string or pathlib.Path
+        Directory where the dataset is stored
+    reservoirs: list (optional)
+        List of the reservoir ID selected
+    periods: dictionary (optional)
+        If provided, it cuts the time series to the specified period. It is a dictionary of dictionaries, where the keys are the reservoir ID, and the values are dictionaries with two entries ('start' and 'end') that contain timestamps of the selected beginning and end of the study period
+        
+    Returns:
+    --------
+    timeseries: dictionary
+        It contains the timeseries of the selected reservoirs as pandas.DataFrame
+    """
+    
+    variables = ['inflow', 'storage', 'outflow', 'elevation']
+    
+    if reservoirs is None:
+        reservoirs = [int(file.stem) for file in path_ts.glob('*.csv')]
+        
+    # read time series
+    timeseries = {}
+    for id in reservoirs:
+        # read time series
+        file = path / f'{id}.csv'
+        if file.is_file():
+            ts = pd.read_csv(file, parse_dates=True, index_col='date')
+        else:
+            print(f"File {file} doesn't exist")
+            continue
+
+        # select study period
+        if periods is not None:
+            start, end = [periods[id][x] for x in ['start', 'end']]
+            ts = ts.loc[start:end, variables]
+
+        # convert storage to m3
+        ts.iloc[:, ts.columns.str.contains('storage')] *= 1e6
+
+        # save time series
+        timeseries[id] = ts
+        
+    return timeseries
