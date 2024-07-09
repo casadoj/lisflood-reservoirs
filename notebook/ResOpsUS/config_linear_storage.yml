@@ -1,25 +1,17 @@
-paths:
-    # static map of reservoir ID
-    reservoirs: ../../data/reservoirs/GloFAS/20220802_reservoirs_Global_03min.nc
-    # directory with the NetCDFs generated in the Lisflood run
-    timeseries: Z:/nahaUsers/casadje/GloFASv4/long_run/rsfil/
-    dataset: Z:/nahaUsers/casadje/datasets/reservoirs/
-
-# variable of interest
-var: rsfil
-# directory where the extracted NetCDFs will be saved
-path_out: Z:/nahaUsers/casadje/GloFASv4/US/rsfil/
-period:
-    start: 1982-01-02
-    end: 2019-12-31
+data:
+    path: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.1/
+    reservoirs: reservoirs_test.txt
+    periods: periods.pkl
     
-model: linear
+simulation:
+    model: linear
     
 calibration:
-    algorithm: SCEUA
-    target: 
+    # algorithm: SCEUA
+    input:
+        - inflow
+    target:
         - storage
     max_iter: 1000
     complexes: 4
-    train_size: 0.7
-    path_out: ./calibration #/SCEUA/6parameters/bivariate/
+    # train_size: 0.7
