@@ -9,7 +9,6 @@ setup(
         'console_scripts': [
             'simulate=lisfloodreservoirs.simulate:main',
             'calibrate=lisfloodreservoirs.calibrate:main',
-            'calibrate-mHM=lisfloodreservoirs.calibrate_mHM:main', 
         ],
     },
     install_requires=[
