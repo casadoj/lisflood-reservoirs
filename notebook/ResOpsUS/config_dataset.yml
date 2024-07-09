@@ -18,3 +18,4 @@ conditions:
     min_area: 250 # km²
     min_volume: 10 # hm3
     min_length: 8 # years
+    tol_bias: 0.3 # relative bias accepted between inflow and outflow
