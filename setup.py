@@ -7,8 +7,9 @@ setup(
     package_dir={'': 'src'},
     entry_points={
         'console_scripts': [
-            'calibrate=lisfloodreservoirs.calibration.calibrate:main',
-            'calibrate-mHM=lisfloodreservoirs.calibration.calibrate_mHM:main', 
+            'simulate=lisfloodreservoirs.simulate:main',
+            'calibrate=lisfloodreservoirs.calibrate:main',
+            'calibrate-mHM=lisfloodreservoirs.calibrate_mHM:main', 
         ],
     },
     install_requires=[
