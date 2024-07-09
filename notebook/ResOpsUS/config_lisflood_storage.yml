@@ -1,13 +1,14 @@
 data:
     path: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.1/
-    reservoirs: reservoirs.txt
-    periods: periods.pkl
+    reservoirs: reservoirs_test.txt
+    periods: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.1/selection/periods.pkl
 
 simulation:
     model: lisflood
     config:
         routine: 1
         limit_Q: True
+    path: ./
 
 calibration:
     # algorithm: SCEUA
@@ -18,3 +19,4 @@ calibration:
     max_iter: 1000
     complexes: 4
     # train_size: 0.7
+    path: ./
