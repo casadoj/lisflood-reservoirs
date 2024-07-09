@@ -351,6 +351,7 @@ def compute_performance(obs: pd.DataFrame, sim: pd.DataFrame):
     
     variables = obs.columns.intersection(sim.columns)
     performance = pd.DataFrame(index=['KGE', 'alpha', 'beta', 'rho'], columns=variables)
+    performance.index.name = 'metric'
     for var in variables:
         try:
             performance[var] = KGEmod(obs[var], sim[var])
