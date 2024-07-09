@@ -45,7 +45,7 @@ def main():
 
     cfg = Config(args.config_file)
 
-    print(f'Default simulation results will be saved in:\n\t{cfg.PATH_DEF}')
+    print(f'Default simulation results will be saved in:\n\t{cfg.PATH_DEF}\n')
     
     # ## Data
 
@@ -85,13 +85,15 @@ def main():
             continue
 
         # plot observed time series
+        path_obs = cfg.PATH_DEF.parent.parent / 'observed'
+        path_obs.mkdir(exist_ok=True)
         plot_resops(ts.storage,
                     ts.elevation if 'elevation' in ts.columns else None,
                     ts.inflow,
                     ts.outflow,
                     attributes.loc[grand_id, ['CAP_MCM', 'CAP_GLWD']].values * 1e6,
                     title=grand_id,
-                    save=cfg.PATH_DEF / f'{grand_id}_line_obs.jpg'
+                    save=path_obs / f'{grand_id}_line.jpg'
                    )
 
         # storage attributes (m3)
@@ -126,6 +128,7 @@ def main():
                 'Qf': Qf,
                 'A': A
             })
+            del reservoir_attrs['Qmin']
         elif cfg.MODEL == 'mhm':
             # create a demand time series
             bias = ts.outflow.mean() / ts.inflow.mean()
@@ -199,7 +202,7 @@ def main():
                      save=cfg.PATH_DEF / f'{grand_id}_line_obs_sim.jpg',
                    )
 
-            del res, setup, sim_def, sim_cfg, default_attrs, performance_def
+        del res, sim_def, sim_cfg, default_attrs, performance_def
 
 if __name__ == "main":
     main()
