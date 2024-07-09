@@ -25,5 +25,5 @@ gamma: !!python/object/apply:numpy.core.multiarray.scalar
 - !!binary |
   CylV/i2c7T8=
 lambda: 1
-rho: 0.7518065491852974
+rho: 0.7515910875873771
 w: 0.1

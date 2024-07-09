@@ -1,5 +1,5 @@
-,inflow,storage,outflow
-KGE,,,
-alpha,,,
-beta,,,
-rho,,,
+metric,inflow,storage,outflow
+KGE,1.000,0.316,0.132
+alpha,1.000,0.497,0.425
+beta,1.000,1.400,1.177
+rho,1.000,0.766,0.373

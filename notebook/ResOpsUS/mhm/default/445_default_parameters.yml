@@ -16,14 +16,14 @@ Vn: !!python/object/apply:numpy.core.multiarray.scalar
   - -1
   - 0
 - !!binary |
-  AQAAwBUpgEE=
+  AwAAYKIpgEE=
 Vtot: 40082000.0
 alpha: 0.5
 beta: 1
 gamma: !!python/object/apply:numpy.core.multiarray.scalar
 - *id001
 - !!binary |
-  jvI0V60O6z8=
+  OzOfyZgP6z8=
 lambda: 1
-rho: 0.6255839493538583
+rho: 0.6255137182193243
 w: 0.1

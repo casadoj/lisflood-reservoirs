@@ -25,5 +25,5 @@ gamma: !!python/object/apply:numpy.core.multiarray.scalar
 - !!binary |
   MIPn7lQd7z8=
 lambda: 1
-rho: 0.062408405604572774
+rho: 0.06247127939796178
 w: 0.1
