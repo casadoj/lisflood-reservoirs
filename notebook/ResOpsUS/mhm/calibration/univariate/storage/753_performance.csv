@@ -1,5 +1,0 @@
-,storage,inflow,outflow,elevation,evaporation,storage_glofas,inflow_glofas,outflow_glofas,year,month,weekofyear,dayofyear,dayofweek
-KGE,0.876,1.000,0.577,,,,,,,,,,
-alpha,1.013,1.000,0.776,,,,,,,,,,
-beta,1.027,1.000,1.066,,,,,,,,,,
-rho,0.880,1.000,0.648,,,,,,,,,,
