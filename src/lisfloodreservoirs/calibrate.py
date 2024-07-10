@@ -63,7 +63,7 @@ def main():
     # log file
     log_path = cfg.PATH_CALIB / 'logs'
     log_path.mkdir(exist_ok=True)
-    log_file = log_path / '{0:%Y%m%d%H%M}_simulate_{1}.log'.format(datetime.now(),
+    log_file = log_path / '{0:%Y%m%d%H%M}_calibrate_{1}.log'.format(datetime.now(),
                                                                    '_'.join(args.config_file.split('.')[0].split('_')[1:]))
     f_handler = logging.FileHandler(log_file)
     f_handler.setFormatter(log_format)
