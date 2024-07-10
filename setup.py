@@ -20,7 +20,7 @@ setup(
         'cartopy',
         'statsmodels',
         'tqdm',
-        'yaml',
+        'pyyaml',
         'spotpy'
     ],
     author='Jesús Casado Rodríguez',
