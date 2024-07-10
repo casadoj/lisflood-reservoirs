@@ -27,5 +27,4 @@ setup(
     author_email='jesus.casado-rodriguez@ec.europa.eu',
     description='Package to simulate reservoir operations according to different modelling routines.',
     keywords='hydrology reservoir simulation calibration',
-    # Consider adding classifiers to provide more metadata
 )
