@@ -20,6 +20,8 @@ setup(
         'cartopy',
         'statsmodels',
         'tqdm',
+        'yaml',
+        'spotpy'
     ],
     author='Jesús Casado Rodríguez',
     author_email='jesus.casado-rodriguez@ec.europa.eu',
