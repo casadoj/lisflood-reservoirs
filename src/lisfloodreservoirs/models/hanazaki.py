@@ -37,7 +37,7 @@ class Hanazaki(Reservoir):
             Normal outflow (m3/s)
         Qf: float
             Outflow (m3/s) in case of flood
-        A: float
+        A: integer
             Area (m2) of the reservoir catchment
         At: int
             Simulation time step in seconds.
