@@ -101,7 +101,7 @@ class Lisflood_calibrator(Calibrator):
         if inflow is None:
             inflow = self.inflow
         if storage_init is None:
-            storage_init = self.observed['storage'][0]
+            storage_init = self.observed['storage'].iloc[0]
         
         # define model arguments
         # volume and outflow limits

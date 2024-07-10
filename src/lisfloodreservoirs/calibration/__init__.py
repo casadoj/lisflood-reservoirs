@@ -4,18 +4,19 @@ from pathlib import Path
 
 from .linear import Linear_calibrator
 from .lisflood import Lisflood_calibrator
+from .hanazaki import Hanazaki_calibrator
 from .mhm import mHM_calibrator
 
 
 
-def get_calibrator(model_name: Literal['linear', 'lisflood', 'mhm'], *args, **kwargs):
+def get_calibrator(model_name: Literal['linear', 'lisflood', 'hanazaki', 'mhm'], *args, **kwargs):
     """
     Creates an instance of the specific calibration class for the reservoir model.
     
     Parameters:
     -----------
     model_name: string
-        The name of the model class to instantiate. It must be one of the following values: 'linear', 'lisflood' or 'mhm'
+        The name of the model class to instantiate. It must be one of the following values: 'linear', 'lisflood', 'hanazaki' or 'mhm'
     *args:
         Positional arguments to pass to the calibrator class constructor.
     **kwargs:
@@ -30,6 +31,8 @@ def get_calibrator(model_name: Literal['linear', 'lisflood', 'mhm'], *args, **kw
         return Linear_calibrator(*args, **kwargs)
     elif model_name.lower() == 'lisflood':
         return Lisflood_calibrator(*args, **kwargs)
+    elif model_name.lower() == 'hanazaki':
+        return Hanazaki_calibrator(*args, **kwargs)
     elif model_name.lower() == 'mhm':
         return mHM_calibrator(*args, **kwargs)
     else:

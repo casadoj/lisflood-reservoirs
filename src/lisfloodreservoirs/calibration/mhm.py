@@ -99,7 +99,7 @@ class mHM_calibrator(Calibrator):
         if demand is None:
             demand = self.demand
         if storage_init is None:
-            storage_init = self.observed['storage'][0]
+            storage_init = self.observed['storage'].iloc[0]
             
         # declare the reservoir with the effect of the parameters
         reservoir_kwargs = {'Vmin': self.Vmin,
