@@ -5,7 +5,7 @@
 # ***
 #
 # **Author:** Chus Casado Rodríguez<br>
-# **Date:** 09-07-2024<br>
+# **Date:** 10-07-2024<br>
 #
 # **Introduction:**<br>
 #
@@ -24,6 +24,8 @@ import spotpy
 import pickle
 import copy
 import argparse
+import logging
+from datetime import datetime
 
 from . import Config, read_attributes, read_timeseries
 from .models import get_model
@@ -44,8 +46,31 @@ def main():
     args = parser.parse_args()
 
     cfg = Config(args.config_file)
-
-    print(f'Calibration results will be saved in:\n\t{cfg.PATH_CALIB}\n')
+    
+    
+    # ## Logger
+    
+    # create logger
+    logger = logging.getLogger('calibrate-reservoirs')
+    logger.setLevel(logging.INFO)
+    logger.propagate = False
+    log_format = logging.Formatter('%(asctime)s | %(levelname)s | %(name)s | %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
+    # log on screen
+    c_handler = logging.StreamHandler()
+    c_handler.setFormatter(log_format)
+    c_handler.setLevel(logging.INFO)
+    logger.addHandler(c_handler)
+    # log file
+    log_path = cfg.PATH_CALIB / 'logs'
+    log_path.mkdir(exist_ok=True)
+    log_file = log_path / '{0:%Y%m%d%H%M}_simulate_{1}.log'.format(datetime.now(),
+                                                                   '_'.join(args.config_file.split('.')[0].split('_')[1:]))
+    f_handler = logging.FileHandler(log_file)
+    f_handler.setFormatter(log_format)
+    f_handler.setLevel(logging.INFO)
+    logger.addHandler(f_handler)
+    
+    logger.info(f'Calibration results will be saved in:\t{cfg.PATH_CALIB}')
 
     
     # ## Data
@@ -53,23 +78,39 @@ def main():
     # ### Attributes
 
     # list of reservoirs to be trained
-    reservoirs = pd.read_csv(cfg.RESERVOIRS_FILE, header=None).squeeze().tolist()
+    try:
+        reservoirs = pd.read_csv(cfg.RESERVOIRS_FILE, header=None).squeeze().tolist()
+    except IOError as e:
+        logger.error(f'Failed to open {cfg.RESERVOIRS_FILE}: {e}')
+        raise
 
     # import all tables of attributes
-    attributes = read_attributes(cfg.PATH_DATA / 'attributes', reservoirs)
-    print(f'{attributes.shape[0]} reservoirs in the attribute tables')
+    try:
+        attributes = read_attributes(cfg.PATH_DATA / 'attributes', reservoirs)
+    except IOError as e:
+        logger.error('Failed to read attribute tables from {0}: {1}'.format(cfg.PATH_DATA / 'attributes', e))
+        raise
+    logger.info(f'{attributes.shape[0]} reservoirs in the attribute tables')
 
     # #### Time series
 
     # training periods
-    with open(cfg.PERIODS_FILE, 'rb') as file:
-        periods = pickle.load(file)
+    try:
+        with open(cfg.PERIODS_FILE, 'rb') as file:
+            periods = pickle.load(file)
+    except IOError as e:
+        logger.error(f'Failed to open {cfg.PERIODS_FILE}: {e}')
+        raise
 
     # read time series
-    timeseries = read_timeseries(cfg.PATH_DATA / 'time_series' / 'csv',
-                                 attributes.index,
-                                 periods)
-    print(f'{len(timeseries)} reservoirs with timeseries\n')
+    try:
+        timeseries = read_timeseries(cfg.PATH_DATA / 'time_series' / 'csv',
+                                     attributes.index,
+                                     periods)
+    except IOError as e:
+        logger.error('Failed to read time series from {0}: {1}'.format(cfg.PATH_DATA / 'time_series' / 'csv', e))
+        raise
+    logger.info(f'{len(timeseries)} reservoirs with timeseries')
 
 
     # ## Reservoir routine
@@ -81,9 +122,11 @@ def main():
     for grand_id, ts in tqdm(timeseries.items(), desc='simulating reservoir'):
 
         if grand_id in id_calib:
-            print(f'Reservoir {grand_id} has already been calibrated. Skipping calibration.')
+            logger.warning(f'Reservoir {grand_id} has already been calibrated. Skipping calibration.')
             continue
-
+        else:
+            logger.info(f'Calibrating reservoir {grand_id:>4}')
+            
         # storage attributes (m3)
         Vtot = ts.storage.max()
         Vmin = max(0, ts.storage.min())
@@ -136,8 +179,9 @@ def main():
 
         # CALIBRATION
         # -----------
-
-        if grand_id not in id_calib:
+        
+        try:
+            
             dbname = f'{cfg.PATH_CALIB}/{grand_id}_samples'
 
             # initialize the calibration setup of the LISFLOOD reservoir routine
@@ -192,18 +236,36 @@ def main():
                                    Vo=ts.storage.iloc[0],
                                    **sim_cfg)
             sim_cal.to_csv(cfg.PATH_CALIB / f'{grand_id}_simulation.csv', float_format='%.3f')
-
-            # performance
+        
+        except RuntimeError as e:
+            logger.error(f'Reservoir {grand_id} could not be calibrated: {e}')
+            continue
+            
+        # ANALYSE RESULTS
+        # ---------------
+        
+        # performance
+        try:
             performance_cal = compute_performance(ts, sim_cal)
             performance_cal.to_csv(cfg.PATH_CALIB / f'{grand_id}_performance.csv', float_format='%.3f')
-
-            # analyse results
+            logger.info(f'Performance of reservoir {grand_id} has been computed')
+        except IOError as e:
+            logger.error(f'The performance of reservoir {grand_id} could not be exported: {e}')
+            
+        # scatter plot calibration vs observation
+        try:
             res.scatter(sim_cal,
                         ts,
                         norm=False,
                         title=f'grand_id: {grand_id}',
                         save=cfg.PATH_CALIB / f'{grand_id}_scatter.jpg',
                        )
+            logger.info(f'Scatter plot of simulation from reservoir {grand_id}')
+        except IOError as e:
+            logger.error(f'The scatter plot of reservoir {grand_id} could not be generated: {e}')
+            
+        # line plot calibration (vs default simulation) vs observation
+        try:
             file_default = cfg.PATH_DEF / f'{grand_id}_simulation.csv'
             if file_default.is_file():
                 sim_def = pd.read_csv(cfg.PATH_DEF / f'{grand_id}_simulation.csv', parse_dates=True, index_col=0)
@@ -218,11 +280,12 @@ def main():
                          figsize=(12, 6),
                          save=cfg.PATH_CALIB / f'{grand_id}_line.jpg',
                        )
+            logger.info(f'Line plot of simulation from reservoir {grand_id}')
+        except IOError as e:
+            logger.error(f'The line plot of reservoir {grand_id} could not be generated: {e}')
+            
+        del res, setup, sceua, sim_cal, sim_cfg, calibrated_attrs, performance_cal
 
-            del res, setup, sceua, sim_cal, sim_cfg, calibrated_attrs, performance_cal
 
-        else:
-            print(f'Reservoir {grand_id} has already been calibrated. Skipping calibration.')
-
-if __name__ == "main":
+if __name__ == "__main__":
     main()
