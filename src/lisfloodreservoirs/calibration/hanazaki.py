@@ -25,9 +25,9 @@ class Hanazaki_calibrator(Calibrator):
             Qf = epsilon * Q100
     """
     
-    alpha = Uniform(name='beta', low=0.5, high=1.0)
-    beta = Uniform(name='gamma', low=0.001, high=0.999)    
-    gamma = Uniform(name='alpha', low=0.001, high=0.999)
+    alpha = Uniform(name='alpha', low=0.5, high=1.0)
+    beta = Uniform(name='beta', low=0.001, high=0.999)    
+    gamma = Uniform(name='gamma', low=0.001, high=0.999)
     delta = Uniform(name='delta', low=0.5, high=2.0)
     epsilon = Uniform(name='epsilon', low=0.1, high=0.5)
     
@@ -40,6 +40,7 @@ class Hanazaki_calibrator(Calibrator):
                  A: int,
                  target: Literal['storage', 'outflow'], 
                  obj_func=kge,
+                 Qmin: Optional[float] = None,
                 ):
         """
         Parameters:
@@ -60,9 +61,11 @@ class Hanazaki_calibrator(Calibrator):
             Variable(s) targeted in the calibration. Possible values are 'storage' and/or 'outflow'
         obj_func:
             A function that assess the performance of a simulation with a single float number. The optimization tries to minimize the objective function. We assume that the objective function would be either NSE or KGE, so the function is internally converted so that better performance corresponds to lower values of the objective function.
+        Qmin: float (optional)
+            Minimum outflow (m3/s). Not needed in the Hanazaki routine, so keep as None
         """
         
-        super().__init__(inflow, storage, outflow, Vmin, Vtot, None, target, obj_func)
+        super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, target, obj_func)
         
         self.A = A
         
@@ -99,8 +102,8 @@ class Hanazaki_calibrator(Calibrator):
         
         # define model arguments
         # volume limits
-        Vf = self.obs.storage.quantile(pars[0])
-        Ve = Vtot - pars[1] * (Vtot - Vf)
+        Vf = self.observed.storage.quantile(pars[0])
+        Ve = self.Vtot - pars[1] * (self.Vtot - Vf)
         Vmin = pars[2] * Vf
         # outflow limits
         Qn = pars[3] * self.inflow.mean()
