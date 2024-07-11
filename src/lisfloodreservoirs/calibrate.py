@@ -5,7 +5,7 @@
 # ***
 #
 # **Author:** Chus Casado Rodríguez<br>
-# **Date:** 10-07-2024<br>
+# **Date:** 11-07-2024<br>
 #
 # **Introduction:**<br>
 #
@@ -38,7 +38,8 @@ from .calibration import get_calibrator, read_results
 
 def main():
 
-    # ## Configuration
+    # ## CONFIGURATION
+    # ## -------------
 
     # read argument specifying the configuration file
     parser = argparse.ArgumentParser(description='Run the mHM calibration script with a specified configuration file.')
@@ -70,10 +71,11 @@ def main():
     f_handler.setLevel(logging.INFO)
     logger.addHandler(f_handler)
     
-    logger.info(f'Calibration results will be saved in:\t{cfg.PATH_CALIB}')
+    logger.info(f'Calibration results will be saved in: {cfg.PATH_CALIB}')
 
     
-    # ## Data
+    # ## DATA
+    # ## ----
 
     # ### Attributes
 
@@ -113,10 +115,9 @@ def main():
     logger.info(f'{len(timeseries)} reservoirs with timeseries')
 
 
-    # ## Reservoir routine
+    # ## CALIBRATION
+    # ## -----------
     
-    # ### Simulate all reservoirs
-
     id_calib = list(np.unique([int(file.stem.split('_')[0]) for file in cfg.PATH_CALIB.glob('*performance.csv')]))
 
     for grand_id, ts in tqdm(timeseries.items(), desc='simulating reservoir'):
@@ -131,7 +132,10 @@ def main():
         Vtot = ts.storage.max()
         Vmin = max(0, ts.storage.min())
         # flow attributes (m3/s)
-        Qmin = max(0, ts.outflow.min())
+        if cfg.MODEL != 'hanazaki':
+            Qmin = max(0, ts.outflow.min())
+        else:
+            Qmin = None
         # model-independent reservoir attributes
         reservoir_attrs = {
             'Vmin': Vmin,
@@ -139,90 +143,98 @@ def main():
             'Qmin': Qmin,
             }
 
-        # update with model-specific attributes (here I add only attributes that are not calibrated)
-        if cfg.MODEL == 'hanazaki':
-            # storage limits (m3)
-            Vf = ts.storage.quantile(.75)
-            Ve = Vtot - .2 * (Vtot - Vf)
-            Vmin = .5 * Vf
-            # outflow limits
-            Qn = ts.inflow.mean()
-            Q100 = return_period(ts.inflow, T=100)
-            Qf = .3 * Q100
-            # catchment area (m2)
-            A = attributes.loc[grand_id, 'CATCH_SKM'] * 1e6
-            # add to reservoir attributes
-            reservoir_attrs.update({
-                'Vf': Vf,
-                'Ve': Ve,
-                'Qn': Qn,
-                'Qf': Qf,
-                'A': A
-            })
-            del reservoir_attrs['Qmin']
-        elif cfg.MODEL == 'mhm':
-            # create a demand time series
-            bias = ts.outflow.mean() / ts.inflow.mean()
-            demand = create_demand(ts.outflow,
-                                   water_stress=min(1, bias),
-                                   window=28)
-            # add to reservoir attributes
-            reservoir_attrs.update({
-                'avg_inflow': ts.inflow.mean(),
-                'avg_demand': demand.mean()
-            })
-
-        # configure simulation kwargs
-        sim_cfg = copy.deepcopy(cfg.SIMULATION_CFG)
-        if cfg.MODEL == 'mhm':
-            sim_cfg.update({'demand': demand})
-
-        # CALIBRATION
-        # -----------
+        # CALIBRATE
         
         try:
             
-            dbname = f'{cfg.PATH_CALIB}/{grand_id}_samples'
-
+            # configure calibration kwargs
+            cal_cfg = copy.deepcopy(cfg.SIMULATION_CFG)
+            if cfg.MODEL == 'hanazaki':
+                # catchment area (m2)
+                A = int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6)
+                cal_cfg.update({'A': A})
+                del reservoir_attrs['Qmin']
+            elif cfg.MODEL == 'mhm':
+                # create a demand time series
+                bias = ts.outflow.mean() / ts.inflow.mean()
+                demand = create_demand(ts.outflow,
+                                       water_stress=min(1, bias),
+                                       window=28)
+                cal_cfg.update({'demand': demand})
+            
             # initialize the calibration setup of the LISFLOOD reservoir routine
-            setup = get_calibrator(cfg.MODEL,
-                                   inflow=ts.inflow,
-                                   storage=ts.storage,
-                                   outflow=ts.outflow,
-                                   Vmin=Vmin,
-                                   Vtot=Vtot,
-                                   Qmin=Qmin,
-                                   target=cfg.TARGET,
-                                   obj_func=KGEmod,
-                                   **sim_cfg)
+            calibrator = get_calibrator(cfg.MODEL,
+                                        inflow=ts.inflow,
+                                        storage=ts.storage,
+                                        outflow=ts.outflow,
+                                        Vmin=Vmin,
+                                        Vtot=Vtot,
+                                        Qmin=Qmin,
+                                        target=cfg.TARGET,
+                                        obj_func=KGEmod,
+                                        **cal_cfg)
 
             # define the sampling method
-            sceua = spotpy.algorithms.sceua(setup, dbname=dbname, dbformat='csv', save_sim=False)
+            dbname = f'{cfg.PATH_CALIB}/{grand_id}_samples'
+            if Path(f'{dbname}.csv').is_file():
+                pass
+            else:
+                sceua = spotpy.algorithms.sceua(calibrator, dbname=dbname, dbformat='csv', save_sim=False)
 
-            # start the sampler
-            sceua.sample(cfg.MAX_ITER, ngs=cfg.COMPLEXES, kstop=3, pcento=0.01, peps=0.1)
+                # start the sampler
+                sceua.sample(cfg.MAX_ITER, ngs=cfg.COMPLEXES, kstop=3, pcento=0.01, peps=0.1)
 
-            # define optimal model parameters
+                logger.info(f'Calibration of reservoir{grand_id} successfully finished')
+            
+        except RuntimeError as e:
+            logger.error(f'Reservoir {grand_id} could not be calibrated: {e}')
+            continue
+            
+        # SIMULTE OPTIMIZED RESERVOIR
+        
+        try:
+            
+            # read calibration results
             results, parameters = read_results(f'{dbname}.csv')
-
-            if cfg.MODEL in ['linear', 'mhm']:
-                calibrated_attrs = parameters
+            
+            # define optimal model parameters
+            calibrated_attrs = copy.deepcopy(reservoir_attrs)
+            if cfg.MODEL == 'linear':
+                calibrated_attrs.update(parameters)
+            elif cfg.MODEL == 'hanazaki':
+                Vf = float(ts.storage.quantile(parameters['alpha']))
+                Ve = Vtot - parameters['beta'] * (Vtot - Vf)
+                Vmin = parameters['gamma'] * Vf
+                Qn = parameters['delta'] * ts.inflow.mean()
+                Qf = parameters['epsilon'] * return_period(ts.inflow, T=100)
+                calibrated_attrs.update({
+                    'Vf': Vf,
+                    'Ve': Ve,
+                    'Vmin': Vmin,
+                    'Qn': Qn,
+                    'Qf': Qf,
+                    'A': A
+                })
             elif cfg.MODEL == 'lisflood':
                 Vf = parameters['FFf'] * Vtot
                 Vn = Vmin + parameters['alpha'] * (Vf - Vmin)
                 Vn_adj = Vn + parameters['beta'] * (Vf - Vn)
                 Qf = float(ts.inflow.quantile(parameters['QQf']))
                 Qn = parameters['gamma'] * Qf
-                k = parameters['k']
-                calibrated_attrs = {
+                calibrated_attrs.update({
                     'Vf': Vf,
                     'Vn': Vn,
                     'Vn_adj': Vn_adj,
                     'Qf': Qf,
                     'Qn': Qn,
-                    'k': k
-                }
-            calibrated_attrs.update(reservoir_attrs)
+                    'k': parameters['k']
+                })
+            elif cfg.MODEL == 'mhm':
+                calibrated_attrs.update(parameters)
+                calibrated_attrs.update({
+                    'avg_inflow': ts.inflow.mean(),
+                    'avg_demand': demand.mean()
+                })
 
             # declare the reservoir with optimal parameters
             res = get_model(cfg.MODEL, **calibrated_attrs)
@@ -232,17 +244,22 @@ def main():
                 yaml.dump(res.get_params(), file)
 
             # simulate the reservoir
+            if cfg.MODEL == 'hanazaki':
+                sim_cfg = {}
+            else:
+                sim_cfg = cal_cfg
             sim_cal = res.simulate(inflow=ts.inflow,
                                    Vo=ts.storage.iloc[0],
                                    **sim_cfg)
             sim_cal.to_csv(cfg.PATH_CALIB / f'{grand_id}_simulation.csv', float_format='%.3f')
-        
+            
+            logger.info(f'Simulation of the calibrated reservoir {grand_id} successfully finished')
+            
         except RuntimeError as e:
-            logger.error(f'Reservoir {grand_id} could not be calibrated: {e}')
+            logger.error(f'Calibrated reservoir {grand_id} could not be simulated: {e}')
             continue
             
         # ANALYSE RESULTS
-        # ---------------
         
         # performance
         try:
@@ -284,8 +301,11 @@ def main():
         except IOError as e:
             logger.error(f'The line plot of reservoir {grand_id} could not be generated: {e}')
             
-        del res, setup, sceua, sim_cal, sim_cfg, calibrated_attrs, performance_cal
-
+        del res, calibrator, sim_cal, sim_cfg, calibrated_attrs, performance_cal
+        try:
+            del sceua
+        except:
+            pass
 
 if __name__ == "__main__":
     main()

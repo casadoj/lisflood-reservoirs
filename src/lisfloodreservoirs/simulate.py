@@ -5,7 +5,7 @@
 # ***
 #
 # **Author:** Chus Casado Rodríguez<br>
-# **Date:** 10-07-2024<br>
+# **Date:** 11-07-2024<br>
 #
 # **Introduction:**<br>
 #
@@ -38,7 +38,8 @@ from .calibration import get_calibrator, read_results
 
 def main():
 
-    # ## Configuration
+    # ## CONFIGURATION
+    # ## -------------
 
     # read argument specifying the configuration file
     parser = argparse.ArgumentParser(description='Run the reservoir routine with a specified configuration file.')
@@ -71,10 +72,11 @@ def main():
     f_handler.setLevel(logging.INFO)
     logger.addHandler(f_handler)
 
-    logger.info(f'Default simulation results will be saved in:\t{cfg.PATH_DEF}')
+    logger.info(f'Default simulation results will be saved in: {cfg.PATH_DEF}')
     
     
-    # ## Data
+    # ## DATA
+    # ## ----
 
     # ### Attributes
 
@@ -114,9 +116,8 @@ def main():
     logger.info(f'{len(timeseries)} reservoirs with timeseries')
 
 
-    # ## Reservoir routine
-    
-    # ### Simulate all reservoirs
+    # ## SIMULATE RESERVOIR ROUTINE
+    # ## --------------------------
     
     # reservoirs already simulated
     id_def = list(np.unique([int(file.stem.split('_')[0]) for file in cfg.PATH_DEF.glob('*performance.csv')]))
@@ -149,7 +150,10 @@ def main():
         Vtot = ts.storage.max()
         Vmin = max(0, ts.storage.min())
         # flow attributes (m3/s)
-        Qmin = max(0, ts.outflow.min())
+        if cfg.MODEL != 'hanazaki':
+            Qmin = max(0, ts.outflow.min())
+        else:
+            Qmin = None
         # model-independent reservoir attributes
         reservoir_attrs = {
             'Vmin': Vmin,
@@ -157,44 +161,10 @@ def main():
             'Qmin': Qmin,
             }
 
-        # update with model-specific attributes (here I add only attributes that are not calibrated)
-        if cfg.MODEL == 'hanazaki':
-            # storage limits (m3)
-            Vf = ts.storage.quantile(.75)
-            Ve = Vtot - .2 * (Vtot - Vf)
-            Vmin = .5 * Vf
-            # outflow limits
-            Qn = ts.inflow.mean()
-            Q100 = return_period(ts.inflow, T=100)
-            Qf = .3 * Q100
-            # catchment area (m2)
-            A = attributes.loc[grand_id, 'CATCH_SKM'] * 1e6
-            # add to reservoir attributes
-            reservoir_attrs.update({
-                'Vf': Vf,
-                'Ve': Ve,
-                'Qn': Qn,
-                'Qf': Qf,
-                'A': A
-            })
-            del reservoir_attrs['Qmin']
-        elif cfg.MODEL == 'mhm':
-            # create a demand time series
-            bias = ts.outflow.mean() / ts.inflow.mean()
-            demand = create_demand(ts.outflow,
-                                   water_stress=min(1, bias),
-                                   window=28)
-            # add to reservoir attributes
-            reservoir_attrs.update({
-                'avg_inflow': ts.inflow.mean(),
-                'avg_demand': demand.mean()
-            })
-
         # SIMULATION WITH DEFAULT PARAMETERS
-        # ----------------------------------
-    
+
         try:
-            
+
             # update reservoir attributes with default values of the calibration parameters
             default_attrs = copy.deepcopy(reservoir_attrs)
             sim_cfg = copy.deepcopy(cfg.SIMULATION_CFG)
@@ -203,22 +173,41 @@ def main():
                     'T': Vtot / (ts.inflow.mean() * 24 * 3600)
                 })
             elif cfg.MODEL == 'lisflood':
-                # outflow limits
-                Qn = ts.inflow.mean()
-                Q100 = return_period(ts.inflow, T=100)
-                Qf = .3 * Q100
                 # add to reservoir attributes
                 default_attrs.update({
                     'Vn': 0.67 * Vtot,
                     'Vn_adj': 0.83 * Vtot,
                     'Vf': 0.97 * Vtot,
-                    'Qn': Qn,
-                    'Qf': Qf,
+                    'Qn': ts.inflow.mean(),
+                    'Qf': .3 * return_period(ts.inflow, T=100),
                     'k': 1.2
                 })
-            elif cfg.MODEL == 'mhm':
+            elif cfg.MODEL == 'hanazaki':
+                # storage limits (m3)
+                Vf = float(ts.storage.quantile(.75))
+                Ve = Vtot - .2 * (Vtot - Vf)
+                Vmin = .5 * Vf
+                # add to reservoir attributes
                 default_attrs.update({
-                    'gamma': ts.storage.quantile(.9) / ts.storage.max()
+                    'Vf': Vf,
+                    'Ve': Ve,
+                    'Vmin': Vmin,
+                    'Qn': ts.inflow.mean(),
+                    'Qf': .3 * return_period(ts.inflow, T=100),
+                    'A': int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6)
+                })
+                del default_attrs['Qmin']   
+            elif cfg.MODEL == 'mhm':
+                # create a demand time series
+                bias = ts.outflow.mean() / ts.inflow.mean()
+                demand = create_demand(ts.outflow,
+                                       water_stress=min(1, bias),
+                                       window=28)
+                # add to reservoir attributes
+                default_attrs.update({
+                    'gamma': float(ts.storage.quantile(.9) / ts.storage.max()),
+                    'avg_inflow': ts.inflow.mean(),
+                    'avg_demand': demand.mean()
                 })
                 sim_cfg.update({'demand': demand})
 
@@ -234,15 +223,14 @@ def main():
                                    Vo=ts.storage.iloc[0],
                                    **sim_cfg)
             sim_def.to_csv(cfg.PATH_DEF / f'{grand_id}_simulation.csv', float_format='%.3f')
-            
+
             logger.info(f'Reservoir {grand_id} correctly simulated')
-            
+
         except RuntimeError as e:
             logger.error(f'Reservoir {grand_id} could not be simulated: {e}')
             continue
 
         # ANALYSE RESULTS
-        # ---------------
         
         # performance
         try:
@@ -276,7 +264,7 @@ def main():
         except IOError as e:
             logger.error(f'The line plot of reservoir {grand_id} could not be generated: {e}')
 
-        del res, sim_def, sim_cfg, default_attrs, performance_def
+        del res, sim_def, sim_cfg, default_attrs, reservoir_attrs, performance_def
 
 if __name__ == "__main__":
     main()
