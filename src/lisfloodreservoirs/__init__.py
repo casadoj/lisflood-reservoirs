@@ -57,6 +57,9 @@ def read_attributes(path: Union[str, Path],
         Concatenation of all the attributes in the dataset
     """
     
+    if isinstance(reservoirs, list) is False:
+        reservoirs = [reservoirs]
+        
     # import all tables of attributes
     try:
         attributes = pd.concat([pd.read_csv(file, index_col=0) for file in path.glob('*.csv')],
