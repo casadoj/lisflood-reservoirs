@@ -1,20 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# # Calibrate the reservoir routine
-# ***
-#
-# **Author:** Chus Casado Rodríguez<br>
-# **Date:** 11-07-2024<br>
-#
-# **Introduction:**<br>
-#
-#
-# **To do:**<br>
-#
-#
-
-
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm

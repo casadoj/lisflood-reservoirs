@@ -1,20 +1,3 @@
-#!/usr/bin/env python
-# coding: utf-8
-
-# # Simulate the reservoir routine
-# ***
-#
-# **Author:** Chus Casado Rodríguez<br>
-# **Date:** 11-07-2024<br>
-#
-# **Introduction:**<br>
-#
-#
-# **To do:**<br>
-#
-#
-
-
 import numpy as np
 import pandas as pd
 from tqdm.auto import tqdm
@@ -170,7 +153,7 @@ def main():
             sim_cfg = copy.deepcopy(cfg.SIMULATION_CFG)
             if cfg.MODEL == 'linear':
                 default_attrs.update({
-                    'T': Vtot / (ts.inflow.mean() * 24 * 3600)
+                    'T': float(Vtot / (ts.inflow.mean() * 24 * 3600))
                 })
             elif cfg.MODEL == 'lisflood':
                 # add to reservoir attributes
@@ -178,7 +161,7 @@ def main():
                     'Vn': 0.67 * Vtot,
                     'Vn_adj': 0.83 * Vtot,
                     'Vf': 0.97 * Vtot,
-                    'Qn': ts.inflow.mean(),
+                    'Qn': float(ts.inflow.mean()),
                     'Qf': .3 * return_period(ts.inflow, T=100),
                     'k': 1.2
                 })
@@ -192,7 +175,7 @@ def main():
                     'Vf': Vf,
                     'Ve': Ve,
                     'Vmin': Vmin,
-                    'Qn': ts.inflow.mean(),
+                    'Qn': float(ts.inflow.mean()),
                     'Qf': .3 * return_period(ts.inflow, T=100),
                     'A': int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6)
                 })
