@@ -21,14 +21,14 @@ class Hanazaki_calibrator(Calibrator):
             Qn = gamma * Qf
     delta: factor of the mean inflow that defines the normal outflow (Qn)
             Qn = delta * mean(inflow)
-    epsilon: factor of the 100-year return period of inflow that defines the floos outflow (Qf)
+    epsilon: factor of the 100-year return period of inflow that defines the flood outflow (Qf)
             Qf = epsilon * Q100
     """
     
     alpha = Uniform(name='alpha', low=0.5, high=1.0)
     beta = Uniform(name='beta', low=0.001, high=0.999)    
     gamma = Uniform(name='gamma', low=0.001, high=0.999)
-    delta = Uniform(name='delta', low=0.5, high=2.0)
+    delta = Uniform(name='delta', low=0.333, high=1.0)
     epsilon = Uniform(name='epsilon', low=0.1, high=0.5)
     
     def __init__(self,
@@ -108,6 +108,9 @@ class Hanazaki_calibrator(Calibrator):
         # outflow limits
         Qn = pars[3] * self.inflow.mean()
         Qf = pars[4] * return_period(self.inflow, T=100)
+        if Qn > Qf:
+            Qn = min(Qn, Qf)
+            pars[3] = Qn / self.inflow.mean()
             
         # declare the reservoir with the effect of the parameters in 'x'
         reservoir_kwargs = {
