@@ -143,5 +143,6 @@ class mHM(Reservoir):
                   'gamma': self.gamma,
                   'lambda': self.lambda_,
                   'rho': self.rho}
+        params = {key: float(value) for key, value in params.items()}
 
         return params
