@@ -52,6 +52,9 @@ class mHM(Reservoir):
         assert 0 <= alpha, 'ERROR. Parameter "alpha" (degree of regulation) must be positive'
         assert 0 <= gamma <= 1, 'ERROR. Parameter "gamma" must be a value between 0 and 1, as it represents the normal reservoir filling'
         
+        # make sure that Vmin is not smaller than Vn
+        Vmin = min(Vmin, gamma * Vtot)
+            
         super().__init__(Vmin, Vtot, Qmin, Qf=None, At=At)
         
         # demand and degree of regulation
