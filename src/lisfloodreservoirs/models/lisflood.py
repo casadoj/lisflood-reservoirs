@@ -589,5 +589,6 @@ class Lisflood(Reservoir):
                   'Qn': self.Qn,
                   'Qf': self.Qf,
                   'k': self.k}
+        params = {key: float(value) for key, value in params.items()}
 
         return params
