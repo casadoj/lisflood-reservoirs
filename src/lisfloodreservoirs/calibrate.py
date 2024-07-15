@@ -25,7 +25,7 @@ def main():
     # ## -------------
 
     # read argument specifying the configuration file
-    parser = argparse.ArgumentParser(description='Run the mHM calibration script with a specified configuration file.')
+    parser = argparse.ArgumentParser(description='Run the calibration script with a specified configuration file.')
     parser.add_argument('--config-file', type=str, required=True, help='Path to the configuration file')
     args = parser.parse_args()
 
