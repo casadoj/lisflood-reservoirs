@@ -85,5 +85,6 @@ class Linear(Reservoir):
                   'Vtot': self.Vtot,
                   'Qmin': self.Qmin,
                   'T': 1 / (self.k * self.At)}
+        params = {key: float(value) for key, value in params.items()}
 
         return params
