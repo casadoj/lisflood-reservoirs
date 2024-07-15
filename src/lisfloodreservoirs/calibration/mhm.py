@@ -12,12 +12,11 @@ np.random.seed(0)
 class mHM_calibrator(Calibrator):
     """This class allows for calibrating 5 parameters in the mHM reservoir routine, 3 related to the storage limits, 2 to the outflow limits and the last one to the relation between inflow and outflow.
     
-    FFn: fraction filled normal. The proportion of reservoir capacity that defines the lower limit of the normal storage zone
-    FFf: fraction filled flood. The proportion of reservoir capacity that defines the upper limit of the flood zone
-    alpha: a value between 0 and 1 that defines the limit between the normal and flood zones
-    QQn: quantile outflow normal. The quantile of the inflow records that defines the normal outflow
-    QQf: quantile outflow flood. The quantile of the inflow records that defines the flood outflow
-    k: release coefficient. A factor of the inflow that limits the outflow
+    w:       Dimensionless parameter that controls the demand hedging. Calibration range [0, 1]
+    alpha:   Dimensionless parameter that is a threshold that defines reservoirs whose releases are only based on demand (degree of regulation greater than alpha), or a combination of demand and inflow (otherwise). Calibration range [0, 5]
+    beta:    Dimensionless parameter that indirectly controls the proportion of inflow and demand in the releases. Calibration range [0.5, 3]
+    gamma:   Dimensionless parameter that defines the normal storage. Calibration range [0, 1]
+    lambda_: Dimensionless parameter that further controls the hedging in relation to the current reservoir filling. Calibration range [0.25, 3]
     """
     
     seed = 0
