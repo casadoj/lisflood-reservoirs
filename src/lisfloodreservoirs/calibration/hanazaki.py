@@ -13,23 +13,25 @@ from ..utils.utils import return_period
 class Hanazaki_calibrator(Calibrator):
     """This class allows for calibrating 6 parameters in the LISFLOOD reservoir routine, 3 related to the storage limits, 2 to the outflow limits and the last one to the relation between inflow and outflow.
     
-    alpha: quantile of the storage records that defines the flood storage (Qf)
-            Qf = storage.quantile(alpha)
-    beta: defines the extreme storage as the distance between flood storage (Qf) and total capacity (Vtot)
-            Qe = Vtot - beta * (Vtot - Vf)
-    gamma: proportion of the flood storage (Qf) that corresponds to the normal storage (Qn)
-            Qn = gamma * Qf
-    delta: factor of the mean inflow that defines the normal outflow (Qn)
-            Qn = delta * mean(inflow)
-    epsilon: factor of the 100-year return period of inflow that defines the flood outflow (Qf)
-            Qf = epsilon * Q100
+    alpha: quantile of the storage records that defines the flood storage
+            Vf = alpha * Vtot
+    beta: defines the extreme storage as the distance between flood storage (Vf) and total capacity (Vtot)
+            Ve = Vtot - beta * (Vtot - Vf)
+    gamma: proportion of the flood storage (Vf) that corresponds to the normal storage (Vn)
+            Vmin = gamma * Vf
+    delta: factor of the 100-year return period of inflow that defines the flood outflow (Qf)
+            Qf = delta * Q100
+    epsilon: factor of the mean inflow that defines the normal outflow (Qn)
+            Qn = epsilon * Qf
     """
     
-    alpha = Uniform(name='alpha', low=0.5, high=1.0)
+    # alpha = Uniform(name='alpha', low=0.5, high=1.0)
+    alpha = Uniform(name='alpha', low=0.2, high=0.99)
     beta = Uniform(name='beta', low=0.001, high=0.999)    
     gamma = Uniform(name='gamma', low=0.001, high=0.999)
-    delta = Uniform(name='delta', low=0.333, high=1.0)
-    epsilon = Uniform(name='epsilon', low=0.1, high=0.5)
+    delta = Uniform(name='delta', low=0.1, high=0.5)
+    # epsilon = Uniform(name='epsilon', low=0.333, high=1.0)
+    epsilon = Uniform(name='epsilon', low=0.001, high=0.999)
     
     def __init__(self,
                  inflow: pd.Series,
@@ -100,21 +102,23 @@ class Hanazaki_calibrator(Calibrator):
         if storage_init is None:
             storage_init = self.observed['storage'].iloc[0]
         
-        # define model arguments
         # volume limits
-        Vf = self.observed.storage.quantile(pars[0])
+        # Vf = self.observed.storage.quantile(pars[0])
+        Vf = pars[0] * self.Vtot 
         Ve = self.Vtot - pars[1] * (self.Vtot - Vf)
         Vmin = pars[2] * Vf
+        
         # outflow limits
-        Qn = pars[3] * self.inflow.mean()
-        Qf = pars[4] * return_period(self.inflow, T=100)
-        if Qn > Qf:
-            Qn = min(Qn, Qf)
-            pars[3] = Qn / self.inflow.mean()
+        Qf = pars[3] * return_period(self.inflow, T=100)
+        # Qn = pars[4] * self.inflow.mean()
+        # if Qn > Qf:
+        #     Qn = min(Qn, Qf)
+        #     pars[4] = Qn / self.inflow.mean()
+        Qn = pars[4] * Qf
             
-        # declare the reservoir with the effect of the parameters in 'x'
+        # declare the reservoir with the effect of the parameters
         reservoir_kwargs = {
-            'Vmin': self.Vmin, 
+            'Vmin': Vmin, 
             'Vf': Vf,
             'Ve': Ve,
             'Vtot': self.Vtot,

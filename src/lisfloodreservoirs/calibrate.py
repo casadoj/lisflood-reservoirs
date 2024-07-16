@@ -19,6 +19,7 @@ from .utils.plots import plot_resops
 from .calibration import get_calibrator, read_results
 
 
+
 def main():
 
     # ## CONFIGURATION
@@ -113,7 +114,7 @@ def main():
             
         # storage attributes (m3)
         Vtot = ts.storage.max()
-        Vmin = max(0, ts.storage.min())
+        Vmin = max(0, min(0.1 * Vtot, ts.storage.min()))
         # flow attributes (m3/s)
         if cfg.MODEL != 'hanazaki':
             Qmin = max(0, ts.outflow.min())
@@ -145,7 +146,7 @@ def main():
                                        window=28)
                 cal_cfg.update({'demand': demand})
             
-            # initialize the calibration setup of the LISFLOOD reservoir routine
+            # initialize the calibration setup
             calibrator = get_calibrator(cfg.MODEL,
                                         inflow=ts.inflow,
                                         storage=ts.storage,
@@ -188,8 +189,8 @@ def main():
                 Vf = float(ts.storage.quantile(parameters['alpha']))
                 Ve = Vtot - parameters['beta'] * (Vtot - Vf)
                 Vmin = parameters['gamma'] * Vf
-                Qn = parameters['delta'] * ts.inflow.mean()
-                Qf = parameters['epsilon'] * return_period(ts.inflow, T=100)
+                Qf = parameters['delta'] * return_period(ts.inflow, T=100)
+                Qn = parameters['epsilon'] * ts.inflow.mean()
                 calibrated_attrs.update({
                     'Vf': Vf,
                     'Ve': Ve,
@@ -199,11 +200,12 @@ def main():
                     'A': A
                 })
             elif cfg.MODEL == 'lisflood':
-                Vf = parameters['FFf'] * Vtot
-                Vn = Vmin + parameters['alpha'] * (Vf - Vmin)
-                Vn_adj = Vn + parameters['beta'] * (Vf - Vn)
-                Qf = float(ts.inflow.quantile(parameters['QQf']))
-                Qn = parameters['gamma'] * Qf
+                Vf = parameters['alpha'] * Vtot
+                Vn = Vmin + parameters['beta'] * (Vf - Vmin)
+                Vn_adj = Vn + parameters['gamma'] * (Vf - Vn)
+                # Qf = float(ts.inflow.quantile(parameters['QQf']))
+                Qf = parameters['delta'] * return_period(ts.inflow, T=100)
+                Qn = parameters['epsilon'] * Qf
                 calibrated_attrs.update({
                     'Vf': Vf,
                     'Vn': Vn,

@@ -131,7 +131,7 @@ def main():
 
         # storage attributes (m3)
         Vtot = ts.storage.max()
-        Vmin = max(0, ts.storage.min())
+        Vmin = max(0, min(0.1 * Vtot, ts.storage.min()))
         # flow attributes (m3/s)
         if cfg.MODEL != 'hanazaki':
             Qmin = max(0, ts.outflow.min())
@@ -156,13 +156,19 @@ def main():
                     'T': float(Vtot / (ts.inflow.mean() * 24 * 3600))
                 })
             elif cfg.MODEL == 'lisflood':
+                # storage limits (m3)
+                Vn, Vn_adj, Vf = np.array([0.67, 0.83, 0.97]) * Vtot
+                # flow limits (m3/s)
+                Qf = .3 * return_period(ts.inflow, T=100)
+                Qn = min(ts.inflow.mean(), Qf)
                 # add to reservoir attributes
                 default_attrs.update({
-                    'Vn': 0.67 * Vtot,
-                    'Vn_adj': 0.83 * Vtot,
-                    'Vf': 0.97 * Vtot,
-                    'Qn': float(ts.inflow.mean()),
-                    'Qf': .3 * return_period(ts.inflow, T=100),
+                    'Vmin': min(Vmin, Vn),
+                    'Vn': Vn,
+                    'Vn_adj': Vn_adj,
+                    'Vf': Vf,
+                    'Qn': Qn,
+                    'Qf': Qf,
                     'k': 1.2
                 })
             elif cfg.MODEL == 'hanazaki':
@@ -170,13 +176,16 @@ def main():
                 Vf = float(ts.storage.quantile(.75))
                 Ve = Vtot - .2 * (Vtot - Vf)
                 Vmin = .5 * Vf
+                # flow limits (m3/s)
+                Qf = .3 * return_period(ts.inflow, T=100)
+                Qn = min(ts.inflow.mean(), Qf)
                 # add to reservoir attributes
                 default_attrs.update({
                     'Vf': Vf,
                     'Ve': Ve,
                     'Vmin': Vmin,
-                    'Qn': float(ts.inflow.mean()),
-                    'Qf': .3 * return_period(ts.inflow, T=100),
+                    'Qn': Qn,
+                    'Qf': Qf,
                     'A': int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6)
                 })
                 del default_attrs['Qmin']   

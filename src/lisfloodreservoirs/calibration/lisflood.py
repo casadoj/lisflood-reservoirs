@@ -6,25 +6,31 @@ from typing import List, Literal, Optional
 
 from .basecalibrator import Calibrator
 from ..models import get_model
+from ..utils.utils import return_period
 
 
 
 class Lisflood_calibrator(Calibrator):
     """This class allows for calibrating 6 parameters in the LISFLOOD reservoir routine, 3 related to the storage limits, 2 to the outflow limits and the last one to the relation between inflow and outflow.
-    
-    FFn: fraction filled normal. The proportion of reservoir capacity that defines the lower limit of the normal storage zone
-    FFf: fraction filled flood. The proportion of reservoir capacity that defines the upper limit of the flood zone
-    alpha: a value between 0 and 1 that defines the limit between the normal and flood zones
-    QQn: quantile outflow normal. The quantile of the inflow records that defines the normal outflow
-    QQf: quantile outflow flood. The quantile of the inflow records that defines the flood outflow
-    k: release coefficient. A factor of the inflow that limits the outflow
+               
+    alpha: fraction filled flood. The proportion of reservoir capacity that defines the upper limit of the flood zone. Calibration range [0.2, 1)
+            Vf = alpha * Vtot
+    beta: a value between 0 and 1 that defines the normal storage as a value in between the total and the minimum storage
+            Vn = Vmin + beta * (Vf - Vmin)
+    gamma: a value between 0 and 1 that defines the adjusted normal storage as a value in between the normal and the flood storage
+            Vn_adj = Vn + gamma * (Vf - Vn)
+    delta: factor of the 100-year return period of inflow that defines the flood outflow (Qf)
+            Qf = delta * Q100
+    epsilon: a value betwee 0 and 1 that defines the normal outflow as a factor of the flood outflow
+            Qn = epsilon * Qf
+    k: release coefficient. A factor of the inflow that limits the outflow. Calibration range [1, 5]
     """
     
-    FFf = Uniform(name='FFf', low=0.20, high=0.99)
-    alpha = Uniform(name='alpha', low=0.001, high=0.999)
+    alpha = Uniform(name='alpha', low=0.20, high=0.99)
     beta = Uniform(name='beta', low=0.001, high=0.999)
-    QQf = Uniform(name='QQf', low=0.1, high=0.99)
     gamma = Uniform(name='gamma', low=0.001, high=0.999)
+    delta = Uniform(name='delta', low=0.1, high=0.5)
+    epsilon = Uniform(name='epsilon', low=0.001, high=0.999)
     k = Uniform(name='k', low=1.0, high=5.0)
     
     def __init__(self,
@@ -103,22 +109,25 @@ class Lisflood_calibrator(Calibrator):
         if storage_init is None:
             storage_init = self.observed['storage'].iloc[0]
         
-        # define model arguments
-        # volume and outflow limits
+        # volume limits
         Vf = pars[0] * self.Vtot 
         Vn = self.Vmin + pars[1] * (Vf - self.Vmin)
         Vn_adj = Vn + pars[2] * (Vf - Vn)
-        Qf = self.inflow.quantile(pars[3])
+        Vmin = min(self.Vmin, Vn)
+        
+        # outflow limits
+        Qf = pars[3] * return_period(self.inflow, T=100) # self.inflow.quantile(pars[3])
         Qn = pars[4] * Qf
+        Qmin = min(self.Qmin, Qn)
             
-        # declare the reservoir with the effect of the parameters in 'x'
+        # declare the reservoir with the effect of the parameters
         reservoir_kwargs = {
-            'Vmin': self.Vmin, 
+            'Vmin': Vmin, 
             'Vn': Vn, 
             'Vn_adj': Vn_adj,
             'Vf': Vf,
             'Vtot': self.Vtot,
-            'Qmin': self.Qmin,
+            'Qmin': Qmin,
             'Qn': Qn,
             'Qf': Qf,
             'k': pars[5]
