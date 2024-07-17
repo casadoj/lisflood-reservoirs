@@ -1,8 +1,8 @@
 # Compare reservoir models
 ***
 
-**Author:** *Chus Casado Rodríguez*<br>
-**Date:** *17-07-2024*<br>
+**Author:** Chus Casado Rodríguez<br>
+**Date:** 17-07-2024<br>
 
 ## 1 Introduction
 
@@ -155,11 +155,11 @@ The reservoir release at day $t$ is partitioned in a component based on the hedg
 
 $$Q_t = \rho \cdot \kappa_t \cdot \hat{D}_t + (1 - \rho) \cdot I_t$$
 
-The partition coefficient ($\rho$) depends on the degree of regulation of the reservoir ($DOR$), i.e., the ratio between the reservoir storage capacity and the annual inflow. The release of highly regulated reservoirs ($DOR \geq DOR*$) depends only on the demand component ($\rho = 1$), whereas in the rest of the cases the release depends on both the demand and the current inflow components:
+The partition coefficient ($\rho$) depends on the degree of regulation of the reservoir ($DOR$), i.e., the ratio between the reservoir storage capacity and the annual inflow. The release of highly regulated reservoirs ($DOR \geq \alpha$) depends only on the demand component ($\rho = 1$), whereas in the rest of the cases the release depends on both the demand and the current inflow components:
 
 $$\rho = min\left(1, \left( \frac{DOR}{\alpha} \right)^\beta \right)$$
 
-$DOR*$ and $\beta$ are model parameters in mHM. Shin et al. (2019) and Hanasaki et al. (2006) used fixed values as reported in Table 1.
+$\alpha$ and $\beta$ are model parameters in mHM. Shin et al. (2019) and Hanasaki et al. (2006) used fixed values as reported in Table 1.
 
 In the release formulation, the current filling ($V_t$) of the reservoir is used indirectly to limit the supplied demand by the time varying coefficient $\kappa_t$:
 
@@ -193,7 +193,7 @@ Following the procedure in [Shrestha et al. (2024)](https://agupubs.onlinelibrar
 | --------- | -------------- | ----- | ------- | ------- | ------- |
 | $\alpha$  | Threshold in the degree of regulation that defines demand-controlled reservoirs (DOR > $\alpha$) | - | 0.0 | 5.0 | 0.5 |
 | $\beta$   | It controls indirectly the proportion of inflow and demand in the releases | - | 0.5 | 3.0 | 1 |
-| $\gamma$  | Ration between normal and total storage | - | 0 | 1 | 0.85 |
+| $\gamma$  | Ration between normal and total storage | - | 0 | 1 | $\frac{V_{0.9}}{V_{tot}}$ |
 | $\lambda$  | It further controls hedging based on the current reservoir storage | - | 0.25 | 3.0 | 1 |
 | $\omega$ | It controls hedging based on the ratio between the current and average demand | -  | 0| 1 | 0.1 |
 
@@ -319,8 +319,25 @@ Figure 11 shows the performance in terms of KGE for the mHM reservoir in the fou
 
 ***Figure 11**. Empirical cumulative density curves of KGE for the mHM reservoir in the four runs.*
 
+As in the other models, the default parameterization of mHM performs better in terms of outflow (median KGE 0.65) than storage (median KGE 0.31). All the calibrations (even only calibrating storage) improve the outflow performance, but the gains are marginal compared with those obtained in the calibration of storage (either univariate or bivariate). Calibrating only storage is a good compromise as it improves significantly the simulation of storage (median KGE 0.78), and it also improves slightly the simulation of outflow (median KGE 0.70).
+
 #### 4.4.2 Model parameters
+
+Figure 12 compares the model parameters in the mHM reservoir routine for the four runs.
 
 <img src="../results/ResOpsUS/mhm/parameters_boxplot.jpg" width="1500">
 
 ***Figure 12**. Comparison of the model parameters of the mHM reservoir in the four runs.*
+
+* The calibrated values of $\omega$ are in general larger that the default value of 0.1, particularly in the univariate calibration of storage. It means an increased influence of the mean inflow over the current demand in the hedged demand.
+
+* The default value of $\alpha$ is relatively accurate, perhaps a bit too small. The calibration indicates that the outflow from reservoirs with a degree of regulation larger or equal than 0.7 approximately are controlled only by the demand.
+
+* The $\beta$ parameter affects the partition of releases between demand and inflow for those reservoirs with a degree of regulation below $\alpha$. Values over 1 (default) increase the influence of inflow over demand in the reservoir release. All the calibrations show that $\beta$ should take values larger than 1.
+
+* The calibration of $\gama$ shows that the normal storage is in general around 60% of the total storage, which is significantly smaller than the default value of 0.85.
+
+* The $\lamba$ parameter modifies the effect of the current reservoir storage in the outflow. The default value of 1 means that $\lambda$ has no effect. All the calibrations take median values around 1.5, which means that releases are increased when the reservoir is over the normal storage, and reduced when the reservoir is below the normal storage.
+
+### Model comparison
+
