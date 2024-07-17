@@ -2,7 +2,7 @@
 ***
 
 **Author:** *Chus Casado Rodríguez*<br>
-**Date:** *16-07-2024*<br>
+**Date:** *17-07-2024*<br>
 
 ## 1 Introduction
 
@@ -27,10 +27,13 @@ A quick look at the time series in ResOpsUS shows that the records are not consi
 The selection of reservoirs to be included in the analysis was based in three conditions:
 
 * The observed time series of the three variables of interest (inflow, storage, outflow) must be available.
+* The reservoir catchment area must be at least 250 km². Actually, this condition did not remove any reservoir that fulfilled the other conditions.
+* The reservoir storage capacity must be at least 10 hm3. Actually, this condition dis not remove any reservoir that fulfilled the other conditions.
+* The degree of regulation must be larger or equal than 0.08.
 * The bias between observed outflow and inflow must be smaller than 30%. I discovered that the bias between these two time series is very high for many reservoirs. Some bias can be expected due to reservoir losses such as evaporation or leakages, but I assumed that those losses should not be larger than 30%. Biases below that threshold may be caused by reservoirs whose outflow is not released to the river, but to other water system (irrigation chanels, water supply...).
 * The length of the time series must be at least 8 years. I have identified the longest period for which data for all thre variables is available; if that period is shorter than 8 years, I discard the reservoir.
 
-In the end, I have selected 97 reservoirs.
+In the end, I have selected 90 reservoirs.
 
 > **Note**. The dataset is available in _Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.1/_ or in the HPC in _/BGFS/DISASTER/casadje2/ResOpsUS/v1.1/_
 
@@ -61,11 +64,11 @@ Table 1 shows the search range for this parameter defined in the calibration of 
 
 The advantage of this routine is its simplicity, as it has a single model parameter that can be estimated kwnown the storage capacity (provided by GRanD, for instance) and the average inflow (from GloFASv4, for instance). The drawback is also its simplicity. A given storage will always produce the same outflow, which is not realistic. Neither seasonality nor other operator management can be reproduced with this approach.
 
-As an example, Figure 1 compares the daily values of storage, outflow and inflow for the observed data (blue dots) and the default simulation of the linear model for reservoir 1053. The simplicity of this approach is particularly clear in the storage-outflow scatter plot, where the observation shows some scatter, but the simulation is a straight line.
+As an example, Figure 1 compares the daily values of storage, outflow and inflow for the observed data (blue dots) and the default simulation of the linear model for reservoir 355. The simplicity of this approach is particularly clear in the storage-outflow scatter plot, where the observation shows some scatter, but the simulation is a straight line.
 
-<img src="../../results/ResOpsUS/linear/default/1053_scatter_obs_sim.jpg" alt="reservoir 1053" title="Linear model" width="800">
+<img src="../results/ResOpsUS/linear/default/355_scatter_obs_sim.jpg" alt="reservoir 355" title="Linear model" width="800">
 
-***Figure 1**. Comparison of the observed (blue) and default simulation (orange) of reservoir 1053 with the linear model.*
+***Figure 1**. Comparison of the observed (blue) and default simulation (orange) of reservoir 355 with the linear model.*
 
 #### 3.1.2 [LISFLOOD](../../src/lisfloodreservoirs/models/lisflood.py)
 
@@ -100,11 +103,11 @@ In the calibration I have performed here, I have allowed maximum flexibility to 
 
 As the linear reservoir, the LISFLOOD routine is often a univocal relation between storage and outflow, which is not realistic. Above the normal zone, there are some limitations to the outflow based on the inflow which allows for some deviations from this univocal behaviour. It should be a more flexible routine, as the number of parameters is larger, but that is also a drawback, since those parameter need to be fitted.
 
-Figure 2 shows a comparison of the observation and default simulation of the LISFLOOD reservoir model for reservoir 1053.
+Figure 2 shows a comparison of the observation and default simulation of the LISFLOOD reservoir model for reservoir 355.
 
-<img src="../../results/ResOpsUS/lisflood/default/1053_scatter_obs_sim.jpg" alt="reservoir 1053" title="Linear model" width="800">
+<img src="../results/ResOpsUS/lisflood/default/355_scatter_obs_sim.jpg" alt="reservoir 355" title="Linear model" width="800">
 
-***Figure 2**. Comparison of the observed (blue) and default simulation (orange) of reservoir 1053 with the LISFLOOD model.*
+***Figure 2**. Comparison of the observed (blue) and default simulation (orange) of reservoir 355 with the LISFLOOD model.*
 
 #### 3.1.3 [Hanazaki](../../src/lisfloodreservoirs/models/hanazaki.py)
 
@@ -136,9 +139,9 @@ Similarly to LISFLOOD, this routine needs to specify some storage and outflow li
 
 The benefit of the Hanazaki model in comparison with LISFLOOD is that it enhances storing water when the inflows are small. The relation between storage and outflow is now bivocal instead of univocal. This routine is able to reproduce a larger dispersion in the inflow-outflow scatter plot, whereas LISFLOOD or the linear model where mostly lines.
 
-<img src="../../results/ResOpsUS/hanazaki/default/1053_scatter_obs_sim.jpg" alt="reservoir 1053" title="Linear model" width="800">
+<img src="../results/ResOpsUS/hanazaki/default/355_scatter_obs_sim.jpg" alt="reservoir 355" title="Linear model" width="800">
 
-***Figure 3**. Comparison of the observed (blue) and default simulation (orange) of reservoir 1053 with the Hanazaki model.*
+***Figure 3**. Comparison of the observed (blue) and default simulation (orange) of reservoir 355 with the Hanazaki model.*
 
 #### 3.1.4 [mHM](../../src/lisfloodreservoirs/models/mhm.py)
 
@@ -196,9 +199,9 @@ Following the procedure in [Shrestha et al. (2024)](https://agupubs.onlinelibrar
 
 The storage-outflow scatter plot in Figure 4 shows the different approach in this routine. The relationship between these two variables is not any more a clear function, but it is based on demands, which explains the dispersion in the scatter plot. The limitation of this routine is the amount of parameters to be fitted, and the need to estimate a demand time series.
 
-<img src="../../results/ResOpsUS/mhm/default/1053_scatter_obs_sim.jpg" alt="reservoir 1053" title="Linear model" width="800">
+<img src="../results/ResOpsUS/mhm/default/355_scatter_obs_sim.jpg" alt="reservoir 355" title="Linear model" width="800">
 
-***Figure 4**. Comparison of the observed (blue) and default simulation (orange) of reservoir 1053 with the mHM model.*
+***Figure 4**. Comparison of the observed (blue) and default simulation (orange) of reservoir 355 with the mHM model.*
 
 ### 3.2 Runs
 
@@ -209,6 +212,8 @@ For each reservoir model, I have run 4 simulations. In all cases, the input is t
 As a benchmark, I have run a simulation with the default parameter values in the tables above. To run this simulations I've created the command [`simulate`](../../src/lisfloodreservoirs/simulate.py). Example use:
 
 ```Bash
+# from the root folder of the lisflood-reservoirs repository
+pip install -e .
 simulate --config-file ./src/lisfloodreservoirs/config.yml
 ```
 
@@ -216,16 +221,106 @@ simulate --config-file ./src/lisfloodreservoirs/config.yml
 
 I have done three calibrations targeting different variables.
 
-1. Univariate calibration of **outflow**. This would be the calibration closest to the LISFLOOD procedure that calibrates streamflow.
-2. Univariate calibration of **storage**.
-3. Bivariate calibration of both **storage and outflow**.
+1. Univariate calibration of **outflow**. This would be the calibration closest to the LISFLOOD procedure that calibrates streamflow. I'll refer to it as _SCEUA-Q_.
+2. Univariate calibration of **storage**. I'll refer to it as _SCEUA-S_.
+3. Bivariate calibration of both **storage and outflow**. I'll refer to it as _SCEUA-QS_.
+
+In all cases the objective function is the modified Kling-Gupta efficiency ($\text{KGE}$). For the bivariate calibration I compute a combined KGE from the individual KGE of each of the variables.
+
+$$
+\begin{align*}
+\text{KGE} &= \sqrt{(1 - r)^2 + \left(1 - \frac{\mu_{\text{sim}}}{\mu_{\text{obs}}}\right)^2 + \left(1 - \frac{CV_{\text{sim}}}{CV_{\text{obs}}}\right)^2} \\
+\text{KGE}_{\text{bivariate}} &= \sqrt{(1 - \text{KGE}_{\text{Q}})^2 + (1 - \text{KGE}_{\text{S}})^2}
+\end{align*}
+$$
     
-Calibrations were done using the implementation of the SCEUA (Shuffle Complex Evolution - University of Arizona) algorithm in the Python library [`spotpy`](https://spotpy.readthedocs.io/en/latest/). In all cases I used the complete observed time series, and I set up the algorithm to run a maximum of 1000 iterations with 4 complexes. As explained above, the calibration parameters differ over reservoir models, both in number and meaning. To run the calibrations I've created the commad [`calibrate`](../../src/lisfloodreservoirs/calibrate.py). Example use:
+Calibrations were done using the implementation of the SCEUA (Shuffle Complex Evolution - University of Arizona) algorithm in the Python library [`spotpy`](https://spotpy.readthedocs.io/en/latest/). In all cases I used the complete observed time series, and I set up the algorithm to run a maximum of 1000 iterations with 4 complexes. As explained above, the calibration parameters differ over reservoir models, both in number and meaning. 
+
+To run the calibrations I've created the commad [`calibrate`](../../src/lisfloodreservoirs/calibrate.py). Example use:
 
 ```Bash
+# from the root folder of the lisflood-reservoirs repository
+pip install -e .
 calibrate --config-file ./src/lisfloodreservoirs/config.yml
 ```
 
 ## 4 Results
 
 > **Note**. Results are available in _Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.1/results/_ or in the HPC in _/BGFS/DISASTER/casadje2/ResOpsUS/v1.1/results/_
+
+### 4.1 Linear reservoir
+
+#### 4.1.1 Performance
+
+Figure 5 shows the performance in terms of KGE for the Linear reservoir in the four runs (different colour lines) for the three variables (each of the panels).
+
+<img src="../results/ResOpsUS/linear/ecdf_KGE.jpg" width="800">
+
+***Figure 5**. Empirical cumulative density curves of KGE for the linear reservoir in the four runs.*
+
+The default parameterization of the linear reservoirs performs better in terms of outflow (median KGE 0.50) than storage (median KGE 0.27). The median performance of these two variables improves in all the calibrations but one case: the performance in terms of storage when calibrating outflow (median KGE 0.20). It indicates that the observed storage is a variables that informs better about the behaviour of the reservoir than the observed outflow. Actually, the bivariate calibration barely improves the performance of the univariate calibration of storage.
+
+#### 4.1.2 Model parameters
+
+The box plots in Figure 6 show the variability over the 90 reservoirs of the single model parameter in the linear reservoir (the residence time) for the four runs.
+
+<img src="../results/ResOpsUS/linear/parameters_boxplot.jpg" width="300">
+
+***Figure 6**. Comparison of the model parameters of the linear reservoir in the four runs.*
+
+The default parameter tends to be larger than those obtained in the calibration of storage, and storage-outflow, which are rather similar between them. The calibration of outflow obtained the largest dispersion over reservoirs, but the lowest median value.
+
+### 4.2 LISFLOOD
+
+#### 4.2.1 Performance
+
+Figure 7 shows the performance in terms of KGE for the LISFLOOD reservoir in the four runs (different colour lines) for the three variables (each of the panels).
+
+<img src="../results/ResOpsUS/lisflood/ecdf_KGE.jpg" width="800">
+
+***Figure 7**. Empirical cumulative density curves of KGE for the Lisflood reservoir in the four runs.*
+
+The conclusions are similar to those presented for the linear reservoir. The default parameters perform better in terms of outflow (0.51 KGE) than storage (0.23 KGE). All the calibrations improve these values but in one case: the performance in terms of storage in the calibration of outflow (0.19 KGE). The univariate calibration of storage yields performance similar to the bivariate calibration, but the difference in outflow performance is a bit larger than in the linear reservoir
+
+#### 4.2.2 Model parameters
+
+Figure 8 compares the model parameters in the LISFLOOD reservoir routine for the four runs.
+
+<img src="../results/ResOpsUS/lisflood/parameters_boxplot.jpg" width="1800">
+
+***Figure 8**. Comparison of the model parameters of the Lisflood reservoir in the four runs.*
+
+* The default value of $\alpha$, the fraction of the total storage that represents the flood storage limit, seems to be excessively large. This result is in line with the default parameterization of the Hanazaki routine, which uses a value of 0.75. It's important to remark that this parameter is not calibrated in the usual LISFLOOD calibration, so the definition of its default value is relevant.
+* The default values of both $\beta$ and $\gamma$ (parameters that define the normal and normal-adjusted storage limits) seems to bemore accurate, but still are larger than the calibrated values. These two parameters show a large dispersion over reservoirs. From these two parameters, only $\gamma$ is fitted in the usual LISFLOOD calibration.
+* The definition of the outflow limits (normal and flood/non-damaging) in LISFLOOD is uncertain. As default values I used the parameterization in Hanazaki, i.e., the non-damaging outflow is 30% ($\delta$) of the 100-year return period of inflow, and the normal outflow is the mean inflow. It seems like the 30% value in $\delta$ is a bit excessive, particularly when the focus is on the simulation of storage; this parameter is not fitted in the usual LISFLOOD calibration. On the contrary, the calibration of $epsilon$ shows that the normal outflow needs to be larger than the mean inflow in the majority of cases; this parameter is indeed fitted in the LISFLOOD calibration.
+* The parameter $k$ is included in the LISFLOOD reservoir routine to limit the outflows depending on the inflow. It's default value of 1.2 limits outflows in the flood storage zone to 120% of the inflow at that timestep. The calibration proves that this limitation is not needed, yielding values around 3.
+
+### 4.3 Hanazaki
+
+#### 4.3.1 Performance
+
+<img src="../results/ResOpsUS/hanazaki/ecdf_KGE.jpg" width="800">
+
+***Figure 9**. Empirical cumulative density curves of KGE for the Hanazaki reservoir in the four runs.*
+
+#### 4.3.2 Model parameters
+
+<img src="../results/ResOpsUS/hanazaki/parameters_boxplot.jpg" width="1500">
+
+***Figure 10**. Comparison of the model parameters of the Hanazaki reservoir in the four runs.*
+
+### 4.4 mHM
+
+#### 4.4.1 Performance
+
+Figure 11 shows the performance in terms of KGE for the mHM reservoir in the four runs (different colour lines) for the three variables (each of the panels).
+
+<img src="../results/ResOpsUS/mhm/ecdf_KGE.jpg" width="800">
+
+***Figure 11**. Empirical cumulative density curves of KGE for the mHM reservoir in the four runs.*
+
+#### 4.4.2 Model parameters
+
+<img src="../results/ResOpsUS/mhm/parameters_boxplot.jpg" width="1500">
+
+***Figure 12**. Comparison of the model parameters of the mHM reservoir in the four runs.*
