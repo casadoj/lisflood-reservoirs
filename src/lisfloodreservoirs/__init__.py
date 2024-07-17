@@ -55,10 +55,7 @@ def read_attributes(path: Union[str, Path],
     --------
     attributes: pandas.DataFrame
         Concatenation of all the attributes in the dataset
-    """
-    
-    if isinstance(reservoirs, list) is False:
-        reservoirs = [reservoirs]
+    """      
         
     # import all tables of attributes
     try:
@@ -66,6 +63,8 @@ def read_attributes(path: Union[str, Path],
                                axis=1,
                                join='outer')
         if reservoirs is not None:
+            if isinstance(reservoirs, list) is False:
+                reservoirs = [reservoirs]
             attributes = attributes.loc[reservoirs]
     except Exception as e:
         raise ValueError(f'ERROR while reading attribute tables from directory {path}: {e}') from e
