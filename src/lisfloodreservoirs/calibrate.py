@@ -190,7 +190,7 @@ def main():
                 Ve = Vtot - parameters['beta'] * (Vtot - Vf)
                 Vmin = parameters['gamma'] * Vf
                 Qf = parameters['delta'] * return_period(ts.inflow, T=100)
-                Qn = parameters['epsilon'] * ts.inflow.mean()
+                Qn = parameters['epsilon'] * Qf # ts.inflow.mean()
                 calibrated_attrs.update({
                     'Vf': Vf,
                     'Ve': Ve,
