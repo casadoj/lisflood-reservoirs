@@ -335,9 +335,28 @@ Figure 12 compares the model parameters in the mHM reservoir routine for the fou
 
 * The $\beta$ parameter affects the partition of releases between demand and inflow for those reservoirs with a degree of regulation below $\alpha$. Values over 1 (default) increase the influence of inflow over demand in the reservoir release. All the calibrations show that $\beta$ should take values larger than 1.
 
-* The calibration of $\gama$ shows that the normal storage is in general around 60% of the total storage, which is significantly smaller than the default value of 0.85.
+* The calibration of $\gamma$ shows that the normal storage is in general around 60% of the total storage, which is significantly smaller than the default value of 0.85.
 
-* The $\lamba$ parameter modifies the effect of the current reservoir storage in the outflow. The default value of 1 means that $\lambda$ has no effect. All the calibrations take median values around 1.5, which means that releases are increased when the reservoir is over the normal storage, and reduced when the reservoir is below the normal storage.
+* The $\lambda$ parameter modifies the effect of the current reservoir storage in the outflow. The default value of 1 means that $\lambda$ has no effect. All the calibrations take median values around 1.5, which means that releases are increased when the reservoir is over the normal storage, and reduced when the reservoir is below the normal storage.
 
-### Model comparison
+### 4.5 Model comparison
+
+Figure 13 is a reorganization of the line plots in figures 5, 7, 9 and 11 to compare the performance of the four reservoir models.
+
+<img src="../results/ResOpsUS/ecdf_KGE_default.jpg" width="800">
+<img src="../results/ResOpsUS/ecdf_KGE_SCEUA-S.jpg" width="800">
+<img src="../results/ResOpsUS/ecdf_KGE_SCEUA-Q.jpg" width="800">
+
+***Figure 13**. Comparison of the performance of the four reservoir models (colour lines) for each of the runs (rows) and variables (columns).*
+
+> **Note**. A similar plot for the bivariate calibration can be found [here](../results/Results/ResOpsUS/ecdf_KGE_SCEUA-QS.jpg).
+
+In the simulation with **default parameters** (top row) Hanazaki and mHM slightly stand out from the other two models, particularly in the simulation of outflow. It's not surprising that mHM is the best model in terms of outflow, as this model has more information than the rest because it uses a demand time series derived from the observed outflow. I remark here that the Hanazaki routine is meant to be used with default parameters, which are proved here to perform reasonably well. The performance of the linear and LISFLOOD models is very similar, despite the former being so simple. However, the overall differences in performance among models are relatively small. 
+
+It is when parameters are calibrated that the differences between models emerge. The **calibration of storage** (middle row) shows large differences in performance. The mHM model stands out as the best approach both in terms of storage and outflow. The LISFLOOD and linear reservoirs perform similarly in both variables. Hanazaki performs clearly worse in terms of storage, but similarly in terms of outflow. In the previous sections we've seen that this calibration outperforms the default parameterization in both storage and outflow for all the models.
+
+The **calibration of outflow** (bottom row) yields a similar ranking of model performance, but the differences are narrower. mHM is the best model, followed by LISFLOOD and linear reservoir (that perform similarly), and Hanazaki is slightly worse. Previous sections showed that the calibration of outflow produces a loss in storage performance in some of the models compared with the default parameterization.
+
+## Conclusions
+
 
