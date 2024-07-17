@@ -195,8 +195,8 @@ def main():
                     'Vf': Vf,
                     'Ve': Ve,
                     'Vmin': Vmin,
-                    'Qn': Qn,
                     'Qf': Qf,
+                    'Qn': Qn,
                     'A': A
                 })
             elif cfg.MODEL == 'lisflood':
@@ -212,6 +212,7 @@ def main():
                     'Vn_adj': Vn_adj,
                     'Qf': Qf,
                     'Qn': Qn,
+                    'Qmin': min(Qmin, Qn),
                     'k': parameters['k']
                 })
             elif cfg.MODEL == 'mhm':
