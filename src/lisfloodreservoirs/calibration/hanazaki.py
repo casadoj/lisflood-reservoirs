@@ -17,7 +17,7 @@ class Hanazaki_calibrator(Calibrator):
             Vf = alpha * Vtot
     beta: defines the extreme storage as the distance between flood storage (Vf) and total capacity (Vtot)
             Ve = Vtot - beta * (Vtot - Vf)
-    gamma: proportion of the flood storage (Vf) that corresponds to the normal storage (Vn)
+    gamma: proportion of the flood storage (Vf) that corresponds to the normal storage (Vmin)
             Vmin = gamma * Vf
     delta: factor of the 100-year return period of inflow that defines the flood outflow (Qf)
             Qf = delta * Q100
