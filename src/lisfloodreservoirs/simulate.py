@@ -197,7 +197,7 @@ def main():
                                        window=28)
                 # add to reservoir attributes
                 default_attrs.update({
-                    'gamma': float(ts.storage.quantile(.9) / ts.storage.max()),
+                    'gamma': 0.85, #float(ts.storage.quantile(.9) / Vtot),
                     'avg_inflow': ts.inflow.mean(),
                     'avg_demand': demand.mean()
                 })
