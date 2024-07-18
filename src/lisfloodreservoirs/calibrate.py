@@ -186,7 +186,7 @@ def main():
             if cfg.MODEL == 'linear':
                 calibrated_attrs.update(parameters)
             elif cfg.MODEL == 'hanazaki':
-                Vf = float(ts.storage.quantile(parameters['alpha']))
+                Vf = parameters['alpha'] * Vtot #float(ts.storage.quantile(parameters['alpha']))
                 Ve = Vtot - parameters['beta'] * (Vtot - Vf)
                 Vmin = parameters['gamma'] * Vf
                 Qf = parameters['delta'] * return_period(ts.inflow, T=100)
