@@ -211,7 +211,7 @@ $$Q_{\text{min}} = max \left( 0, min \left( I_t \right) \right)$$
 
 #### 3.2.1 Default parameters
 
-As a benchmark, I have run a simulation with the default parameter values in the tables above. This simulation can be run using the [`simulate`](../../src/lisfloodreservoirs/simulate.py) command. Example use:
+As a benchmark, I have run a simulation with the default parameter values in the tables above. This simulation can be run using the [`simulate`](../src/lisfloodreservoirs/simulate.py) command. Example use:
 
 ```Bash
 # from the root folder of the lisflood-reservoirs repository
@@ -238,7 +238,7 @@ $$
     
 Calibrations were done using the implementation of the SCEUA (Shuffle Complex Evolution - University of Arizona) algorithm in the Python library [`spotpy`](https://spotpy.readthedocs.io/en/latest/). In all cases I used the complete observed time series, and I set up the algorithm to run a maximum of 1000 iterations with 4 complexes. As explained above, the calibration parameters differ over reservoir models, both in number and meaning. 
 
-Calibrations can be excecuted from the command prompt using the command [`calibrate`](../../src/lisfloodreservoirs/calibrate.py). Example use:
+Calibrations can be excecuted from the command prompt using the command [`calibrate`](../src/lisfloodreservoirs/calibrate.py). Example use:
 
 ```Bash
 # from the root folder of the lisflood-reservoirs repository
