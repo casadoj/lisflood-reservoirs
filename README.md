@@ -19,13 +19,24 @@ The time series were extracted from the [database of the Spanish Ministry of the
 
 ## Reservoir modelling
 
-Four reservoir routines are implemented in this repository.
+Four reservoir routines are implemented in this repository. The parameter that relates these two variables is the residences time ($T$), whose default value is the quotient of the total storage ($V_{\text{tot}}$) and the annual inflow volume ($\bar{I}$):
+
+$$T = \frac{V_{\text{tot}}}{\bar{I}}$$
 
 ### Linear reservoir
 
+The reservoir outflow is a linear function of the current storage.
+
+Class [`Linear`](./src/lisfloodreservoirs/models/linear.py)
+
 ### [LISFLOOD](https://ec-jrc.github.io/lisflood-model/3_03_optLISFLOOD_reservoirs/)
+
+Class [`Lisflood`](./src/lisfloodreservoirs/models/lisflood.py)
 
 ### [Hanazaki](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021MS002944)
 
+Class [`Hanazaki`](./src/lisfloodreservoirs/models/hanazaki.py)
+
 ### [mHM](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2023WR035433)
 
+Class [`mHM`](./src/lisfloodreservoirs/models/mhm.py)
