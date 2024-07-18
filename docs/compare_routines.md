@@ -231,8 +231,8 @@ In all cases the objective function is the modified Kling-Gupta efficiency ($\te
 
 $$
 \begin{align*}
-\text{KGE} &= \sqrt{(1 - r)^2 + \left(1 - \frac{\mu_{\text{sim}}}{\mu_{\text{obs}}}\right)^2 + \left(1 - \frac{CV_{\text{sim}}}{CV_{\text{obs}}}\right)^2} \\
-\text{KGE}_{\text{bivariate}} &= \sqrt{(1 - \text{KGE}_{\text{Q}})^2 + (1 - \text{KGE}_{\text{S}})^2}
+KGE &= \sqrt{(1 - r)^2 + \left(1 - \frac{\mu_{\text{sim}}}{\mu_{\text{obs}}}\right)^2 + \left(1 - \frac{CV_{\text{sim}}}{CV_{\text{obs}}}\right)^2} \\
+KGE_{\text{bivariate}} &= \sqrt{(1 - KGE_Q)^2 + (1 - KGE_S)^2}
 \end{align*}
 $$
     
