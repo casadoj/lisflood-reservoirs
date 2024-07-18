@@ -113,7 +113,7 @@ Figure 2 shows a comparison of the observation and default simulation of the LIS
 
 The model in [Hanazaki et al. (2022)](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021MS002944) is an evolution of the LISFLOOD model that creates two different reservoir operations depending on the inflow ($I_t$). If the inflow is smaller than the flood outflow ($Q_f$), outflow is a quadratic function of storage; this quadratic behaviour limits the outflow when the reservoir empties, hence storing water for future needs. If the inflow is larger than the flood outflow, it's a linear reservoir.
 
-\begin{equation}
+$$
 Q =
 \begin{cases}
 Q_n \frac{V_t}{V_f} & \text{if } V_t < V_{\text{min}} \\
@@ -123,7 +123,7 @@ Q_n \frac{V_{\text{min}}}{V_f} + \frac{V_t - V_{\text{min}}}{V_f - V_{\text{min}
 Q_f + k \cdot \frac{V_t - V_f}{V_e - V_f} \cdot (I_t - Q_f) & \text{if } I_t \geq Q_f \text{ and } V_f \leq V_t < V_e  \\
 I_t & \text{if } I_t \geq Q_f \text{ and } V_t \geq V_e
 \end{cases}
-\end{equation}
+$$
 
 Similarly to LISFLOOD, this routine needs to specify some storage and outflow limits. In their paper they do not calibrate the model. Instead, they use default parameters to define the storage and outflow limits. On the contrary, I have developed a calibration (class [`Hanazaki_calibrator`](../src/lisfloodreservoirs/calibration/hanazaki.py)) with 5 model parameters. To be able to compare the LISFLOOD and Hanazaki routine, the definition of three of those parameters is identical between these two routines: $\alpha$, $\delta$, $\epsilon$.
 
