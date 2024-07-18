@@ -74,7 +74,7 @@ As an example, Figure 1 compares the daily values of storage, outflow and inflow
 
 In simple terms, the current LISFLOOD model is a concatenation of linear reservoirs, where the constant connecting storage and outflow changes according to the storage zone at which the reservoir is at that moment: conservative, normal or flood.
 
-\begin{equation}
+$$
 Q_t = \begin{cases}
 Q_{min} & \text{if } V_t < 2 \cdot V_{min} \\
 Q_{min} + \left( Q_n - Q_{min} \right) \frac{V_t - 2 \cdot V_{min}}{V_n - 2 \cdot V_{min}} & \text{if } 2 \cdot V_{min} \leq V_t < V_n \\
@@ -82,7 +82,7 @@ Q_n & \text{if } V_n \leq V_t < V_{n,adj} \\
 Q_n + \left( Q_f - Q_n \right) \frac{V_t - V_{n,adj}}{V_f - V_{n,adj}} & \text{if } V_{n,adj} \leq V < V_f \\
 \max\left(\frac{V_t - V_f}{\Delta t}, \min\left(Q_f, \max \left( k \cdot I, Q_n \right) \right) \right) & \text{if } V_t > V_f
 \end{cases}
-\end{equation}
+$$
 
 where $V_{min}$, $V_n$, $V_{n,adj}$ and $V_f$ are the minimum storage, lower and upper bound of the normal storage zone, and the flood storage, respectively. $Q_{min}$, $Q_n$ and $Q_f$ are the minimum, normal and flood outflow.
 
