@@ -11,12 +11,10 @@ import logging
 from datetime import datetime
 
 from . import Config, read_attributes, read_timeseries
-from .models import get_model
-from .utils.metrics import KGEmod, compute_performance
-from .utils.utils import get_normal_value, return_period
-from .utils.timeseries import create_demand, define_period
+from .models import get_model, default_attributes
+from .utils.metrics import compute_performance
+from .utils.timeseries import create_demand
 from .utils.plots import plot_resops
-from .calibration import get_calibrator, read_results
 
 
 def main():
@@ -26,7 +24,8 @@ def main():
 
     # read argument specifying the configuration file
     parser = argparse.ArgumentParser(description='Run the reservoir routine with a specified configuration file.')
-    parser.add_argument('--config-file', type=str, required=True, help='Path to the configuration file')
+    parser.add_argument('-c', '--config-file', type=str, required=True, help='Path to the configuration file')
+    parser.add_argument('-o', '--overwrite', action='store_true', help='Overwrite existing simulation files', default=False)
     args = parser.parse_args()
     
     # read configuration file
@@ -103,7 +102,7 @@ def main():
     # ## --------------------------
     
     # reservoirs already simulated
-    id_def = list(np.unique([int(file.stem.split('_')[0]) for file in cfg.PATH_DEF.glob('*performance.csv')]))
+    id_def = list(np.unique([int(file.stem.split('_')[0]) for file in cfg.PATH_DEF.glob('*performance.csv')])) if args.overwrite is False else []
 
     for grand_id, ts in tqdm(timeseries.items(), desc='simulating reservoir'):
         
@@ -128,89 +127,53 @@ def main():
             logger.info(f'Line plot of observations from reservoir {grand_id}')
         except IOError as e:
             logger.error(f'The line plot of observed records could not be generated: {e}')
-
-        # storage attributes (m3)
-        Vtot = ts.storage.max()
-        Vmin = max(0, min(0.1 * Vtot, ts.storage.min()))
-        # flow attributes (m3/s)
-        if cfg.MODEL != 'hanazaki':
-            Qmin = max(0, ts.outflow.min())
-        else:
-            Qmin = None
-        # model-independent reservoir attributes
-        reservoir_attrs = {
-            'Vmin': Vmin,
-            'Vtot': Vtot,
-            'Qmin': Qmin,
-            }
+        
+        # ESTIMATE DEFAULT PARAMETERS
+        
+        try:
+            
+            # storage limits (m3)
+            Vtot = ts.storage.max()
+            Vmin = max(0, min(0.1 * Vtot, ts.storage.min()))
+            
+            # time series of water demand
+            if cfg.MODEL == 'mhm':
+                bias = ts.outflow.mean() / ts.inflow.mean()
+                demand = create_demand(ts.outflow,
+                                       water_stress=min(1, bias),
+                                       window=28)
+            else:
+                demand = None
+                
+            # default reservoir attributes
+            reservoir_attrs = default_attributes(cfg.MODEL,
+                                                 ts.inflow,
+                                                 Vtot,
+                                                 Vmin,
+                                                 Qmin=max(0, ts.outflow.min()),
+                                                 A=int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6),
+                                                 storage=ts.storage,
+                                                 demand=demand) 
+            
+        except RuntimeError as e:
+            logger.error(f'Default parameters for reservoir {grand_id} could not be estimated: {e}')
+            continue
 
         # SIMULATION WITH DEFAULT PARAMETERS
 
         try:
 
-            # update reservoir attributes with default values of the calibration parameters
-            default_attrs = copy.deepcopy(reservoir_attrs)
-            sim_cfg = copy.deepcopy(cfg.SIMULATION_CFG)
-            if cfg.MODEL == 'linear':
-                default_attrs.update({
-                    'T': float(Vtot / (ts.inflow.mean() * 24 * 3600))
-                })
-            elif cfg.MODEL == 'lisflood':
-                # storage limits (m3)
-                Vn, Vn_adj, Vf = np.array([0.67, 0.83, 0.97]) * Vtot
-                # flow limits (m3/s)
-                Qf = .3 * return_period(ts.inflow, T=100)
-                Qn = min(ts.inflow.mean(), Qf)
-                # add to reservoir attributes
-                default_attrs.update({
-                    'Vmin': min(Vmin, Vn),
-                    'Vn': Vn,
-                    'Vn_adj': Vn_adj,
-                    'Vf': Vf,
-                    'Qn': Qn,
-                    'Qf': Qf,
-                    'k': 1.2
-                })
-            elif cfg.MODEL == 'hanazaki':
-                # storage limits (m3)
-                Vf = float(ts.storage.quantile(.75))
-                Ve = Vtot - .2 * (Vtot - Vf)
-                Vmin = .5 * Vf
-                # flow limits (m3/s)
-                Qf = .3 * return_period(ts.inflow, T=100)
-                Qn = min(ts.inflow.mean(), Qf)
-                # add to reservoir attributes
-                default_attrs.update({
-                    'Vf': Vf,
-                    'Ve': Ve,
-                    'Vmin': Vmin,
-                    'Qn': Qn,
-                    'Qf': Qf,
-                    'A': int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6)
-                })
-                del default_attrs['Qmin']   
-            elif cfg.MODEL == 'mhm':
-                # create a demand time series
-                bias = ts.outflow.mean() / ts.inflow.mean()
-                demand = create_demand(ts.outflow,
-                                       water_stress=min(1, bias),
-                                       window=28)
-                # add to reservoir attributes
-                default_attrs.update({
-                    'gamma': 0.85, #float(ts.storage.quantile(.9) / Vtot),
-                    'avg_inflow': ts.inflow.mean(),
-                    'avg_demand': demand.mean()
-                })
-                sim_cfg.update({'demand': demand})
-
             # declare the reservoir
-            res = get_model(cfg.MODEL, **default_attrs)
+            res = get_model(cfg.MODEL, **reservoir_attrs)
 
             # export default parameters
             with open(cfg.PATH_DEF / f'{grand_id}_default_parameters.yml', 'w') as file:
                 yaml.dump(res.get_params(), file)
 
             # simulate the reservoir
+            sim_cfg = copy.deepcopy(cfg.SIMULATION_CFG)
+            if cfg.MODEL == 'mhm':
+                sim_cfg.update({'demand': demand})
             sim_def = res.simulate(inflow=ts.inflow,
                                    Vo=ts.storage.iloc[0],
                                    **sim_cfg)
@@ -256,7 +219,7 @@ def main():
         except IOError as e:
             logger.error(f'The line plot of reservoir {grand_id} could not be generated: {e}')
 
-        del res, sim_def, sim_cfg, default_attrs, reservoir_attrs, performance_def
+        del res, sim_def, sim_cfg, reservoir_attrs, performance_def
 
 if __name__ == "__main__":
     main()

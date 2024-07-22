@@ -1,9 +1,12 @@
-from typing import Literal
+from typing import Literal, Optional, Dict
+import numpy as np
+import pandas as pd
 
 from .linear import Linear
 from .lisflood import Lisflood
 from .hanazaki import Hanazaki
 from .mhm import mHM
+from ..utils.utils import return_period
 
 model_classes = {
     'linear': Linear,
@@ -39,3 +42,127 @@ def get_model(model_name: Literal['linear', 'lisflood', 'hanazaki', 'mhm'], *arg
         return model_class(*args, **kwargs)
     else:
         raise ValueError(f"Model '{model_name}' not found. Available models: {list(model_classes.keys())}")
+        
+        
+        
+def default_attributes(model_name: Literal['linear', 'lisflood', 'hanazaki', 'mhm'],
+                       inflow: pd.Series,
+                       Vtot: float,
+                       Vmin: Optional[float] = None,
+                       Qmin: Optional[float] = None,
+                       A: Optional[float] = None,
+                       storage: Optional[pd.Series] = None,
+                       demand: Optional[pd.Series] = None,
+                      ) -> Dict:
+    """It creates a dictionary with the model-specific attributes required to declare the reservoir class
+    
+    Parameters:
+    -----------
+    model_name: string
+        Name of the reservoir model to be used: 'linear', 'lisflood', 'hanazaki' or 'mhm'
+    inflow: pandas.Series
+        Time series of reservoir inflow (m3/s)
+    Vtot: float (optional)
+        Reservoir storage capacity (m3). Required by the 'linear', 'lisflood' and 'hanazaki' models
+    Vmin: float (optional)
+        Minimum reservoir storage (m3). Required by the 'lisflood' model. If not provided, a value of 0 is used
+    Qmin: float(optional)
+        Minimum outflow (m3/s). Required by the 'lionear', 'lisflood' and 'hanazaki' models
+    A: float (optional)
+        Reservoir catchment area (m2). Required by the 'hanazaki' model
+    storage: pandas.Series (optional)
+        Time series of reservoir storage (m3). Required by the 'hanazaki' routine
+    demand: pandas.Series (optional)
+        Time series of water demand (m3/s). Required by the 'mhm' routine
+        
+    Return:
+    -------
+    attributes: dictionary
+        Reservoir attributes needed to declare a reservoir using the function 'get_model'  in this same module
+    """
+        
+    if inflow is None:
+        raise ValueError(f"Model '{model_name}' requires the attribute 'inflow' reporting a time series of reservoir inflow (m3/s)")
+    if Vtot is None:
+        raise ValueError(f"Model '{model_name}' requires the attribute 'Vtot' reporting the reservoir total storage capacity (m3)")
+          
+    # model-generic dictionary of reservoir attributes
+    attributes = {
+        'Vtot': Vtot,
+        'Vmin': Vmin,
+        'Qmin': Qmin
+    }
+    
+    if model_name.lower() == 'linear':
+        
+        # update dictionary of reservoir attributes
+        attributes.update({            
+            'T': float(Vtot / (inflow.mean() * 24 * 3600))
+        })
+        
+    elif model_name.lower() == 'lisflood':
+            
+        # storage limits (m3)
+        Vn, Vn_adj, Vf = np.array([0.67, 0.83, 0.97]) * Vtot
+        if Vmin is None:
+            Vmin = 0
+        else:
+            Vmin = min(Vmin, Vn)
+        # flow limits (m3/s)
+        Qf = .3 * return_period(inflow, T=100)
+        Qn = min(inflow.mean(), Qf)
+        # update dictionary of reservoir attributes
+        attributes.update({
+            'Vmin': Vmin,
+            'Vn': Vn,
+            'Vn_adj': Vn_adj,
+            'Vf': Vf,
+            'Qn': Qn,
+            'Qf': Qf,
+            'k': 1.2
+        })
+        
+    elif model_name.lower() == 'hanazaki':
+        
+        if A is None:
+            raise ValueError(f"Model '{model_name}' requires the attribute 'A' reporting the reservoir catchment area (m2)")
+        if storage is None:
+            raise ValueError(f"Model '{model_name}' requires the attribute 'storage' reporting a time series of reservoir storage (m3)")
+            
+        # storage limits (m3)
+        Vf = float(storage.quantile(.75))
+        Ve = Vtot - .2 * (Vtot - Vf)
+        Vmin = .5 * Vf
+        # flow limits (m3/s)
+        Qf = .3 * return_period(inflow, T=100)
+        Qn = min(inflow.mean(), Qf)
+        # dictionary of reservoir attributes
+        attributes.update({
+            'Vf': Vf,
+            'Ve': Ve,
+            'Vmin': Vmin,
+            'Qn': Qn,
+            'Qf': Qf,
+            'A': A
+        })
+        del attributes['Qmin']
+        
+    elif model_name.lower() == 'mhm':
+        
+        if demand is None:
+            raise ValueError(f"Model '{model_name}' requires the attribute 'demand' reporting a time series of water demand (m3/s)")
+        
+        # create a demand time series
+        # dictionary of reservoir attributes
+        attributes.update({
+            'gamma': 0.85, #float(storage.quantile(.9) / Vtot),
+            'avg_inflow': inflow.mean(),
+            'avg_demand': demand.mean()
+        })
+        
+    else:
+        raise ValueError('The model name must be one of the following: "linear", "lisflood", "hanazaki", "mhm"')
+        
+    return attributes
+    
+    
