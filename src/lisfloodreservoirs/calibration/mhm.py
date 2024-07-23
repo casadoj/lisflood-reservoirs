@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from spotpy.objectivefunctions import kge
 from spotpy.parameter import Uniform
-from typing import List, Literal, Optional
+from typing import List, Dict, Literal, Optional
 
 from .basecalibrator import Calibrator
 from ..models import get_model
@@ -64,6 +64,34 @@ class mHM_calibrator(Calibrator):
         
         self.demand = demand
         
+    def pars2attrs(self, pars: List) -> Dict:
+        """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`
+        
+        Parameters:
+        -----------
+        pars: list
+            Calibrated model parameters obtained, for instance, from the function `read_results()`
+
+        Returns:
+        --------
+        attributes: dictionary
+            Reservoir attributes needed to declare a reservoir using the function `models.get_model()`
+        """
+        
+        attributes = {
+            'Vmin': self.Vmin,
+            'Vtot': self.Vtot,
+            'Qmin': self.Qmin,
+            'avg_inflow': self.inflow.mean(),
+            'avg_demand': self.demand.mean(),
+            'w': pars[0],
+            'alpha': pars[1],
+            'beta': pars[2],
+            'gamma': pars[3],
+            'lambda_': pars[4]}
+
+        return attributes
+    
     def simulation(self,
                    pars: List[float],
                    inflow: Optional[pd.Series] = None,
@@ -101,17 +129,8 @@ class mHM_calibrator(Calibrator):
             storage_init = self.observed['storage'].iloc[0]
             
         # declare the reservoir with the effect of the parameters
-        reservoir_kwargs = {'Vmin': self.Vmin,
-                            'Vtot': self.Vtot,
-                            'Qmin': self.Qmin,
-                            'avg_inflow': inflow.mean(),
-                            'avg_demand': demand.mean(),
-                            'w': pars[0],
-                            'alpha': pars[1],
-                            'beta': pars[2],
-                            'gamma': pars[3],
-                            'lambda_': pars[4]}
-        res = get_model('mhm', **reservoir_kwargs)
+        reservoir_attrs = self.pars2attrs(pars)
+        res = get_model('mhm', **reservoir_attrs)
         self.reservoir = res
         
         # simulate

@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from spotpy.objectivefunctions import kge
 from spotpy.parameter import Uniform
-from typing import List, Literal, Optional
+from typing import List, Dict, Literal, Optional
 
 from .basecalibrator import Calibrator
 from ..models import get_model
@@ -71,6 +71,41 @@ class Hanazaki_calibrator(Calibrator):
         
         self.A = A
         
+    def pars2attrs(self, pars: List) -> Dict:
+        """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`
+        
+        Parameters:
+        -----------
+        pars: list
+            Calibrated model parameters obtained, for instance, from the function `read_results()`
+
+        Returns:
+        --------
+        attributes: dictionary
+            Reservoir attributes needed to declare a reservoir using the function `models.get_model()`
+        """
+        
+        # volume limits
+        Vf = pars[0] * self.Vtot 
+        Ve = self.Vtot - pars[1] * (self.Vtot - Vf)
+        Vmin = pars[2] * Vf
+        
+        # outflow limits
+        Qf = pars[3] * return_period(self.inflow, T=100)
+        Qn = pars[4] * Qf
+            
+        attributes = {
+            'Vmin': Vmin, 
+            'Vf': Vf,
+            'Ve': Ve,
+            'Vtot': self.Vtot,
+            'Qn': Qn,
+            'Qf': Qf,
+            'A': self.A
+        }
+
+        return attributes
+        
     def simulation(self,
                    pars: List[float],
                    inflow: Optional[pd.Series] = None,
@@ -102,31 +137,9 @@ class Hanazaki_calibrator(Calibrator):
         if storage_init is None:
             storage_init = self.observed['storage'].iloc[0]
         
-        # volume limits
-        # Vf = self.observed.storage.quantile(pars[0])
-        Vf = pars[0] * self.Vtot 
-        Ve = self.Vtot - pars[1] * (self.Vtot - Vf)
-        Vmin = pars[2] * Vf
-        
-        # outflow limits
-        Qf = pars[3] * return_period(self.inflow, T=100)
-        # Qn = pars[4] * self.inflow.mean()
-        # if Qn > Qf:
-        #     Qn = min(Qn, Qf)
-        #     pars[4] = Qn / self.inflow.mean()
-        Qn = pars[4] * Qf
-            
         # declare the reservoir with the effect of the parameters
-        reservoir_kwargs = {
-            'Vmin': Vmin, 
-            'Vf': Vf,
-            'Ve': Ve,
-            'Vtot': self.Vtot,
-            'Qn': Qn,
-            'Qf': Qf,
-            'A': self.A
-        }
-        res = get_model('hanazaki', **reservoir_kwargs)
+        reservoir_attrs = self.pars2attrs(pars)
+        res = get_model('hanazaki', **reservoir_attrs)
         self.reservoir = res
         
         # simulate

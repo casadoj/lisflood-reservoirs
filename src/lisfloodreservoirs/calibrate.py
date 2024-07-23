@@ -16,7 +16,7 @@ from .utils.metrics import KGEmod, compute_performance
 from .utils.utils import return_period
 from .utils.timeseries import create_demand
 from .utils.plots import plot_resops
-from .calibration import get_calibrator, read_results, pars2attrs
+from .calibration import get_calibrator, read_results
 
 
 
@@ -178,14 +178,7 @@ def main():
             results, parameters = read_results(f'{dbname}.csv')
             
             # convert parameter into reservoir attributes
-            calibrated_attrs = pars2attrs(cfg.MODEL,
-                                          parameters,
-                                          Vtot,
-                                          Vmin,
-                                          Qmin,
-                                          A,
-                                          ts.inflow, 
-                                          demand)
+            calibrated_attrs = calibrator.pars2attrs(list(parameters.values()))
 
             # declare the reservoir with optimal parameters
             res = get_model(cfg.MODEL, **calibrated_attrs)

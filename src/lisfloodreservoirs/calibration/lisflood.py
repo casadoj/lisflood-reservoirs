@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from spotpy.objectivefunctions import kge
 from spotpy.parameter import Uniform
-from typing import List, Literal, Optional
+from typing import List, Dict, Literal, Optional
 
 from .basecalibrator import Calibrator
 from ..models import get_model
@@ -78,6 +78,43 @@ class Lisflood_calibrator(Calibrator):
             'limit_Q': limit_Q
         }
         
+    def pars2attrs(self, pars: List) -> Dict:
+        """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`
+        
+        Parameters:
+        -----------
+        pars: list
+            Calibrated model parameters obtained, for instance, from the function `read_results()`
+
+        Returns:
+        --------
+        attributes: dictionary
+            Reservoir attributes needed to declare a reservoir using the function `models.get_model()`
+        """
+        
+        # volume limits
+        Vf = pars[0] * self.Vtot 
+        Vn = self.Vmin + pars[1] * (Vf - self.Vmin)
+        Vn_adj = Vn + pars[2] * (Vf - Vn)
+        
+        # outflow limits
+        Qf = pars[3] * return_period(self.inflow, T=100) # self.inflow.quantile(pars[3])
+        Qn = pars[4] * Qf
+        
+        attributes = {
+            'Vmin': min(self.Vmin, Vn), 
+            'Vn': Vn, 
+            'Vn_adj': Vn_adj,
+            'Vf': Vf,
+            'Vtot': self.Vtot,
+            'Qmin': min(self.Qmin, Qn),
+            'Qn': Qn,
+            'Qf': Qf,
+            'k': pars[5]
+        }
+
+        return attributes
+
     def simulation(self,
                    pars: List[float],
                    inflow: Optional[pd.Series] = None,
@@ -108,31 +145,10 @@ class Lisflood_calibrator(Calibrator):
             inflow = self.inflow
         if storage_init is None:
             storage_init = self.observed['storage'].iloc[0]
-        
-        # volume limits
-        Vf = pars[0] * self.Vtot 
-        Vn = self.Vmin + pars[1] * (Vf - self.Vmin)
-        Vn_adj = Vn + pars[2] * (Vf - Vn)
-        Vmin = min(self.Vmin, Vn)
-        
-        # outflow limits
-        Qf = pars[3] * return_period(self.inflow, T=100) # self.inflow.quantile(pars[3])
-        Qn = pars[4] * Qf
-        Qmin = min(self.Qmin, Qn)
             
         # declare the reservoir with the effect of the parameters
-        reservoir_kwargs = {
-            'Vmin': Vmin, 
-            'Vn': Vn, 
-            'Vn_adj': Vn_adj,
-            'Vf': Vf,
-            'Vtot': self.Vtot,
-            'Qmin': Qmin,
-            'Qn': Qn,
-            'Qf': Qf,
-            'k': pars[5]
-        }
-        res = get_model('lisflood', **reservoir_kwargs)
+        reservoir_attrs = self.pars2attrs(pars)
+        res = get_model('lisflood', **reservoir_attrs)
         self.reservoir = res
         
         # simulate

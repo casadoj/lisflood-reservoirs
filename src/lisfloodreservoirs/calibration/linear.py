@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from spotpy.objectivefunctions import kge
 from spotpy.parameter import Uniform
-from typing import List, Literal, Optional
+from typing import List, Literal, Optional, Dict
 
 from .basecalibrator import Calibrator
 from ..models import get_model
@@ -49,7 +49,30 @@ class Linear_calibrator(Calibrator):
         """
         
         super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, target, obj_func)  
-
+    
+    def pars2attrs(self, pars: List) -> Dict:
+        """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`
+    
+    Parameters:
+    -----------
+    pars: list
+        Calibrated model parameters obtained, for instance, from the function `read_results()`
+        
+    Returns:
+    --------
+    attributes: dictionary
+        Reservoir attributes needed to declare a reservoir using the function `models.get_model()`
+        """
+        
+        attributes = {
+            'Vmin': self.Vmin,
+            'Vtot': self.Vtot,
+            'Qmin': self.Qmin,
+            'T': pars[0]
+        }
+        
+        return attributes
+        
     def simulation(self, 
                    pars: List[float], 
                    inflow: pd.Series = None, 
@@ -61,9 +84,9 @@ class Linear_calibrator(Calibrator):
         Inputs:
         -------
         pars: List
-            A pair of values of the parameters 'alpha' and 'beta'
+            The parameter values used in the current iteration
         inflow: pd.Series
-            Inflow time seris used to force the model. If not given, the 'inflow' stored in the class will be used
+            Inflow time series used to force the model. If not given, the 'inflow' stored in the class will be used
         storage_init: float
             Initial reservoir storage. If not provided, the 'storage_init' stored in the class will be used
         spinup: int
@@ -77,11 +100,8 @@ class Linear_calibrator(Calibrator):
             storage_init = self.observed['storage'].iloc[0]
             
         # declare the reservoir with the effect of the parameters in 'x'
-        reservoir_kwargs = {'Vmin': self.Vmin,
-                            'Vtot': self.Vtot,
-                            'Qmin': self.Qmin,
-                            'T': pars[0]}
-        res = get_model('linear', **reservoir_kwargs)
+        reservoir_attrs = self.pars2attrs(pars)
+        res = get_model('linear', **reservoir_attrs)
         self.reservoir = res
         
         # simulate
