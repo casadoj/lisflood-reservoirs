@@ -52,16 +52,16 @@ class Linear_calibrator(Calibrator):
     
     def pars2attrs(self, pars: List) -> Dict:
         """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`
-    
-    Parameters:
-    -----------
-    pars: list
-        Calibrated model parameters obtained, for instance, from the function `read_results()`
         
-    Returns:
-    --------
-    attributes: dictionary
-        Reservoir attributes needed to declare a reservoir using the function `models.get_model()`
+        Parameters:
+        -----------
+        pars: list
+            Model parameters obtained, for instance, from the function `read_results()`
+
+        Returns:
+        --------
+        attributes: dictionary
+            Reservoir attributes needed to declare a reservoir using the function `models.get_model()`
         """
         
         attributes = {

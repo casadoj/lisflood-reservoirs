@@ -70,7 +70,7 @@ class mHM_calibrator(Calibrator):
         Parameters:
         -----------
         pars: list
-            Calibrated model parameters obtained, for instance, from the function `read_results()`
+            Model parameters obtained, for instance, from the function `read_results()`
 
         Returns:
         --------

@@ -57,27 +57,17 @@ class Calibrator(object):
         self.target = target
         self.obj_func = obj_func       
     
-    def pars2attrs(self,
-                   parameters: List,
-                   Vtot: float,
-                   Vmin: Optional[float] = 0,
-                   Qmin: Optional[float] = 0
+    def pars2attrs(self, pars: List
                   ) -> Dict:
-        """It converts a list of model parameters into reservoir attributes needed to declare the reservoir with `model.get_model()`
+        """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`
         
         Parameters:
         -----------
-        parameters: list
-            Calibrated model parameters obtained, for instance, from the function `read_results()`. The length of the list varies depending on the reservoir model
-        Vtot: float (optional)
-            Reservoir storage capacity (m3). Required by the 'linear', 'lisflood' and 'hanazaki' models
-        Vmin: float (optional)
-            Minimum reservoir storage (m3). Required by the 'lisflood' model. If not provided, a value of 0 is used
-        Qmin: float(optional)
-            Minimum outflow (m3/s). Required by the 'lionear', 'lisflood' and 'hanazaki' models. If not provided, a value of 0  is used
-            
+        pars: list
+            Model parameters obtained, for instance, from the function `read_results()`
+
         Returns:
-        --------            
+        --------
         attributes: dictionary
             Reservoir attributes needed to declare a reservoir using the function `models.get_model()`
         """
