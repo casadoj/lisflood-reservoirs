@@ -13,10 +13,10 @@ from datetime import datetime
 from . import Config, read_attributes, read_timeseries
 from .models import get_model
 from .utils.metrics import KGEmod, compute_performance
-from .utils.utils import get_normal_value, return_period
-from .utils.timeseries import create_demand, define_period
+from .utils.utils import return_period
+from .utils.timeseries import create_demand
 from .utils.plots import plot_resops
-from .calibration import get_calibrator, read_results
+from .calibration import get_calibrator, read_results, pars2attrs
 
 
 
@@ -26,8 +26,18 @@ def main():
     # ## -------------
 
     # read argument specifying the configuration file
-    parser = argparse.ArgumentParser(description='Run the calibration script with a specified configuration file.')
-    parser.add_argument('--config-file', type=str, required=True, help='Path to the configuration file')
+    parser = argparse.ArgumentParser(
+        description="""
+        Run the calibration script with a specified configuration file.
+        It calibrates the reservoir model parameters of the defined routine using the
+        SCE-UA (Shuffle Complex Evolution-University of Arizona) algorithm for each of
+        the selected reservoirs.
+        The optimal parameters are simulated and plotted, if possible comparing against
+        a simulation with default parameters
+        """
+    )
+    parser.add_argument('-c', '--config-file', type=str, required=True, help='Path to the configuration file')
+    parser.add_argument('-o', '--overwrite', action='store_true', help='Overwrite existing simulation files', default=False)
     args = parser.parse_args()
 
     cfg = Config(args.config_file)
@@ -101,31 +111,24 @@ def main():
 
     # ## CALIBRATION
     # ## -----------
-    
-    id_calib = list(np.unique([int(file.stem.split('_')[0]) for file in cfg.PATH_CALIB.glob('*performance.csv')]))
 
     for grand_id, ts in tqdm(timeseries.items(), desc='simulating reservoir'):
-
-        if grand_id in id_calib:
-            logger.warning(f'Reservoir {grand_id} has already been calibrated. Skipping calibration.')
-            continue
-        else:
-            logger.info(f'Calibrating reservoir {grand_id:>4}')
             
         # storage attributes (m3)
         Vtot = ts.storage.max()
         Vmin = max(0, min(0.1 * Vtot, ts.storage.min()))
         # flow attributes (m3/s)
-        if cfg.MODEL != 'hanazaki':
-            Qmin = max(0, ts.outflow.min())
+        Qmin = max(0, ts.outflow.min())
+        # catchment area (m2)
+        A = int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6) if cfg.MODEL == 'hanazaki' else None
+        # time series of water demand
+        if cfg.MODEL == 'mhm':
+            bias = ts.outflow.mean() / ts.inflow.mean()
+            demand = create_demand(ts.outflow,
+                                   water_stress=min(1, bias),
+                                   window=28)
         else:
-            Qmin = None
-        # model-independent reservoir attributes
-        reservoir_attrs = {
-            'Vmin': Vmin,
-            'Vtot': Vtot,
-            'Qmin': Qmin,
-            }
+            demand = None
 
         # CALIBRATE
         
@@ -134,18 +137,10 @@ def main():
             # configure calibration kwargs
             cal_cfg = copy.deepcopy(cfg.SIMULATION_CFG)
             if cfg.MODEL == 'hanazaki':
-                # catchment area (m2)
-                A = int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6)
                 cal_cfg.update({'A': A})
-                del reservoir_attrs['Qmin']
             elif cfg.MODEL == 'mhm':
-                # create a demand time series
-                bias = ts.outflow.mean() / ts.inflow.mean()
-                demand = create_demand(ts.outflow,
-                                       water_stress=min(1, bias),
-                                       window=28)
                 cal_cfg.update({'demand': demand})
-            
+
             # initialize the calibration setup
             calibrator = get_calibrator(cfg.MODEL,
                                         inflow=ts.inflow,
@@ -158,16 +153,17 @@ def main():
                                         obj_func=KGEmod,
                                         **cal_cfg)
 
-            # define the sampling method
+            # calibration output file
             dbname = f'{cfg.PATH_CALIB}/{grand_id}_samples'
-            if Path(f'{dbname}.csv').is_file():
+            if Path(f'{dbname}.csv').is_file() and args.overwrite is False:
+                logger.warning(f'Reservoir {grand_id} has already been calibrated. Skipping calibration.')
                 pass
             else:
+                logger.info(f'Calibrating reservoir {grand_id:>4}')
+                # define the sampling method
                 sceua = spotpy.algorithms.sceua(calibrator, dbname=dbname, dbformat='csv', save_sim=False)
-
-                # start the sampler
+                # launch calibration
                 sceua.sample(cfg.MAX_ITER, ngs=cfg.COMPLEXES, kstop=3, pcento=0.01, peps=0.1)
-
                 logger.info(f'Calibration of reservoir{grand_id} successfully finished')
             
         except RuntimeError as e:
@@ -181,46 +177,15 @@ def main():
             # read calibration results
             results, parameters = read_results(f'{dbname}.csv')
             
-            # define optimal model parameters
-            calibrated_attrs = copy.deepcopy(reservoir_attrs)
-            if cfg.MODEL == 'linear':
-                calibrated_attrs.update(parameters)
-            elif cfg.MODEL == 'hanazaki':
-                Vf = parameters['alpha'] * Vtot #float(ts.storage.quantile(parameters['alpha']))
-                Ve = Vtot - parameters['beta'] * (Vtot - Vf)
-                Vmin = parameters['gamma'] * Vf
-                Qf = parameters['delta'] * return_period(ts.inflow, T=100)
-                Qn = parameters['epsilon'] * Qf # ts.inflow.mean()
-                calibrated_attrs.update({
-                    'Vf': Vf,
-                    'Ve': Ve,
-                    'Vmin': Vmin,
-                    'Qf': Qf,
-                    'Qn': Qn,
-                    'A': A
-                })
-            elif cfg.MODEL == 'lisflood':
-                Vf = parameters['alpha'] * Vtot
-                Vn = Vmin + parameters['beta'] * (Vf - Vmin)
-                Vn_adj = Vn + parameters['gamma'] * (Vf - Vn)
-                # Qf = float(ts.inflow.quantile(parameters['QQf']))
-                Qf = parameters['delta'] * return_period(ts.inflow, T=100)
-                Qn = parameters['epsilon'] * Qf
-                calibrated_attrs.update({
-                    'Vf': Vf,
-                    'Vn': Vn,
-                    'Vn_adj': Vn_adj,
-                    'Qf': Qf,
-                    'Qn': Qn,
-                    'Qmin': min(Qmin, Qn),
-                    'k': parameters['k']
-                })
-            elif cfg.MODEL == 'mhm':
-                calibrated_attrs.update(parameters)
-                calibrated_attrs.update({
-                    'avg_inflow': ts.inflow.mean(),
-                    'avg_demand': demand.mean()
-                })
+            # convert parameter into reservoir attributes
+            calibrated_attrs = pars2attrs(cfg.MODEL,
+                                          parameters,
+                                          Vtot,
+                                          Vmin,
+                                          Qmin,
+                                          A,
+                                          ts.inflow, 
+                                          demand)
 
             # declare the reservoir with optimal parameters
             res = get_model(cfg.MODEL, **calibrated_attrs)
@@ -230,10 +195,7 @@ def main():
                 yaml.dump(res.get_params(), file)
 
             # simulate the reservoir
-            if cfg.MODEL == 'hanazaki':
-                sim_cfg = {}
-            else:
-                sim_cfg = cal_cfg
+            sim_cfg = {} if cfg.MODEL == 'hanazaki' else cal_cfg
             sim_cal = res.simulate(inflow=ts.inflow,
                                    Vo=ts.storage.iloc[0],
                                    **sim_cfg)

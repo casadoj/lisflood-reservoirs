@@ -1,11 +1,12 @@
 import pandas as pd
-from typing import Literal, Union, Tuple, Dict
+from typing import Literal, Optional, Union, Tuple, Dict
 from pathlib import Path
 
 from .linear import Linear_calibrator
 from .lisflood import Lisflood_calibrator
 from .hanazaki import Hanazaki_calibrator
 from .mhm import mHM_calibrator
+from ..utils.utils import return_period
 
 
 
@@ -67,3 +68,89 @@ def read_results(filename: Union[str, Path]) -> Tuple[pd.DataFrame, Dict]:
     
     return results, optimal_par
 
+
+
+def pars2attrs(model_name: Literal['linear', 'lisflood', 'hanazaki', 'mhm'],
+               parameters: Dict,
+               Vtot: float,
+               Vmin: Optional[float] = 0,
+               Qmin: Optional[float] = 0,
+               A: Optional[float] = None,
+               inflow: Optional[pd.Series] = None,
+               demand: Optional[pd.Series] = None
+              ) -> Dict:
+    """It converts the dictionary of calibrated model parameters returned by `read_results()` into reservoir attributes to be used to declare a reservoir with `model.get_model()`
+    
+    Parameters:
+    -----------
+    model_name: string
+        Name of the reservoir model to be used: 'linear', 'lisflood', 'hanazaki' or 'mhm'
+    parameters: dictionary
+        Calibrated model parameters obtained, for instance, from the function `read_results()`. The structure of the dictionary varies depending on the reservoir model
+    Vtot: float (optional)
+        Reservoir storage capacity (m3). Required by the 'linear', 'lisflood' and 'hanazaki' models
+    Vmin: float (optional)
+        Minimum reservoir storage (m3). Required by the 'lisflood' model. If not provided, a value of 0 is used
+    Qmin: float(optional)
+        Minimum outflow (m3/s). Required by the 'lionear', 'lisflood' and 'hanazaki' models. If not provided, a value of 0  is used
+    A: float (optional)
+        Reservoir catchment area (m2). Required by the 'hanazaki' model
+    inflow: pandas.Series (optional)
+        Time series of reservoir inflow (m3/s)
+    demand: pandas.Series (optional)
+        Time series of water demand (m3/s). Required by the 'mhm' routine
+        
+    Returns:
+    --------
+    attributes: dictionary
+        Reservoir attributes needed to declare a reservoir using the function `models.get_model()`
+    """
+    
+    attributes = {
+        'Vmin': Vmin,
+        'Vtot': Vtot,
+        'Qmin': Qmin,
+    }
+    
+    # define optimal model parameters
+    if model_name.lower() == 'linear':
+        attributes.update(parameters)
+    elif model_name.lower() == 'lisflood':
+        Vf = parameters['alpha'] * Vtot
+        Vn = Vmin + parameters['beta'] * (Vf - Vmin)
+        Vn_adj = Vn + parameters['gamma'] * (Vf - Vn)
+        Qf = parameters['delta'] * return_period(inflow, T=100)
+        Qn = parameters['epsilon'] * Qf
+        attributes.update({
+            'Vf': Vf,
+            'Vn': Vn,
+            'Vn_adj': Vn_adj,
+            'Qf': Qf,
+            'Qn': Qn,
+            'Qmin': min(Qmin, Qn),
+            'k': parameters['k']
+        })
+    elif model_name.lower() == 'hanazaki':
+        Vf = parameters['alpha'] * Vtot
+        Ve = Vtot - parameters['beta'] * (Vtot - Vf)
+        Vmin = parameters['gamma'] * Vf
+        Qf = parameters['delta'] * return_period(inflow, T=100)
+        Qn = parameters['epsilon'] * Qf
+        attributes.update({
+            'Vf': Vf,
+            'Ve': Ve,
+            'Vmin': Vmin,
+            'Qf': Qf,
+            'Qn': Qn,
+            'A': A
+        })
+        del attributes['Qmin']
+    elif model_name.lower() == 'mhm':
+        attributes.update(parameters)
+        attributes.update({
+            'avg_inflow': inflow.mean(),
+            'avg_demand': demand.mean()
+        })
+        
+    return attributes
+    
