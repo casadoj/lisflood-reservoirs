@@ -9,8 +9,8 @@ from functions import fit_constrained_harmonic, convert_parameters_to_targets
 
 
 def fit_targets(
-    USRDATS_path: Union[str, Path],
     dam_id: int,
+    USRDATS_path: Union[str, Path],
     reservoir_attributes: Optional[pd.DataFrame] = None,
     GRanD_path: Optional[Union[str, Path]] = None,
     capacity: str = 'CAP_MCM',
@@ -22,17 +22,17 @@ def fit_targets(
     
     Parameters:
     -----------
-    USRDATS_path: string or pathib.Path
-        Path to the time series
     dam_id: integer
         Dam ID in the GRanD database
+    USRDATS_path: string or pathib.Path
+        Path to the time series
     reservoir_attributes: pandas.DataFrame (optional)
         GRanD attributes for selected dam
     GRanD_path: string or pathlib.Path
         path to v1.3 of GRanD database. Only needed if 'reservoir_attributes' is None
     capacity: string
         Field in the reservoir attributes used as reservoir storage capacity. By default "CAP_MCM"
-    cutoff_year: integer
+    cutoff_year: integer (optional)
         Trim the time series to start this year
     min_days: integer
         Minimum number of days with storage values required to fit the target storage functions
