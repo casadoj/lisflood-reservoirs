@@ -156,14 +156,95 @@ def find_closest_dam():
 
 
 
-def aggregate_to_epiweeks():
-    """Aggregate data to epiweek and back-calculate release and inflow using mass balance"""
+def aggregate_to_epiweeks(daily: pd.DataFrame) -> pd.DataFrame:
+    """Aggregate daily timeseries to epiweek
     
-    pass
+    Parameters:
+    -----------
+    daily: pandas.DataFrame
+        Daily time series that includes fields 'epiweek', 'i' inflow, 's' storage, 'r' release
+        
+    Returns:
+    --------
+    weekly: pandas.DataFrame
+        Weekly time series
+    """
+    
+    # find the first timestep that represents the beginning of a week
+    start_snip = daily.index.get_loc(daily[(daily['epiweek'].diff() != 0)].index[0])
+
+    # Check if the first water week duration is greater than 7 days
+    if start_snip not in range(1, 8):
+        raise ValueError("first water week duration > 7 days!")
+
+    # snip the data if necessary
+    if start_snip < 7:
+        daily_snipped = daily.iloc[start_snip:].copy()
+    else:
+        daily_snipped = daily.copy()
+
+    # Perform aggregation
+    daily_snipped['s_end'] = daily_snipped['s'].shift(-7)
+    weekly = daily_snipped.groupby(['year', 'epiweek']).agg(
+        i=('i', 'sum'),
+        r=('r', 'sum'),
+        s_start=('s', 'first'),
+        s_end=('s_end', 'first')
+    ).reset_index()
+
+    # Filter out epiweek 53 and rows where s_end is NA
+    weekly = weekly[(weekly['epiweek'] != 53) & (~weekly['s_end'].isna())]
+
+    return weekly
 
 
 
-def back_calc_missing_flows():
-    """Compute i or r from mass balance (if either is missing)"""
+def back_calc_missing_flows(
+    weekly: pd.DataFrame,
+    min_weeks: int = 260,
+) -> pd.DataFrame:
+    """Compute inflow or release from mass balance (if either is missing)
+    
+    Parameters:
+    -----------
+    weekly: pandas.DataFrame
+        Weekly time series obtained from function `aggregate_to_epiweeks()`
+    min_weeks: integer
+        Minimum allowable data points (weeks) to use release and inflow without any back-calculating. Default value set to 5 years
+    
+    Returns:
+    --------
+    weekly: pandas.DataFrame
+        Weekly time series filled in by mass balance in the 'min_weeks' condition is not met
+    """
 
-    pass
+    # Compute the change in storage and back-calculate release (r_) and inflow (i_)
+    weekly['s_change'] = weekly['s_end'] - weekly['s_start']
+    weekly['r_'] = np.where((weekly['i'] - weekly['s_change']) < 0, 0, weekly['i'] - weekly['s_change'])
+    weekly['i_'] = weekly['r'] + weekly['s_change']
+
+    # Filter to full data points where neither r nor i is NA
+    full_data_points = weekly.dropna(subset=['r', 'i'])
+
+    # Check the number of data points on the most data-scarce epiweek
+    if full_data_points.shape[0] == 0:
+        data_points_on_most_data_scarce_epiweek = -np.inf
+    else:
+        data_points_on_most_data_scarce_epiweek = full_data_points.groupby('epiweek').size().min()
+
+    # back-calculate if there aren't enough data points
+    if data_points_on_most_data_scarce_epiweek < min_weeks:
+        
+        # Count missing values
+        missing_i = weekly['i'].isna().sum()
+        missing_r = weekly['r'].isna().sum()
+
+        # Decide which variable to back-calculate based on which has fewer missing values
+        if missing_i <= missing_r:
+            weekly['i'] = np.where(weekly['i'].isna() & ~weekly['r'].isna(), weekly['i_'], weekly['i'])
+            weekly['r'] = np.where(weekly['r_'].isna(), weekly['r'], weekly['r_'])
+        else:
+            weekly['r'] = np.where(weekly['r'].isna() & ~weekly['i'].isna(), weekly['r_'], weekly['r'])
+            weekly['i'] = np.where(weekly['i_'].isna(), weekly['i'], weekly['i_'])
+
+    return weekly[['year', 'epiweek', 's_start', 'i', 'r']]
