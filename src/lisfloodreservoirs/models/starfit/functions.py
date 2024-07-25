@@ -124,7 +124,7 @@ def fit_constrained_harmonic(data_for_harmonic_fitting: pd.DataFrame) -> np.ndar
     if (round(intercept, 5) == 100 or round(intercept, 5) == 0 or
        (round(sin_term, 5) == 0 and round(cosine_term, 5) == 0) or
        (round(ub_on_curve, 1) == round(lb_on_curve, 1))):
-        return {'solution': [intercept, 0, 0, float('inf'), float('-inf')]}
+        return np.array([intercept, 0, 0, np.inf, -np.inf])
 
     optimized_constrained_harmonic = minimize(
         evaluate_harmonic,
