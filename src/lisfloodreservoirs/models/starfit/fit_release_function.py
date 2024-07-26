@@ -22,7 +22,7 @@ r_st_min_quantile = 0.05
 r_st_max_quantile = 0.95
 # tolerance for r-squared value of release residual model.
 # Models with lower r-squared value than r_sq_tol are discarded.
-r_sq_tol = 0.2
+r_sq_tol = 0.3 # 0.2 in the repository, 0.3 according to the paper
 
 def fit_release_function(
     dam_id: int,
@@ -52,13 +52,15 @@ def fit_release_function(
     Returns:
     --------
     targets: dictionary
-        mean inflow from GRAND. (MCM / wk): float
+        #mean inflow from GRAND. (MCM / wk): float
         mean inflow from obs. (MCM / wk): float
-        release harmonic parameters: list or numpy.array
+        weekly release: pandas.DataFrame
+            Weekly time series of reservoir release
+        harmonic parameters: list or numpy.array
             4 parameters of the release harmonic function
-        release residual model coefficients: list or numpy.array
+        residual parameters: list or numpy.array
             3 parameters of the linear model of release residuals
-        release constraints: list or numpy.array
+        constraints: list or numpy.array
             minimum and maximum release            
     """
     
@@ -67,7 +69,7 @@ def fit_release_function(
     
     # Placeholder for the actual implementation of the function
     reservoir_attributes = read_reservoir_attributes(GRanD_path, dam_id)
-    print(f"Fitting release function for dam {dam_id}: {reservoir_attributes['DAM_NAME']}")
+    print(f"Fitting release function for dam {dam_id}: {reservoir_attributes['DAM_NAME'].values[0]}")
     storage_capacity_MCM = reservoir_attributes[capacity].values[0]
 
     if targets_path is None:
@@ -113,9 +115,10 @@ def fit_release_function(
         return {
             # "mean inflow from GRAND. (MCM / wk)": eservoir_attributes["i_MAF_MCM"] / weeks_per_year,
             "mean inflow from obs. (MCM / wk)": np.nan,
-            "release harmonic parameters": [np.nan] * 4,
-            "release residual model coefficients": [np.nan] * 3,
-            "release constraints": [np.nan] * 2
+            "weekly release": weekly_ops_NA_removed,
+            "harmonic parameters": [np.nan] * 4,
+            "residual parameters": [np.nan] * 3,
+            "constraints": [np.nan] * 2
         }
 
     # get most representative mean flow value
@@ -196,8 +199,9 @@ def fit_release_function(
     return {
         # "mean inflow from GRAND. (MCM / wk)": reservoir_attributes["i_MAF_MCM"] / weeks_per_year,
         "mean inflow from obs. (MCM / wk)": i_mean,
-        "release harmonic parameters": st_r_harmonic,
-        "release residual model coefficients": st_r_residual_model_coef,
-        "release constraints": pd.Series([r_st_min, r_st_max],
-                                         index=['min', 'max'])
+        "weekly release": weekly_ops_NA_removed,
+        "harmonic parameters": st_r_harmonic,
+        "residual parameters": st_r_residual_model_coef,
+        "constraints": pd.Series([r_st_min, r_st_max],
+                                 index=['min', 'max'])
     }
