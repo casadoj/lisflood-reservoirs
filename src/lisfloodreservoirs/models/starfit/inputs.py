@@ -56,6 +56,7 @@ def read_reservoir_attributes(
 
     file_path = f"{GRanD_path}/GRanD_dams_v1_3.shp"
     attributes = gpd.read_file(file_path)
+    attributes.set_index('GRAND_ID', inplace=True, drop=False)
     # attributes_all = gdf[gdf['COUNTRY'] == "United States"].copy()
 
     if dam_id is None:
