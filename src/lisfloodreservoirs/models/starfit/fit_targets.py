@@ -55,7 +55,7 @@ def fit_targets(
     # extract reservoir storage capacity
     if reservoir_attributes is None:
         reservoir_attributes = read_reservoir_attributes(GRanD_path, dam_id)
-    print(f"Fitting targets for dam {dam_id}: {reservoir_attributes['DAM_NAME']}")
+    print(f"Fitting targets for dam {dam_id}: {reservoir_attributes['DAM_NAME'].values[0]}")
     storage_capacity_MCM = reservoir_attributes[capacity]
     
     storage_daily = read_reservoir_data(USRDATS_path, dam_id)
