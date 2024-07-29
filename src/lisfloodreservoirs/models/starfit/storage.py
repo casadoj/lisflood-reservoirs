@@ -3,7 +3,7 @@ import numpy as np
 import statsmodels.formula.api as smf
 from scipy.optimize import minimize
 from pathlib import Path
-from typing import Union, Optional, Dict, List
+from typing import Union, Optional, Dict, List, Literal
 
 from inputs import read_reservoir_attributes, read_reservoir_data, rank_and_filter_data
 
@@ -202,17 +202,20 @@ def fit_constrained_harmonic(data: pd.DataFrame) -> np.ndarray:
 
 def create_storage_harmonic(
     parameters: List[float],
+    freq: Literal['W', 'D'] = 'W',
     name: str = "target",
     constrain: bool = True
-) -> pd.Series:
+) -> pd.DataFrame:
     """It defines the weekly target values of storage given the parameters of the harmonic function
     
-            storage = p1 + p2 · sin( 2 · pi · woy / 52 ) + p3 · cos( 2 · pi · woy / 52 )  # woy: week of the year
+            storage = p1 + p2 · sin( 2 · pi · w · t ) + p3 · cos( 2 · pi · w · t )  # w: frequency, t: specific time
     
     Parameters:
     -----------
     parameters: numpy.ndarray
         vector of length 5 giving, in order, intercept, sine term, cosine term, and upper and lower constraints of the harmonic.
+    freq: string
+        Frequency of the harmonic function to be generated. Only two values are accepted: "W" for weekly, "D" for daily temporal resolution.
     name: string (optional)
         Character string naming the harmonic function. E.g., "flood" or "conservation." Default is simply "target"
     constrain: bool
@@ -221,7 +224,7 @@ def create_storage_harmonic(
     Returns:
     --------
     storage_harmonic: pandas.Series
-        The storage target levels by week of the year
+        The storage target levels by day/week of the year
     """
     
     # extract parameters
@@ -230,10 +233,16 @@ def create_storage_harmonic(
     p5 = parameters[4] if constrain else float('-inf')
 
     # define harmonic function
-    storage_harmonic = pd.DataFrame({'epiweek': np.arange(1, 53)})
+    if freq == 'W':
+        col, t = 'epiweek', 52
+    elif freq == 'D':
+        col, t = 'doy', 365
+    else:
+        raise ValueError(f'"freq" must be either "W" for weekly or "D" for daily, not "{freq}"')
+    storage_harmonic = pd.DataFrame({col: np.arange(1, t + 1)})
     storage_harmonic[name] = (p1 +
-                              p2 * np.sin(2 * np.pi * storage_harmonic['epiweek'] / 52) +
-                              p3 * np.cos(2 * np.pi * storage_harmonic['epiweek'] / 52))
+                              p2 * np.sin(2 * np.pi * storage_harmonic[col] / t) +
+                              p3 * np.cos(2 * np.pi * storage_harmonic[col] / t))
     storage_harmonic[name] = np.minimum(np.maximum(storage_harmonic[name], p5), p4)
     
     return storage_harmonic#.set_index('epiweek', drop=True)
