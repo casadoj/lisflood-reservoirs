@@ -1,0 +1,22 @@
+version: v1.1
+
+paths:
+    GloFAS: 
+        root: Z:/nahaUsers/casadje/GloFASv4/
+        timeseries: long_run/rsfil/
+    ResOpsUS: 
+        root: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/
+        obs_timeseries: raw/time_series_all/
+        sim_timeseries: ancillary/LISFLOOD/
+    GRanD: Z:/nahaUsers/casadje/datasets/reservoirs/GRanD/v1_3/
+
+period:
+    start: 1982-01-01
+    end: 2019-12-30
+
+conditions:
+    min_area: 250 # km²
+    min_volume: 10 # hm3
+    min_dor: 0.08 # degree of regulation
+    min_length: 8 # years
+    tol_bias: 0.3 # relative bias accepted between inflow and outflow

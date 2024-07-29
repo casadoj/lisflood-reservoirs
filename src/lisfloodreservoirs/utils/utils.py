@@ -6,26 +6,37 @@ import matplotlib.pyplot as plt
 import geopandas as gpd
 import cartopy.feature as cfeature
 import cartopy.crs as ccrs
-from typing import Union, List, Dict, Tuple
+from typing import Union, List, Dict, Tuple, Optional
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from scipy.stats import gumbel_r, gaussian_kde
 
 
 
-def select_reservoirs(df: pd.DataFrame, sort: str, storage: str, target: float, plot: bool = True, **kwargs) -> pd.DataFrame:
+def select_reservoirs(df: gpd.GeoDataFrame,
+                      sort: str,
+                      storage: str,
+                      target: float,
+                      plot: bool = True,
+                      **kwargs
+                     ) -> gpd.GeoDataFrame:
     """It selects reservoirs that fulfil a target total storage capacity by prioritizing based on another characteristic
     
     Inputs:
     -------
-    df:    pandas.DataFrame. Table of reservoirs
-    sort:  string. Name of the field in 'df' that will be use to sort (prioritize) the selection
-    storage: string. Name of the field in 'df' that contains the reservoir storage capacity
-    plot:    boolean. If True, a map of the selected reservoirs will be plotted. The size of the dots represents the reservoir storage capacity and the colours the sorting field.
+    df:    geopandas.GeoDataFrame
+        Table of reservoirs
+    sort:  string
+        Name of the field in 'df' that will be use to sort (prioritize) the selection
+    storage: string
+        Name of the field in 'df' that contains the reservoir storage capacity
+    plot:    boolean
+        If True, a map of the selected reservoirs will be plotted. The size of the dots represents the reservoir storage capacity and the colours the sorting field.
     
     Outputs:
     --------
-    df_sel: pandas.DataFrame. A subset of 'df' with the selection of reservoirs.
+    df_sel: geopandas.DataFrame
+        A subset of 'df' with the selection of reservoirs.
     """
     
     mask = df.sort_values(sort, ascending=False)[storage].cumsum() <= target
@@ -56,109 +67,6 @@ def select_reservoirs(df: pd.DataFrame, sort: str, storage: str, target: float, 
         ax.add_artist(legend2);
     
     return df_sel
-        
-        
-
-# def decomposition(data: Union[pd.DataFrame, pd.Series]) -> Tuple[Union[pd.DataFrame, pd.Series], Union[pd.DataFrame, pd.Series], Union[pd.DataFrame, pd.Series]]:
-#     """It decomposes the timeseries in three components: annual average, seasonality and residuals.
-    
-#     Parameters:
-#     -----------
-#     data: Union[pd.DataFrame, pd.Series]
-#         Time series to be decomposed
-        
-#     Returns:
-#     --------
-#     annual: Union[pd.DataFrame, pd.Series]
-#         Timeseries of mean annual values. The length of the timeseries will be the number of years in "data"
-#     seasonality: Union[pd.DataFrame, pd.Series]
-#         Timeseries of montly mean values after removal of the annual trend. The length of the timeseries will be alwas 12, the months
-#     residuals: Union[pd.DataFrame, pd.Series]
-#         Timeseries of residuals, that is, the difference of the original "data" and the annual and seosonal timeseris. The length of the timeseries is the same as the input "data"
-#     """
-    
-#     # annual average storage
-#     annual = data.resample('Y').mean()
-#     annual.index = annual.index.year
-
-#     # seasonal variability
-#     detrended = data - data.resample('Y').transform('mean')
-#     seasonality = detrended.groupby(detrended.index.month).mean()
-
-#     # residual
-#     residuals = detrended - detrended.groupby(detrended.index.month).transform('mean')
-    
-#     return annual, seasonality, residuals
-
-
-
-# class Decomposition:
-#     def __init__(self, original: Tuple[Union[pd.DataFrame, pd.Series]], trend: Tuple[Union[pd.DataFrame, pd.Series]], seasonal: Tuple[Union[pd.DataFrame, pd.Series]], residuals: Tuple[Union[pd.DataFrame, pd.Series]]):
-#         self.original = original
-#         self.trend = trend
-#         self.seasonal = seasonal
-#         self.residual = residuals
-
-        
-        
-# def decompose_timeseries(data: Union[pd.DataFrame, pd.Series], window: int = 365, center: bool = True) -> Decomposition:
-#     """It decomposes the timeseries in three components: trend, seasonality and residuals.
-    
-#     Parameters:
-#     -----------
-#     data: Union[pd.DataFrame, pd.Series]
-#         Time series to be decomposed
-        
-#     Returns:
-#     --------
-#     DecompositionResult:
-#         Object with three methods: trend(), seasonal(), residuals()
-#     """ 
-
-#     # trend as the 365 rolling mean
-#     trend = data.rolling(window=365, min_periods=180, center=center).mean()
-
-#     # seasonality
-#     detrended = data - trend
-#     seasonal = detrended.groupby(detrended.index.month).transform('mean')
-
-#     # residuals
-#     residual = detrended - seasonal
-
-#     return Decomposition(data, trend, seasonal, residual)
-
-
-
-def decompose_timeseries(data: pd.Series, window: int = 365, center: bool = True) -> pd.DataFrame:
-    """It decomposes the timeseries in three components: trend, seasonality and residuals.
-    
-    Parameters:
-    -----------
-    data: pd.Series
-        Time series to be decomposed
-        
-    Returns:
-    --------
-    DecompositionResult:
-        Object with three methods: trend(), seasonal(), residuals()
-    """ 
-    
-    assert isinstance(data, pd.Series), '"data" must be a pandas.Series'
-    
-    # trend as the 365 rolling mean
-    trend = data.rolling(window=365, min_periods=180, center=center).mean()
-
-    # seasonality
-    detrended = data - trend
-    seasonal = detrended.groupby(detrended.index.month).transform('mean')
-
-    # residuals
-    residual = detrended - seasonal
-    
-    decomposition = pd.concat((data, trend, seasonal, residual), axis=1)
-    decomposition.columns = ['original', 'trend', 'seasonal', 'residual']
-    
-    return decomposition
 
 
 
@@ -243,7 +151,7 @@ def get_normal_value(series: pd.Series):
 
 
 
-def return_period(series: pd.Series, T: float = 100):
+def return_period(series: pd.Series, T: float = 100) -> float:
     """It estimates the value associated to a specific return period based on the observed time series and the Gumbel distribution
     
     Input:
@@ -272,4 +180,7 @@ def return_period(series: pd.Series, T: float = 100):
     # discharge associated to return period
     x = gumbel_r.ppf(1 - 1 / T, *pars)
     
-    return x
+    return float(x)
+
+
+

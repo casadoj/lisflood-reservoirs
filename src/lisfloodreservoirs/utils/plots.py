@@ -1,3 +1,5 @@
+import os
+os.environ['USE_PYGEOS'] = '0'
 import matplotlib as mpl
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
@@ -8,8 +10,9 @@ import cartopy.crs as ccrs
 import cartopy.feature as cf
 import numpy as np
 import pandas as pd
+import xarray as xr
 from pathlib import Path
-from typing import Union, Dict, List, Tuple
+from typing import Union, Dict, List, Tuple, Optional
 from statsmodels.distributions.empirical_distribution import ECDF
 
 # from utils import Decomposition
@@ -137,8 +140,12 @@ def create_cmap(cmap: str, bounds: List, name: str = '', specify_color: Tuple = 
 
 
 
-def plot_resops(storage: pd.Series = None, elevation: pd.Series = None, inflow: pd.Series = None, outflow: pd.Series = None, capacity: Union[List[float], float] = None,
-                   save: Union[str, Path] = None, **kwargs):
+def plot_resops(storage: pd.Series = None,
+                elevation: pd.Series = None,
+                inflow: pd.Series = None,
+                outflow: pd.Series = None,
+                capacity: Union[List[float], float] = None,
+                save: Union[str, Path] = None, **kwargs):
     """It creates a plot with two graphs that shows the reservoir time series. The first graph is the storage-elevation curve of the reservoir (if both storage and elevation time series are available). The second graph is the time series of storage, inflow and outflow.
     
     Parameters:
@@ -202,6 +209,7 @@ def plot_resops(storage: pd.Series = None, elevation: pd.Series = None, inflow: 
     
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight')
+        plt.close(fig)
         
         
         
@@ -347,7 +355,8 @@ def plot_decomposition(sim: pd.DataFrame, obs: pd.DataFrame = None, lims: List[f
         fig.text(.5, 1, kwargs['title'], fontsize=11, ha='center');
 
     if save is not None:
-        plt.savefig(save, dpi=300, bbox_inches='tight');
+        plt.savefig(save, dpi=300, bbox_inches='tight')
+        plt.close(fig)
         
         
 
@@ -476,8 +485,7 @@ def plot_decomposition(sim: pd.DataFrame, obs: pd.DataFrame = None, lims: List[f
         
         
 def reservoir_scatter(sim: pd.DataFrame, x: str, y: str, obs: pd.DataFrame = None, x_thr: List = None, y_thr: List = None, legend: bool = True, ax: Axes = None, **kwargs):
-    """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line
-    represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
+    """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
     
     Parameters:
     -----------
@@ -571,8 +579,7 @@ def reservoir_scatter(sim: pd.DataFrame, x: str, y: str, obs: pd.DataFrame = Non
         
         
 def reservoir_kde(sim: pd.DataFrame, obs: pd.DataFrame = None, x: str = None, y: str = None, thr: List = None, ax: Axes = None, **kwargs):
-    """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line
-    represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
+    """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
     
     Parameters:
     -----------
@@ -700,6 +707,8 @@ def reservoir_analysis(sim: pd.DataFrame, obs: pd.DataFrame = None, x1: str = 's
         Point size in the scatter plot
     title:     str
         Title of the figure
+    x1lim:     Tuple(2,)
+        Limits of the "x1" axis
     """
     
     # extract kwargs
@@ -751,6 +760,7 @@ def reservoir_analysis(sim: pd.DataFrame, obs: pd.DataFrame = None, x1: str = 's
     
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight')
+        plt.close(fig)
         
         
         
@@ -859,3 +869,73 @@ def plot_iterations(iters: pd.DataFrame, pareto: pd.DataFrame, best_iter: int, c
     fig.legend(frameon=False, loc=1, bbox_to_anchor=[1.175, .7, .1, .2])
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight');
+        
+        
+        
+def boxplot_parameters(
+    parameters: xr.Dataset,
+    parameter_range: Optional[Dict[str, List]] = None,
+    save: Optional[Union[str, Path]] = None,
+    **kwargs
+):
+    """It creates boxplots comparing the reservoir parameters of a specific model over different runs and reservoirs. 
+    One plot is created for each reservoir parameter, in which every box represents the variability of that parameter among reservoirs for a specific run.
+    
+    Parameters:
+    -----------
+    parameters: xarray.Dataset
+        It contains the reservoir parameters used in different runs and reservoirs. The variables are the reservoir parameters, and it has two dimensions: run and reservoir ID
+    parameter_range: dictionary (optional)
+        It contains for each parameter (key) the search range during the calibration
+    save: string or pathlib.Path (optional)
+        If provided, the plot will be saved in this file
+        
+    Keyword arguments:
+    ------------------
+    axsize: List
+        Size of each of the individual plots
+    color: string
+        Color of the boxes
+    alpha: float
+        Transparency of the boxes
+    """
+    
+    axsize = kwargs.get('axsize', (4.5, 4))
+    color = kwargs.get('color', 'lightsteelblue')
+    alpha = kwargs.get('alpha', 1.0)
+    
+    ncols = len(parameters)
+    fig, axes = plt.subplots(ncols=ncols, figsize=(ncols * axsize[0], axsize[1]), sharey=True)
+    if not isinstance(axes, np.ndarray):
+        axes = np.array([axes])
+    for ax, (parname, da) in zip(axes, parameters.items()):
+
+        # data frame of the parameter
+        df = da.to_pandas().transpose()
+        df.dropna(inplace=True)
+
+        ax.boxplot(df,
+                   # positions=[i + (j - 1) * w],
+                   # widths=w * .8,
+                   vert=False,
+                   patch_artist=True,
+                   boxprops=dict(facecolor=color, edgecolor='none', alpha=alpha), 
+                   medianprops={'color': 'dimgray'},
+                   whiskerprops=dict(color='dimgray', linestyle='-'),
+                   showcaps=False,
+                   flierprops=dict(marker='.', markersize=2)
+                  );
+        if parameter_range is not None:
+            # ax.set_xlim(parameter_range[parname])
+            for v in parameter_range[parname]:
+                ax.axvline(v, ls=':', lw=.5, c='k');
+            
+        ax.set_xlabel(parname)
+        ax.tick_params(axis='y', length=0)
+        ax.spines[['top', 'right', 'left']].set_visible(False)
+
+    axes[0].set_yticks(range(1, len(df.columns) + 1))
+    axes[0].set_yticklabels(df.columns);
+    
+    if save is not None:
+        plt.savefig(save, dpi=300, bbox_inches='tight')
