@@ -2,14 +2,15 @@
 
 import pandas as pd
 import numpy as np
+import xarray as xr
 from statsmodels.formula.api import ols
 from scipy.stats import linregress
 from pathlib import Path
-from typing import Union, Optional, Dict
+from typing import Union, Optional, Dict, List
 
 from inputs import read_reservoir_attributes, read_reservoir_data
-from functions import convert_parameters_to_targets, aggregate_to_epiweeks, back_calc_missing_flows
-from fit_targets import fit_targets
+from functions import aggregate_to_epiweeks, back_calc_missing_flows
+from storage import fit_storage, create_storage_harmonic
 
 # CONSTANTS
 
@@ -24,11 +25,13 @@ r_st_max_quantile = 0.95
 # Models with lower r-squared value than r_sq_tol are discarded.
 r_sq_tol = 0.3 # 0.2 in the repository, 0.3 according to the paper
 
-def fit_release_function(
+
+
+def fit_release(
     dam_id: int,
     USRDATS_path: Union[str, Path],
     GRanD_path: Optional[Union[str, Path]] = None,
-    targets_path: Union[str, Path] = None,
+    NOR_path: Union[str, Path] = None,
     capacity: str = 'CAP_MCM',
     cutoff_year: Optional[int] = None,
 ) -> Dict:
@@ -42,8 +45,8 @@ def fit_release_function(
         Path to the time series
     GRanD_path: string or pathlib.Path
         path to v1.3 of GRanD database. Only needed if 'reservoir_attributes' is None
-    targets_path: Union[str, Path]
-        Directory that contains the CSV with the parameters of the storage target functions
+    NOR_path: Union[str, Path]
+        Directory that contains the CSV with the parameters of the storage normal operating range (NOR)
     capacity: string
         Field in the reservoir attributes used as reservoir storage capacity. By default "CAP_MCM"
     cutoff_year: integer (optional)
@@ -72,16 +75,16 @@ def fit_release_function(
     print(f"Fitting release function for dam {dam_id}: {reservoir_attributes['DAM_NAME'].values[0]}")
     storage_capacity_MCM = reservoir_attributes[capacity].values[0]
 
-    if targets_path is None:
-        # If targets_path is not provided, fit storage targets using a custom function
-        fitted_targets = fit_targets(dam_id, USRDATS_path, reservoir_attributes, cutoff_year=cutoff_year)
+    if NOR_path is None:
+        # fit storage normal operating range using a custom function
+        fitted_targets = fit_storage(dam_id, USRDATS_path, reservoir_attributes, cutoff_year=cutoff_year)
         storage_target_parameters = pd.DataFrame({
-            'pf': fitted_targets["NSR upper bound"],
-            'pm': fitted_targets["NSR lower bound"]
+            'flood': fitted_targets["NSR upper bound"],
+            'conservation': fitted_targets["NSR lower bound"]
         })
     else:
         # Read storage target parameters from file
-        storage_target_parameters = pd.read_csv(f"{targets_path}/{dam_id}.csv")
+        storage_target_parameters = pd.read_csv(f"{NOR_path}/{dam_id}.csv")
 
     if storage_target_parameters.isna().all().all():
         print("Storage targets unavailable due to lack of data!")
@@ -113,8 +116,9 @@ def fit_release_function(
     if len(weekly_ops_NA_removed) <= min_r_i_datapoints:
         print("Insufficient data to build release function")
         return {
-            # "mean inflow from GRAND. (MCM / wk)": eservoir_attributes["i_MAF_MCM"] / weeks_per_year,
-            "mean inflow from obs. (MCM / wk)": np.nan,
+            "id": dam_id,
+            # "mean inflow from GRAND. (MCM/wk)": eservoir_attributes["i_MAF_MCM"] / weeks_per_year,
+            "mean inflow (MCM/wk)": np.nan,
             "weekly release": weekly_ops_NA_removed,
             "harmonic parameters": [np.nan] * 4,
             "residual parameters": [np.nan] * 3,
@@ -129,15 +133,16 @@ def fit_release_function(
         i_mean = weekly_ops_NA_removed.i.mean()
 
     # combined weekly data with storage targets and compute availability and standard inflow/release
-    upper_targets = convert_parameters_to_targets(storage_target_parameters['pf'], 'upper')
-    lower_targets = convert_parameters_to_targets(storage_target_parameters['pm'], 'lower')
+    upper_targets = create_storage_harmonic(storage_target_parameters['flood'], 'upper')
+    lower_targets = create_storage_harmonic(storage_target_parameters['conservation'], 'lower')
     training_data_unfiltered = (
         weekly_ops_NA_removed
         .merge(upper_targets, on='epiweek')
         .merge(lower_targets, on='epiweek')
         .assign(
-            avail_pct=lambda x: 100 * x.s_start / storage_capacity_MCM,
-            availability_status=lambda x: (x.avail_pct - x.lower) / (x.upper - x.lower),
+            # avail_pct=lambda x: 100 * x.s_start / storage_capacity_MCM,
+            s_pct=lambda x: x.s_start / storage_capacity_MCM,
+            a_st=lambda x: (x.s_pct - x.lower) / (x.upper - x.lower),
             i_st=lambda x: x.i / i_mean - 1,
             r_st=lambda x: x.r / i_mean - 1
         )
@@ -152,7 +157,7 @@ def fit_release_function(
         r_st_max, r_st_min = r_st_vector.quantile([r_st_max_quantile, r_st_min_quantile]).round(4)
 
     # create final training data for normal operating period
-    training_data = training_data_unfiltered.query('0 < availability_status <= 1').copy()
+    training_data = training_data_unfiltered.query('0 < a_st <= 1').copy()
     training_data.epiweek = training_data.epiweek.astype(int)
 
     # Fit harmonic regression for standardized release
@@ -178,7 +183,7 @@ def fit_release_function(
     )
 
     # fit linear model of release residuals
-    st_r_residual_model = ols('r_st_resid ~ availability_status + i_st',
+    st_r_residual_model = ols('r_st_resid ~ a_st + i_st',
                               data=data_for_linear_model_of_release_residuals).fit()
     st_r_residual_model_coef = st_r_residual_model.params.round(3)
     # deal with any negative coefficients by setting to zero and re-fitting
@@ -187,21 +192,102 @@ def fit_release_function(
                                   data=data_for_linear_model_of_release_residuals).fit()
         st_r_residual_model_coef = np.array([st_r_residual_model.params['Intercept'], 0, st_r_residual_model.params['i_st']]).round(3)
     if st_r_residual_model_coef[2] < 0 and st_r_residual_model_coef[1] >= 0:
-        st_r_residual_model = ols('r_st_resid ~ availability_status',
+        st_r_residual_model = ols('r_st_resid ~ a_st',
                                   data=data_for_linear_model_of_release_residuals).fit()
-        st_r_residual_model_coef = np.array([st_r_residual_model.params['Intercept'], st_r_residual_model.params['availability_status'], 0]).round(3)
+        st_r_residual_model_coef = np.array([st_r_residual_model.params['Intercept'], st_r_residual_model.params['a_st'], 0]).round(3)
     # remove release residual model if one of the following conditions is not met
     if st_r_residual_model.rsquared_adj < r_sq_tol or st_r_residual_model_coef[1] < 0 or st_r_residual_model_coef[2] < 0:
         print("Release residual model will be discarded; (release will be based harmonic function only)")
-        st_r_residual_model_coef = pd.Series(np.zeros(3),
-                                             index=['Intercept', 'availability_status', 'i_st'])
+        st_r_residual_model_coef = np.zeros(3)
+        
+    # conver residual parameters to pandas.Series
+    if isinstance(st_r_residual_model_coef, np.ndarray):
+        st_r_residual_model_coef = pd.Series(st_r_residual_model_coef, index=['Intercept', 'a_st', 'i_st'])
 
     return {
-        # "mean inflow from GRAND. (MCM / wk)": reservoir_attributes["i_MAF_MCM"] / weeks_per_year,
-        "mean inflow from obs. (MCM / wk)": i_mean,
+        "id": dam_id,
+        # "mean inflow from GRAND. (MCM/wk)": reservoir_attributes["i_MAF_MCM"] / weeks_per_year,
+        "mean inflow (MCM/wk)": i_mean,
         "weekly release": weekly_ops_NA_removed,
         "harmonic parameters": st_r_harmonic,
         "residual parameters": st_r_residual_model_coef,
         "constraints": pd.Series([r_st_min, r_st_max],
                                  index=['min', 'max'])
     }
+
+
+
+def create_release_harmonic(parameters: List[float]) -> pd.DataFrame:
+    """It defines the weekly seasonal release given the parameters of the harmonic function
+        
+            release = p1 · sin( 2 · pi · woy / 52 ) + p2 · cos( 2 · pi · woy / 52 ) + p3 · sin( 4 · pi · woy / 52 ) + p4 · sin( 4 · pi · woy / 52 )
+    
+    Parameters:
+    -----------
+    parameters: list
+        Vector of length 4 giving, in order, first sine term, first cosine term, second sine term, second cosine term.
+    avg_inflow: float (optional)
+        Average weekly inflow (MCM/week). If provided, the function returns the harmonic release in actual streamflow units (MCM/week). If not provided (default), the function return the standardized harmonic release
+    
+    Returns:
+    --------
+    harmonic: 
+        A table of storage target levels by week
+    """
+    
+    # extract parameters
+    p1, p2, p3, p4 = parameters
+    
+    # define weekly releases
+    harmonic = pd.DataFrame({'epiweek': np.arange(1, 53)})
+    harmonic['release'] = (p1 * np.sin(2 * np.pi * harmonic['epiweek'] / 52) +
+                                            p2 * np.cos(2 * np.pi * harmonic['epiweek'] / 52) +
+                                            p3 * np.sin(4 * np.pi * harmonic['epiweek'] / 52) +
+                                            p4 * np.cos(4 * np.pi * harmonic['epiweek'] / 52))
+
+    return harmonic#.set_index('epiweek', drop=True)
+
+
+
+def create_release_linear(parameters: pd.Series) -> xr.DataArray:
+    """
+    Create a linear release DataArray based on the provided parameters and average inflow.
+
+    The function generates a grid of standard inflow (i_st) and standard storage availability (a_st)
+    values within specified ranges. It then computes the linear release amount for each combination
+    of i_st and a_st using the provided linear model parameters. Finally, it inverts the 
+    standardization of inflow and release based on the average inflow.
+
+    Parameters:
+    parameters (pd.Series): A pandas Series containing the parameters of the linear model,
+                            including 'Intercept', 'a_st', and 'i_st' coefficients.
+    avg_inflow (float): The average inflow value used to invert the standardization of the
+                        computed release.
+
+    Returns:
+    xr.DataArray: An xarray DataArray representing the linear release across the range of
+                  standard inflow (i) and standard storage availability (a_st) values.
+
+    Example Usage:
+    >>> parameters = pd.Series({'Intercept': 0.1, 'a_st': 0.2, 'i_st': 0.3})
+    >>> avg_inflow = 100.0
+    >>> release_linear = create_release_linear(parameters, avg_inflow)
+    """
+    
+    # range of values of standard inflow (i_st) and standard storage availability (a_st)
+    a_st = np.arange(0, 1.01, step=.05)
+    i_st = np.arange(-1, 1.01, step=.1)
+    aa_st, ii_st = np.meshgrid(a_st, i_st, indexing='ij')
+    
+    # compute linear release
+    linear = xr.DataArray(
+        data=parameters.Intercept + parameters.a_st * aa_st + parameters.i_st * ii_st,
+        coords={
+            'i_st': i_st,
+            'a_st': a_st
+        },
+        dims=['i_st', 'a_st'],
+        name='release'
+    )
+    
+    return linear
