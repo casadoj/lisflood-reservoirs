@@ -1,142 +1,165 @@
 import pandas as pd
 import numpy as np
-from scipy.optimize import minimize
-from math import sin, cos, pi
+import xarray as xr
+import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
+import matplotlib.cm as cm
+import matplotlib.colors as colors
 from typing import Optional, Union, Dict, List, Tuple
-import statsmodels.formula.api as smf
+
+from inputs import rank_and_filter_data
 
 
+def plot_release(obs_release: pd.Series, avg_inflow: float , harmonic: pd.Series, linear: xr.DataArray, save=None, **kwargs):
+    """
+    Plot observed weekly releases alongside harmonic and linear release models.
 
-def convert_parameters_to_targets(
-    parameters: List[float],
-    target_name: str = "target",
-    constrain: bool = True
-) -> pd.Series:
-    """It defines the weekly target values of storage given the parameters of the harmonic function
-    
-            storage = p1 + p2 · sin( 2 · pi · woy / 52 ) + p3 · cos( 2 · pi · woy / 52 )  # woy: week of the year
-    
+    This function creates a two-panel plot with the left subplot displaying observed weekly 
+    releases as scatter points and the harmonic release as a line plot. The right subplot 
+    displays the linear release model results for different standard storage availability (a_st)
+    values. Both subplots share the same y-axis. The figure size, title, marker size, marker
+    transparency, line width, and colormap can be customized through keyword arguments.
+
     Parameters:
-    -----------
-    parameters: numpy.ndarray
-        vector of length 5 giving, in order, intercept, sine term, cosine term, and upper and lower constraints of the harmonic.
-    target_name: string (optional)
-        Character string naming the target. E.g., "flood" or "conservation." Default is simply "target"
-    constrain: bool
-        Constrain targets?
-        
+    obs_release (pd.Series): A DataFrame containing weekly release observations. The index must refer to the 'epiweek' for epidemiological week numbers
+    avg_inflow (float): average inflow (MCM/week)
+    harmonic (pd.Series): A Series representing the harmonic standard release data indexed by
+        epiweek numbers.
+    linear (xr.DataArray): An xarray DataArray representing the linear standard release
+        indexed by 'i_st' for weekly standardized inflow and 'a_st' for standard storage availability.
+    save (str, optional): The file path or file object to save the figure to. If None,
+        the figure is not saved (default: None).
+
+    Keyword Arguments:
+    figsize (tuple): The size of the figure in inches (default: (12, 4.5)).
+    title (str): The title of the plot. If None, no title is set (default: None).
+    size (int): The size of the scatter plot markers (default: 8).
+    alpha (float): The alpha (transparency) level of the scatter plot markers (default: 0.3).
+    linewidth (int): The width of the line in the line plot (default: 2).
+    cmap (str): The colormap used for the linear release lines (default: 'Blues').
+
     Returns:
-    --------
-    targets: pandas.Series
-        The storage target levels by week of the year
+    None: The function creates a plot and does not return any value.
+
+    Example Usage:
+    >>> plot_release(weekly_obs_df, avg_inflow, harmonic_series, linear_data_array, save="output_plot.png",
+                     figsize=(12, 6), title="Weekly Release Comparison", cmap='viridis')
+    
+    The function will create a plot with the specified parameters and save it to the path
+    provided in the 'save' argument.
     """
     
-    # extract parameters
-    p1, p2, p3 = parameters[:3]
-    p4 = parameters[3] if constrain else float('inf')
-    p5 = parameters[4] if constrain else float('-inf')
-
-    # define harmonic function
-    targets = pd.DataFrame({'epiweek': np.arange(1, 53)})
-    targets[target_name] = (p1 +
-                            p2 * np.sin(2 * np.pi * targets['epiweek'] / 52) +
-                            p3 * np.cos(2 * np.pi * targets['epiweek'] / 52))
-    targets[target_name] = np.minimum(np.maximum(targets[target_name], p5), p4)
+    figsize = kwargs.get('figsize', (12, 4.5))
+    title = kwargs.get('title', None)
+    s = kwargs.get('size', 8)
+    alpha = kwargs.get('alpha', 0.3)
+    lw = kwargs.get('linewidth', 2)
+    cmap = kwargs.get('cmap', 'Blues')
     
-    return targets#.set_index('epiweek', drop=True)
-
-
-
-def convert_parameters_to_release_harmonic(parameters: List[float]) -> pd.DataFrame:
-    """It defines the weekly releases given the parameters of the harmonic function
+    fig = plt.figure(figsize=(12, 4.5))
+    gs = GridSpec(1, 2, width_ratios=[7.5, 4.5])
+    
+    # harmonic release
+    ax1 = fig.add_subplot(gs[0])
+    st_release = (obs_release / avg_inflow) - 1
+    ax1.scatter(st_release.index, st_release, c='k', s=s, alpha=alpha, label='observed')
+    harmonic.plot(ax=ax1, c='steelblue', lw=lw, label='harmonic')
+    ax1.legend(loc=2, frameon=False)
+    ax1.set(xlim=(1, 52),
+           xlabel='epiweek',
+           ylabel='standardised release (-)')
+    
+    # linear release
+    ax2 = fig.add_subplot(gs[1], sharey=ax1)
+    norm = colors.Normalize(vmin=-.25, vmax=1)
+    sm = cm.ScalarMappable(cmap=cmap, norm=norm)
+    sm.set_array([])
+    for a_st in linear.a_st.data[::5]:
+        serie = linear.sel(a_st=a_st).to_pandas()
+        color = sm.to_rgba(a_st)
+        ax2.plot(serie, color=color, label=r'$A_{{st}}={0:.0f}\%$'.format(a_st * 100))
+    ax2.set(xlabel='standardised inflow (-)')
+    ax2.legend(loc=2, frameon=False)
+    ax2.tick_params(labelleft=None)
+    
+    if title is not None:
+        fig.text(.5, .95, title, fontsize=12, ha='center', va='top')
         
-            release = p1 · sin( 2 · pi · woy / 52 ) + p2 · cos( 2 · pi · woy / 52 ) + p3 · sin( 4 · pi · woy / 52 ) + p4 · sin( 4 · pi · woy / 52 )
+    if save is not None:
+        plt.savefig(save, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+        
+        
+        
+def plot_nor(weekly_storage: pd.DataFrame, NOR: pd.DataFrame, save=None, **kwargs):
+    """
+    Plots the weekly storage data with highlighted maximum and minimum observations
+    and fills reservoir zones based on NOR (Normal Operating Range) data. The plot
+    includes a legend positioned to the right-center of the figure, outside of the axes.
     
     Parameters:
-    -----------
-    parameters: list
-        Vector of length 4 giving, in order, first sine term, first cosine term, second sine term, second cosine term.
+    weekly_storage (pd.DataFrame): A DataFrame containing the weekly storage data.
+        It must contain at least the following columns:
+        - epiweek: The epidemiological week of the observation.
+        - s_pct: The storage percentage for the corresponding epiweek.
+    NOR (pd.DataFrame): A DataFrame containing the Normal Operating Range data.
+        It must contain at least the following columns:
+        - index: The index, which represents the epiweek.
+        - flood: The flood threshold percentage for the corresponding epiweek.
+        - conservation: The conservation threshold percentage for the corresponding epiweek.
+    save (str, optional): Path to save the figure. If None, the figure is not saved.
+    
+    Keyword Arguments:
+    figsize (tuple of int): The size of the figure in inches (default: (6, 4.5)).
+    title (str): The title of the plot. If None, no title is set (default: None).
+    size (int): The size of the scatter plot markers for max. and min. observations (default: 8).
+    alpha (float): The alpha (transparency) level of the scatter plot markers for observations
+                   (default: 0.3).
     
     Returns:
-    --------
-    release_harmonic: 
-        A table of storage target levels by week
+    None: The function creates a plot and does not return any value.
+    
+    Example Usage:
+    >>> plot_nor(weekly_storage_df, NOR_df, save="output_plot.png", figsize=(10, 7), title="Weekly Storage vs. NOR")
+    
+    The function will plot the data, show the legend on the right side, and optionally save the
+    figure to the specified path.
     """
     
-    # extract parameters
-    p1, p2, p3, p4 = parameters
+    figsize = kwargs.get('figsize', (6, 4.5))
+    title = kwargs.get('title', None)
+    s = kwargs.get('size', 8)
+    alpha = kwargs.get('alpha', 0.3)
     
-    # define weekly releases
-    release_harmonic = pd.DataFrame({'epiweek': np.arange(1, 53)})
-    release_harmonic['release_harmonic'] = (p1 * np.sin(2 * np.pi * release_harmonic['epiweek'] / 52) +
-                                            p2 * np.cos(2 * np.pi * release_harmonic['epiweek'] / 52) +
-                                            p3 * np.sin(4 * np.pi * release_harmonic['epiweek'] / 52) +
-                                            p4 * np.cos(4 * np.pi * release_harmonic['epiweek'] / 52))
-
-    return release_harmonic#.set_index('epiweek', drop=True)
-
-
-
-def fit_constrained_harmonic(data_for_harmonic_fitting: pd.DataFrame) -> np.ndarray:
-    """Fit parameters of a constrained harmonic function of target storage
+    fig, ax = plt.subplots(figsize=figsize)
     
-    Parameters:
-    -----------
-    data_for_harmonic_fitting: pandas.DataFrame
-        Table with fields 'epiweek' and 's_pct'
+    # observations
+    ax.scatter(weekly_storage.epiweek, weekly_storage.s_pct, c='k', s=8, alpha=alpha, label='observed')
+    top = rank_and_filter_data(weekly_storage, 's_pct', 3, ascending=False)
+    ax.scatter(top.epiweek, top.s_pct, c='green', s=s, alpha=alpha * 2, label='max. obs.')
+    bottom = rank_and_filter_data(weekly_storage, 's_pct', 3, ascending=True)
+    ax.scatter(bottom.epiweek, bottom.s_pct, c='maroon', s=s, alpha=alpha * 2, label='min. obs.')
     
-    Returns:
-    --------
-    pars: numpy.ndarray
-        Fitted parameters of the constrained harmonic function of target storage
-    """
-
-    def evaluate_harmonic(x: List):
-        """Evaluate goodness-of-fit of fitted harmonic with the RMSE (root mean squared error). It is used as objective function in optimization of constrained harmonic.
+    # reservoir zones
+    ax.fill_between(NOR.index, NOR.flood, 1, color='whitesmoke', zorder=0)
+    ax.fill_between(NOR.index, NOR.conservation, NOR.flood, color='lightsteelblue', zorder=0, label='NOR')
+    ax.fill_between(NOR.index, 0, NOR.conservation, color='whitesmoke', zorder=0)
+    
+    if title is not None:
+        ax.set_title(title)
+    ax.text(0.01, 0.975, 'flood pool', va='top', transform=ax.transAxes)
+    ax.text(0.01, 0.025, 'conservation pool', va='bottom', transform=ax.transAxes)
+    ax.legend(loc='center left', bbox_to_anchor=(1, 0.5), frameon=False)
+    ax.set(xlim=(1, 52),
+           xlabel='epiweek',
+           ylim=(0, 1),
+           ylabel='reservoir filling (-)');
+    
+    if save is not None:
+        plt.savefig(save, dpi=300, bbox_inches='tight')
+        plt.close(fig)
         
-        Parameters:
-        -----------
-        x: list
-            5 Parameters of the harmonic function of target storage
-            
-        Returns:
-        --------
-        rmse: float
-            Root mean squared error
-        """
         
-        sin_term_vector = np.sin(2 * np.pi * data_for_harmonic_fitting['epiweek'] / 52)
-        cosin_term_vector = np.cos(2 * np.pi * data_for_harmonic_fitting['epiweek'] / 52)
-        fitted_harmonic = x[0] + x[1] * sin_term_vector + x[2] * cosin_term_vector
-        fitted_harmonic = np.minimum(np.maximum(fitted_harmonic, x[4]), x[3])
-        
-        rmse = np.sqrt(np.mean((data_for_harmonic_fitting['s_pct'] - fitted_harmonic)**2))
-        return rmse
-    
-    # estimate the first 3 parameters by ordinary least squares
-    initial_model = smf.ols('s_pct ~ np.sin(2 * np.pi * epiweek / 52) + np.cos(2 * np.pi * epiweek / 52)', data=data_for_harmonic_fitting).fit()
-    intercept, sin_term, cosine_term = initial_model.params
-    
-    # estimate the last 2 parameters
-    ub_on_curve = data_for_harmonic_fitting['s_pct'].quantile(0.9)
-    lb_on_curve = data_for_harmonic_fitting['s_pct'].quantile(0.1)
-
-    if (round(intercept, 5) == 100 or round(intercept, 5) == 0 or
-       (round(sin_term, 5) == 0 and round(cosine_term, 5) == 0) or
-       (round(ub_on_curve, 1) == round(lb_on_curve, 1))):
-        return np.array([intercept, 0, 0, np.inf, -np.inf])
-
-    optimized_constrained_harmonic = minimize(
-        evaluate_harmonic,
-        x0=[intercept, sin_term, cosine_term, ub_on_curve, lb_on_curve],
-        bounds=[(0, None), (None, None), (None, None), (0, 100), (0, intercept)],
-        method='L-BFGS-B'
-    )
-    pars = optimized_constrained_harmonic.x
-    
-    return pars
-
-
 
 def find_closest_dam():
     """Finds the dam that is closest in terms of purposes served and Euclidean distance
@@ -196,6 +219,14 @@ def aggregate_to_epiweeks(daily: pd.DataFrame) -> pd.DataFrame:
     weekly = weekly[(weekly['epiweek'] != 53) & (~weekly['s_end'].isna())]
 
     return weekly
+
+
+
+def epiweek_to_date(year, epiweek):
+    # Convert epiweek to a date string where the week starts on Sunday
+    d = f'{year:.0f}-W{int(epiweek)-1}-0'  # Set to Sunday
+    # Use '%U' for weeks starting on Sunday and '%w' set to '0' for Sunday
+    return pd.to_datetime(d, format='%Y-W%U-%w')
 
 
 
