@@ -6,7 +6,7 @@ import xarray as xr
 from statsmodels.formula.api import ols
 from scipy.stats import linregress
 from pathlib import Path
-from typing import Union, Optional, Dict, List
+from typing import Union, Optional, Dict, List, Literal
 
 from inputs import read_reservoir_attributes, read_reservoir_data
 from functions import aggregate_to_epiweeks, back_calc_missing_flows
@@ -217,7 +217,10 @@ def fit_release(
 
 
 
-def create_release_harmonic(parameters: List[float]) -> pd.DataFrame:
+def create_release_harmonic(
+    parameters: List[float],
+    freq: Literal['W', 'D'] = 'W'
+) -> pd.DataFrame:
     """It defines the weekly seasonal release given the parameters of the harmonic function
         
             release = p1 · sin( 2 · pi · woy / 52 ) + p2 · cos( 2 · pi · woy / 52 ) + p3 · sin( 4 · pi · woy / 52 ) + p4 · sin( 4 · pi · woy / 52 )
@@ -226,6 +229,8 @@ def create_release_harmonic(parameters: List[float]) -> pd.DataFrame:
     -----------
     parameters: list
         Vector of length 4 giving, in order, first sine term, first cosine term, second sine term, second cosine term.
+    freq: string
+        Frequency of the harmonic function to be generated. Only two values are accepted: "W" for weekly, "D" for daily temporal resolution.
     avg_inflow: float (optional)
         Average weekly inflow (MCM/week). If provided, the function returns the harmonic release in actual streamflow units (MCM/week). If not provided (default), the function return the standardized harmonic release
     
@@ -238,12 +243,18 @@ def create_release_harmonic(parameters: List[float]) -> pd.DataFrame:
     # extract parameters
     p1, p2, p3, p4 = parameters
     
-    # define weekly releases
-    harmonic = pd.DataFrame({'epiweek': np.arange(1, 53)})
-    harmonic['release'] = (p1 * np.sin(2 * np.pi * harmonic['epiweek'] / 52) +
-                                            p2 * np.cos(2 * np.pi * harmonic['epiweek'] / 52) +
-                                            p3 * np.sin(4 * np.pi * harmonic['epiweek'] / 52) +
-                                            p4 * np.cos(4 * np.pi * harmonic['epiweek'] / 52))
+    # define harmonic function
+    if freq == 'W':
+        col, t = 'epiweek', 52
+    elif freq == 'D':
+        col, t = 'doy', 365
+    else:
+        raise ValueError(f'"freq" must be either "W" for weekly or "D" for daily, not "{freq}"')
+    harmonic = pd.DataFrame({col: np.arange(1, t + 1)})
+    harmonic['release'] = (p1 * np.sin(2 * np.pi * harmonic[col] / t) +
+                           p2 * np.cos(2 * np.pi * harmonic[col] / t) +
+                           p3 * np.sin(4 * np.pi * harmonic[col] / t) +
+                           p4 * np.cos(4 * np.pi * harmonic[col] / t))
 
     return harmonic#.set_index('epiweek', drop=True)
 
