@@ -53,3 +53,15 @@ $$
 The last step is to check the feasibility of the release $\ddot{R}_t$ in terms of mass balance:
 
 $$R_t = \max \left( \min \left( \ddot{R}_t, I_t + S_t \right), I_t + S_t - S_{cap} \right)$$
+
+<font color='steelblue'>I have changed the release routine because the original definition generates very noisy releases when the reservoir storage fluctuate around the lower bound of the normal operating rule ($NOR_{lb}$). When the storage is slightly over $NOR_{lb}$, the release is a function of the harmonic and the linear models; however, when the storage is slightly below $NOR_{lb}$, the release is a constant $R_{min}$. It means that from one step to the next there is a big difference in releases.
+    
+<font color='steelblue'>Instead, I change the release function below $NOR_{lb}$ to be the minimum value between the inflow ($I$) and a linear function of $R_{min}$ and the distance from $NOR_{lb}$. In this way, the changes in release are smooth, and the release is at most equal to the inflow, so the resevoir does not keep emptying:
+    
+$$R_{NOR} = \bar{I} \cdot \left( \tilde{R}_t + \epsilon_t \right) + \bar{I}$$
+$$\ddot{R}_t = \begin{cases}
+    \min \left( R_{min} + \frac{\hat{S}_t}{NOR_{lb}} \cdot \left( R_{NOR} - R_{min} \right) , I \right) & if \quad \hat{S}_t < NOR_{lb} \\
+    \min \left( R_{NOR} , R_{max} \right) & if \quad NOR_{lb} \leq \hat{S}_t \leq NOR_{ub} \\
+    \min \left( S_{cap} \cdot \left( \hat{S}_t - NOR_{ub} \right) + I_t , R_{max} \right) & if \quad \hat{S}_t > NOR_{ub}
+\end{cases}
+$$
