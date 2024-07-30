@@ -178,7 +178,7 @@ class Reservoir:
             if series2 is not None:
                 series2_ = self.normalize_timeseries(series2)
             Vlims /= self.Vtot
-            Qlims /= self.Qnd
+            Qlims /= self.Qf
             x1lim = (-.02, 1.02)
         else:
             series1_ = series1
