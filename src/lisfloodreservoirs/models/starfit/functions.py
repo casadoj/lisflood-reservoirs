@@ -6,11 +6,21 @@ from matplotlib.gridspec import GridSpec
 import matplotlib.cm as cm
 import matplotlib.colors as colors
 from typing import Optional, Union, Dict, List, Tuple
+from pathlib import Path
 
 from inputs import rank_and_filter_data
 
 
-def plot_release(obs_release: pd.Series, avg_inflow: float , harmonic: pd.Series, linear: xr.DataArray, save=None, **kwargs):
+def plot_release(
+    obs_release: pd.Series,
+    avg_inflow: float ,
+    harmonic: pd.Series,
+    linear: xr.DataArray,
+    Qmin: Optional[float] = None,
+    Qmax: Optional[float] = None,
+    save: Optional[Union[str, Path]] = None,
+    **kwargs
+):
     """
     Plot observed weekly releases alongside harmonic and linear release models.
 
@@ -21,30 +31,36 @@ def plot_release(obs_release: pd.Series, avg_inflow: float , harmonic: pd.Series
     transparency, line width, and colormap can be customized through keyword arguments.
 
     Parameters:
-    obs_release (pd.Series): A DataFrame containing weekly release observations. The index must refer to the 'epiweek' for epidemiological week numbers
-    avg_inflow (float): average inflow (MCM/week)
+    obs_release (pd.Series): A Series containing weekly release observations indexed by
+        epidemiological week numbers ('epiweek').
+    avg_inflow (float): The average inflow (MCM/week).
     harmonic (pd.Series): A Series representing the harmonic standard release data indexed by
         epiweek numbers.
     linear (xr.DataArray): An xarray DataArray representing the linear standard release
         indexed by 'i_st' for weekly standardized inflow and 'a_st' for standard storage availability.
-    save (str, optional): The file path or file object to save the figure to. If None,
+    Qmin (float, optional): The minimum allowable release value for the plot. If provided, a horizontal
+        line is added to indicate this value (default: None).
+    Qmax (float, optional): The maximum allowable release value for the plot. If provided, a horizontal
+        line is added to indicate this value (default: None).
+    save (Union[str, Path], optional): The file path or file object to save the figure to. If None,
         the figure is not saved (default: None).
 
     Keyword Arguments:
-    figsize (tuple): The size of the figure in inches (default: (12, 4.5)).
-    title (str): The title of the plot. If None, no title is set (default: None).
-    size (int): The size of the scatter plot markers (default: 8).
-    alpha (float): The alpha (transparency) level of the scatter plot markers (default: 0.3).
-    linewidth (int): The width of the line in the line plot (default: 2).
-    cmap (str): The colormap used for the linear release lines (default: 'Blues').
+    figsize (tuple): The size of the figure in inches. Defaults to (12, 4.5).
+    title (str): The title of the plot. If None, no title is set. Defaults to None.
+    size (int): The size of the scatter plot markers. Defaults to 8.
+    alpha (float): The alpha (transparency) level of the scatter plot markers. Defaults to 0.3.
+    linewidth (int): The width of the line in the line plot. Defaults to 2.
+    cmap (str): The colormap used for the linear release lines. Defaults to 'Blues'.
 
     Returns:
     None: The function creates a plot and does not return any value.
 
     Example Usage:
-    >>> plot_release(weekly_obs_df, avg_inflow, harmonic_series, linear_data_array, save="output_plot.png",
-                     figsize=(12, 6), title="Weekly Release Comparison", cmap='viridis')
-    
+    >>> plot_release(weekly_obs_series, avg_inflow, harmonic_series, linear_data_array,
+                     Qmin=0.5, Qmax=1.5, save="output_plot.png", figsize=(12, 6),
+                     title="Weekly Release Comparison", cmap='viridis')
+
     The function will create a plot with the specified parameters and save it to the path
     provided in the 'save' argument.
     """
@@ -64,6 +80,8 @@ def plot_release(obs_release: pd.Series, avg_inflow: float , harmonic: pd.Series
     st_release = (obs_release / avg_inflow) - 1
     ax1.scatter(st_release.index, st_release, c='k', s=s, alpha=alpha, label='observed')
     harmonic.plot(ax=ax1, c='steelblue', lw=lw, label='harmonic')
+    if Qmin is not None or Qmax is not None:
+        ax1.hlines([Qmin, Qmax], 1, 52, color='steelblue', ls=':', lw=lw/2, label='min-max')
     ax1.legend(loc=2, frameon=False)
     ax1.set(xlim=(1, 52),
            xlabel='epiweek',
