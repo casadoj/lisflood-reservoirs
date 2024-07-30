@@ -5,7 +5,41 @@ from typing import List, Optional, Literal
 from storage import create_storage_harmonic
 from release import create_release_harmonic
 
-class Starfit():
+from lisfloodreservoirs.models.basemodel import Reservoir
+
+class Starfit(Reservoir):
+    """
+    Starfit is a subclass of the Reservoir class that models a reservoir with specific
+    harmonic storage and release patterns for flood and conservation purposes.
+
+    Parameters:
+    Vtot (float): The total volume of the reservoir [MCM].
+    avg_inflow (float): The average inflow into the reservoir [MCM/day].
+    pars_Vf (List): Parameters defining the harmonic storage pattern for flood conditions.
+    pars_Vc (List): Parameters defining the harmonic storage pattern for conservation.
+    pars_Qharm (List): Parameters defining the harmonic release pattern from the reservoir.
+    pars_Qresid (List): Parameters for calculating residual releases from the reservoir.
+    Qmin (float): The minimum allowable release from the reservoir [MCM/day].
+    Qmax (float): The maximum allowable release from the reservoir [MCM/day].
+
+    Attributes:
+    avg_inflow (float): Stores the average inflow value provided during initialization.
+    NOR (DataFrame): A pandas DataFrame containing the normalized operational rules
+                     for flood and conservation storage, indexed by day of the year.
+    Qharm (Series): A pandas Series containing the harmonic release pattern, indexed
+                    by day of the year.
+    parsQresid (List): Stores the parameters for residual releases.
+    Qmax (float): The maximum allowable release from the reservoir.
+
+    Methods:
+    Inherits all methods from the Reservoir class and does not define any new explicit methods.
+
+    Notes:
+    The class extends the functionality of the Reservoir base class by incorporating
+    additional attributes related to harmonic storage and release patterns. It uses
+    daily frequencies for these patterns and sets up the operational rules based on
+    the input parameters.
+    """
     
     def __init__(self,
                  Vtot: float,
@@ -16,24 +50,23 @@ class Starfit():
                  pars_Qresid: List,
                  Qmin: float,
                  Qmax: float):
-        """
-        """
         
-        self.Vtot = Vtot
+        super().__init__(None, Vtot, Qmin, None, 86400)
+        
+        # self.Vtot = Vtot
         self.avg_inflow = avg_inflow
         self.NOR = pd.concat((create_storage_harmonic(pars_Vf, freq='D', name='flood').set_index('doy'),
                               create_storage_harmonic(pars_Vc, freq='D', name='conservation').set_index('doy')),
                              axis=1)
-        self.NOR /= 100
         self.Qharm = create_release_harmonic(pars_Qharm, freq='D').set_index('doy').squeeze()
         self.parsQresid = pars_Qresid
-        self.Qmin = Qmin
+        # self.Qmin = Qmin
         self.Qmax = Qmax
         
     def timestep(self, 
                  I: float,
                  V: float,
-                 epiweek: int
+                 doy: int
                 ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow and storage at the end of the timestep
         
@@ -43,8 +76,8 @@ class Starfit():
             Inflow (hm3/week)
         V: float
             Volume stored in the reservoir (hm3)
-        epiweek: integer
-            Week of the year. It must be a value between 1 and 52
+        doy: integer
+            Doy of the year. It must be a value between 1 and 365
             
         Returns:
         --------
@@ -57,28 +90,44 @@ class Starfit():
         V_st = V / self.Vtot
         
         # flood/conservation storage that week
-        assert 1 <= epiweek <=52, f'"epiweek" must be a value between 1 and 52 (including both): {epiweek} was provided'
-        Vf, Vc = self.NOR.loc[epiweek]
+        doy = 365 if doy == 366 else doy
+        assert 1 <= doy <= 365, f'"doy" must be a value between 1 and 365 (including both): {doy} was provided'
+        Vf, Vc = self.NOR.loc[doy, ['flood', 'conservation']]
         
+        # # compute release
+        # if V_st < Vc:
+        #     Q = self.Qmin
+        # elif Vc <= V_st <= Vf:
+        #     # harmonic component of the release
+        #     harm = self.Qharm[doy]
+        #     # residual component of the release
+        #     A_t = (V_st - Vc) / (Vf - Vc) # storage availability
+        #     eps = self.parsQresid[0] + A_t * self.parsQresid[1] + I_st * self.parsQresid[2]      
+        #     # release
+        #     Q = min(self.avg_inflow * (harm + eps + 1), self.Qmax)
+        # elif V_st > Vf:
+        #     Q = min((V_st - Vf) * self.Vtot / self.At + I, self.Qmax)
+            
         # compute release
+        # harmonic component of the release
+        harm = self.Qharm[doy]
+        # residual component of the release
+        A_t = (V_st - Vc) / (Vf - Vc) # storage availability
+        eps = self.parsQresid[0] + A_t * self.parsQresid[1] + I_st * self.parsQresid[2]      
+        # release
+        Q = self.avg_inflow * (harm + eps + 1)
         if V_st < Vc:
-            Q = self.Qmin
+            Q = min(self.Qmin + (Q - self.Qmin) * V_st / Vc, I)
         elif Vc <= V_st <= Vf:
-            # harmonic component of the release
-            harm = self.Qharm[epiweek]
-            # residual component of the release
-            A_t = (V_st - Vc) / (Vf - Vc) # storage availability
-            eps = self.parsQresid[0] + A_t * self.parsQresid[1] + I_st * self.parsQresid[2]      
-            # release
-            Q = min(self.avg_inflow * (harm + eps + 1), self.Qmax)
+            Q = min(Q, self.Qmax)
         elif V_st > Vf:
-            Q = min(self.Vtot * (V_st - Vf) + I, self.Qmax)
+            Q = min((V_st - Vf) * self.Vtot / self.At + I, self.Qmax)
 
         # ensure mass conservation
-        Q = max(min(Q, I + V), I + V - self.Vtot)
+        Q = max(min(Q, I + V / self.At), I + (V - self.Vtot) / self.At)
         
         # update storage
-        V += I - Q
+        V += (I - Q) * self.At
         
         return Q, V
     
@@ -114,13 +163,9 @@ class Starfit():
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
         for date, I in inflow.iteritems():
-            epiweek = min(date.isocalendar().week, 52)
             storage[date] = Vo
             # compute outflow and new storage
-            if demand is None:
-                Q, V = self.timestep(I, Vo, epiweek)
-            else:
-                Q, V = self.timestep(inflow[ts], Vo, demand[ts])
+            Q, V = self.timestep(I, Vo, date.dayofyear)
             outflow[date] = Q
             # update current storage
             Vo = V
