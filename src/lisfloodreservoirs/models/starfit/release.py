@@ -19,11 +19,11 @@ min_r_i_datapoints = 260 # 5 years
 # minimum allowable number of days of data to define release max min
 min_r_maxmin_days = 365
 # release constraint quantile
-r_st_min_quantile = 0.05
-r_st_max_quantile = 0.95
+r_st_min_quantile = 0.01 # 0.05
+r_st_max_quantile = 0.99 # 0.95
 # tolerance for r-squared value of release residual model.
 # Models with lower r-squared value than r_sq_tol are discarded.
-r_sq_tol = 0.3 # 0.2 in the repository, 0.3 according to the paper
+r_sq_tol = 0.2 # 0.2 in the repository, 0.3 according to the paper
 
 
 
@@ -133,8 +133,8 @@ def fit_release(
         i_mean = weekly_ops_NA_removed.i.mean()
 
     # combined weekly data with storage targets and compute availability and standard inflow/release
-    upper_targets = create_storage_harmonic(storage_target_parameters['flood'], 'upper')
-    lower_targets = create_storage_harmonic(storage_target_parameters['conservation'], 'lower')
+    upper_targets = create_storage_harmonic(storage_target_parameters['flood'], name='upper')
+    lower_targets = create_storage_harmonic(storage_target_parameters['conservation'], name='lower')
     training_data_unfiltered = (
         weekly_ops_NA_removed
         .merge(upper_targets, on='epiweek')
