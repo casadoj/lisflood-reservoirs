@@ -11,7 +11,7 @@ def read_reservoir_data(
     USRDATS_path: Union[str, Path],
     dam_id: int
 ) -> pd.DataFrame:
-    """Reads raw reservoir time series data
+    """Reads raw reservoir time series data for the specified dam
 
     Parameters:
     -----------
@@ -26,10 +26,17 @@ def read_reservoir_data(
         Daily time series of reservoir variables: 's_MCM' storage, 'i_cumecs' inflow, 'r_cumecs' release...
     """
     
-    file_path = f"{USRDATS_path}/time_series_all/ResOpsUS_{dam_id}.csv"
+    # read data
+    USRDATS_path = Path(USRDATS_path) if isinstance(USRDATS_path, str) else USRDATS_path
+    file_path = USRDATS_path / 'time_series_all' / f'ResOpsUS_{dam_id}.csv'
     timeseries = pd.read_csv(file_path,
-                            usecols=['date', 'storage', 'inflow', 'outflow', 'elevation', 'evaporation'],
-                            parse_dates=['date'])
+                             usecols=['date', 'storage', 'inflow', 'outflow', 'elevation', 'evaporation'],
+                             parse_dates=['date'])
+    
+    # make sure that the timeseries has no missing days
+    start, end = timeseries.date.min(), timeseries.date.max()
+    dates = pd.DataFrame({'date': pd.date_range(start=start, end=end, freq='D')})
+    timeseries = dates.merge(timeseries, on='date', how='left')
     
     return timeseries.rename(columns={'storage': 's_MCM', 'inflow': 'i_cumecs', 'outflow': 'r_cumecs'})
 
@@ -79,3 +86,40 @@ def read_GRanD_HUC8():
     file_path = "starfit/extdata/GRAND_HUC8.csv"
     df = pd.read_csv(file_path, comment="#")
     return df
+
+
+
+def rank_and_filter_data(
+    df: pd.DataFrame,
+    rank_col: str,
+    n_points: int,
+    ascending: bool = True):
+    """
+    Rank the entries of the dataframe 'df' by the 'rank_col' and keep the top 'n_points'
+    for each group defined by 'epiweek'. The ranking can be done in ascending or descending order.
+
+    Parameters:
+    -----------
+    df: pandas DataFrame containing the data.
+    rank_col: str
+        the column on which to perform the ranking.
+    n_points: int
+        the number of top entries to keep for each group.
+    ascending: bool, True for ascending order, False for descending order.
+
+    Returns:
+    --------
+    A pandas DataFrame with the top 'n_points' ranked entries for each 'epiweek'.
+    """
+    ranked_data = (
+        df.assign(
+            rank=df.groupby('epiweek')[rank_col]
+            .rank(ascending=ascending, method='first')
+        )
+        .query('rank <= @n_points')
+        .drop(columns='rank')
+        .sort_values('epiweek')
+        .reset_index(drop=True)
+    )
+    ranked_data.epiweek = ranked_data.epiweek.astype(int)
+    return ranked_data
