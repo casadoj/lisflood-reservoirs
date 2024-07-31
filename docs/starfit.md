@@ -90,7 +90,7 @@ In total, the release model has 9 parameters: 4 related to the harmonic function
 
 <img src="../results/ResOpsUS/starfit/355_release.jpg" width="900">
 
-***Figure 2**. Fitted release model for reservoir 355. On the left panel, the harmonic ($R_{harm}$), minimum ($R_{min}$) and maximum ($R_{max}$) releases are shown against weekly observations. On the right panel, the linear model of release residuals based on standardised inflow (X axis) and storage availability ($A_{st}$ lines).*
+***Figure 2**. Fitted release model for reservoir 355. On the left panel, the harmonic, minimum and maximum releases are shown against weekly observations. On the right panel, the linear model of release residuals based on standardised inflow (X axis) and storage availability (colour lines).*
 
 ### Modifications
 
