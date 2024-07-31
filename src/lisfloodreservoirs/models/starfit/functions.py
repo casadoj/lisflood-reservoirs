@@ -119,7 +119,7 @@ def plot_nor(weekly_storage: pd.DataFrame, NOR: pd.DataFrame, save=None, **kwarg
     weekly_storage (pd.DataFrame): A DataFrame containing the weekly storage data.
         It must contain at least the following columns:
         - epiweek: The epidemiological week of the observation.
-        - s_pct: The storage percentage for the corresponding epiweek.
+        - s_st: The storage percentage for the corresponding epiweek.
     NOR (pd.DataFrame): A DataFrame containing the Normal Operating Range data.
         It must contain at least the following columns:
         - index: The index, which represents the epiweek.
@@ -152,11 +152,11 @@ def plot_nor(weekly_storage: pd.DataFrame, NOR: pd.DataFrame, save=None, **kwarg
     fig, ax = plt.subplots(figsize=figsize)
     
     # observations
-    ax.scatter(weekly_storage.epiweek, weekly_storage.s_pct, c='k', s=8, alpha=alpha, label='observed')
-    top = rank_and_filter_data(weekly_storage, 's_pct', 3, ascending=False)
-    ax.scatter(top.epiweek, top.s_pct, c='green', s=s, alpha=alpha * 2, label='max. obs.')
-    bottom = rank_and_filter_data(weekly_storage, 's_pct', 3, ascending=True)
-    ax.scatter(bottom.epiweek, bottom.s_pct, c='maroon', s=s, alpha=alpha * 2, label='min. obs.')
+    ax.scatter(weekly_storage.epiweek, weekly_storage.s_st, c='k', s=8, alpha=alpha, label='observed')
+    top = rank_and_filter_data(weekly_storage, 's_st', 3, ascending=False)
+    ax.scatter(top.epiweek, top.s_st, c='green', s=s, alpha=alpha * 2, label='max. obs.')
+    bottom = rank_and_filter_data(weekly_storage, 's_st', 3, ascending=True)
+    ax.scatter(bottom.epiweek, bottom.s_st, c='maroon', s=s, alpha=alpha * 2, label='min. obs.')
     
     # reservoir zones
     ax.fill_between(NOR.index, NOR.flood, 1, color='whitesmoke', zorder=0)

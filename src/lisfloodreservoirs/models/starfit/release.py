@@ -6,6 +6,7 @@ import xarray as xr
 from statsmodels.formula.api import ols
 from scipy.stats import linregress
 from pathlib import Path
+import pickle
 from typing import Union, Optional, Dict, List, Literal
 
 from inputs import read_reservoir_attributes, read_reservoir_data
@@ -29,7 +30,9 @@ r_sq_tol = 0.2 # 0.2 in the repository, 0.3 according to the paper
 
 def fit_release(
     dam_id: int,
-    USRDATS_path: Union[str, Path],
+    daily_ops: Optional[pd.DataFrame] = None,
+    USRDATS_path: Optional[Union[str, Path]] = None,
+    attributes: Optional[pd.DataFrame] = None,
     GRanD_path: Optional[Union[str, Path]] = None,
     NOR_path: Union[str, Path] = None,
     capacity: str = 'CAP_MCM',
@@ -41,10 +44,14 @@ def fit_release(
     -----------
     dam_id: integer
         Dam ID in the GRanD database
-    USRDATS_path: string or pathib.Path
-        Path to the time series
+    daily_ops: pandas.DataFrame (optional)
+        Daily records of reservoir operations. It must contain columns 's' for storage (hm3), 'i' for inflow (hm3/day) and 'r' for release (hm3/day)
+    USRDATS_path: string or pathib.Path (optional)
+        Path to the time series. Only needed if 'daily_ops' is None
+    attributes: pandas.Series (optional)
+        GRanD attributes for selected dam
     GRanD_path: string or pathlib.Path
-        path to v1.3 of GRanD database. Only needed if 'reservoir_attributes' is None
+        path to v1.3 of GRanD database. Only needed if 'attributes' is None
     NOR_path: Union[str, Path]
         Directory that contains the CSV with the parameters of the storage normal operating range (NOR)
     capacity: string
@@ -67,43 +74,53 @@ def fit_release(
             minimum and maximum release            
     """
     
-    if cutoff_year is None:
-        cutoff_year = 1900
+    # if cutoff_year is None:
+    #     cutoff_year = 1900
+    daily_ops = daily_ops.copy()
     
-    # Placeholder for the actual implementation of the function
-    reservoir_attributes = read_reservoir_attributes(GRanD_path, dam_id)
-    print(f"Fitting release function for dam {dam_id}: {reservoir_attributes['DAM_NAME'].values[0]}")
-    storage_capacity_MCM = reservoir_attributes[capacity].values[0]
-
+    # reservoir attributes
+    if attributes is None:
+        # import, if not provided
+        attributes = read_reservoir_attributes(GRanD_path, dam_id)
+    print(f"Fitting release function for dam {dam_id}: {attributes['DAM_NAME']}")
+    storage_capacity_MCM = attributes[capacity]
+    
+    # read daily time series
+    if daily_ops is None:
+        daily_ops = (
+            read_reservoir_data(USRDATS_path, dam_id).set_idnex('date')
+            .assign(
+                i=lambda x: x['i_cumecs'] * 1e-6 * 86400,  # MCM/day
+                r=lambda x: x['r_cumecs'] * 1e-6 * 86400,  # MCM/day
+            )
+            .rename(columns={'s_MCM': 's'})
+            .loc[:, ['s', 'i', 'r']]
+        )
+    
+    # normal operating rule (NOR) of storage
     if NOR_path is None:
-        # fit storage normal operating range using a custom function
-        fitted_targets = fit_storage(dam_id, USRDATS_path, reservoir_attributes, cutoff_year=cutoff_year)
-        storage_target_parameters = pd.DataFrame({
-            'flood': fitted_targets["NSR upper bound"],
-            'conservation': fitted_targets["NSR lower bound"]
-        })
+        # fit, if not provided
+        model_storage = fit_storage(dam_id,
+                                     storage_daily=daily_ops.s,
+                                     attributes=attributes,
+                                     cutoff_year=cutoff_year)
     else:
-        # Read storage target parameters from file
-        storage_target_parameters = pd.read_csv(f"{NOR_path}/{dam_id}.csv")
-
+        with open(f'{NOR_path}/{dam_id}.pkl', 'rb') as file:
+            model_storage = pickle.load(file)
+        storage_capacity_MCM = model_storage['capacity (MCM)']
+    storage_target_parameters = pd.DataFrame({
+            'flood': model_storage["NOR upper bound"],
+            'conservation': model_storage["NOR lower bound"]
+        })
     if storage_target_parameters.isna().all().all():
         print("Storage targets unavailable due to lack of data!")
         return {}
 
-    # read daily time series
-    daily_ops = (
-        read_reservoir_data(USRDATS_path, dam_id)
-        .assign(
-            i=lambda x: x['i_cumecs'] * 1e-6 * 86400,  # MCM/day
-            r=lambda x: x['r_cumecs'] * 1e-6 * 86400,  # MCM/day
-            year=lambda x: x.date.dt.year,
-            epiweek=lambda x: x.date.dt.isocalendar().week
-        )
-        .rename(columns={'s_MCM': 's'})
-        .loc[:, ['date', 's', 'i', 'r', 'year', 'epiweek']]
-        .query('year >= @cutoff_year')
-    )
-
+    # add time variables and filter daily data
+    daily_ops['year'] = daily_ops.index.year
+    daily_ops['epiweek'] = daily_ops.index.isocalendar().week
+    if cutoff_year is not None:
+        daily_ops = daily_ops[daily_ops.year >= cutoff_year]
     daily_ops_non_spill_periods = daily_ops.query('s + i < @storage_capacity_MCM')
 
     # aggreate data weekly and fill in gaps by mass balance
@@ -111,13 +128,11 @@ def fit_release(
     weekly_ops_NA_removed = back_calc_missing_flows(weekly_ops)
     weekly_ops_NA_removed = weekly_ops_NA_removed.dropna(subset=['r', 'i'])
 
-    # Placeholder for condition to check if there is sufficient data
-    weeks_per_year = 365.25 / 7
+    # check if there is sufficient data
     if len(weekly_ops_NA_removed) <= min_r_i_datapoints:
         print("Insufficient data to build release function")
         return {
             "id": dam_id,
-            # "mean inflow from GRAND. (MCM/wk)": eservoir_attributes["i_MAF_MCM"] / weeks_per_year,
             "mean inflow (MCM/wk)": np.nan,
             "weekly release": weekly_ops_NA_removed,
             "harmonic parameters": [np.nan] * 4,
@@ -140,9 +155,8 @@ def fit_release(
         .merge(upper_targets, on='epiweek')
         .merge(lower_targets, on='epiweek')
         .assign(
-            # avail_pct=lambda x: 100 * x.s_start / storage_capacity_MCM,
-            s_pct=lambda x: x.s_start / storage_capacity_MCM,
-            a_st=lambda x: (x.s_pct - x.lower) / (x.upper - x.lower),
+            s_st=lambda x: x.s_start / storage_capacity_MCM,
+            a_st=lambda x: (x.s_st - x.lower) / (x.upper - x.lower),
             i_st=lambda x: x.i / i_mean - 1,
             r_st=lambda x: x.r / i_mean - 1
         )
@@ -206,7 +220,6 @@ def fit_release(
 
     return {
         "id": dam_id,
-        # "mean inflow from GRAND. (MCM/wk)": reservoir_attributes["i_MAF_MCM"] / weeks_per_year,
         "mean inflow (MCM/wk)": i_mean,
         "weekly release": weekly_ops_NA_removed,
         "harmonic parameters": st_r_harmonic,

@@ -11,12 +11,13 @@ from inputs import read_reservoir_attributes, read_reservoir_data, rank_and_filt
 
 def fit_storage(
     dam_id: int,
-    USRDATS_path: Union[str, Path],
-    reservoir_attributes: Optional[pd.DataFrame] = None,
+    storage_daily: Optional[pd.Series] = None,
+    USRDATS_path: Optional[Union[str, Path]] = None,
+    attributes: Optional[pd.DataFrame] = None,
     GRanD_path: Optional[Union[str, Path]] = None,
     capacity: str = 'CAP_MCM',
     cutoff_year: Optional[int] = None,
-    min_days: int = 3650,
+    min_days: int = 2920, # 8 years, the original repository uses 3650
     n_points: int = 3,
 ) -> Dict:
     """Fit parameters of storage targets
@@ -25,12 +26,14 @@ def fit_storage(
     -----------
     dam_id: integer
         Dam ID in the GRanD database
+    storage_daily: pandas.Series
+        Daily time series of reservoir storage (hm3). The index must be the dates
     USRDATS_path: string or pathib.Path
         Path to the time series
-    reservoir_attributes: pandas.DataFrame (optional)
+    attributes: pandas.Series (optional)
         GRanD attributes for selected dam
     GRanD_path: string or pathlib.Path
-        path to v1.3 of GRanD database. Only needed if 'reservoir_attributes' is None
+        path to v1.3 of GRanD database. Only needed if 'attributes' is None
     capacity: string
         Field in the reservoir attributes used as reservoir storage capacity. By default "CAP_MCM"
     cutoff_year: integer (optional)
@@ -46,57 +49,64 @@ def fit_storage(
         id: integer
         weekly storage: pandas.DataFrame
             Weekly time series of median storage
-        NSR upper bound: np.ndarray
+        NOR upper bound: np.ndarray
             5 parameters of the flood storage harmonic function
-        NSR lower bound: np.ndarray
+        NOR lower bound: np.ndarray
             5 parameters of the conservative storage harmonic function
     """
     
     # extract reservoir storage capacity
-    if reservoir_attributes is None:
-        reservoir_attributes = read_reservoir_attributes(GRanD_path, dam_id)
-    print(f"Fitting targets for dam {dam_id}: {reservoir_attributes['DAM_NAME'].values[0]}")
-    storage_capacity_MCM = reservoir_attributes[capacity]
+    if attributes is None:
+        attributes = read_reservoir_attributes(GRanD_path, dam_id)
+    print(f"Fitting targets for dam {dam_id}: {attributes['DAM_NAME']}")
+    storage_capacity_MCM = attributes[capacity]
     
-    storage_daily = read_reservoir_data(USRDATS_path, dam_id)
-    storage_daily = storage_daily.loc[storage_daily['s_MCM'].notnull(), ['date', 's_MCM']]
+    if storage_daily is None:
+        storage_daily = read_reservoir_data(USRDATS_path, dam_id).set_index('date')[['s_MCM']]
+    else:
+        if isinstance(storage_daily, pd.Series):
+            storage_daily = pd.DataFrame(storage_daily)
+            storage_daily.columns = ['s_MCM']
+    storage_daily = storage_daily.loc[storage_daily.s_MCM.notnull()]
     
     if len(storage_daily) < min_days:
+        print(f'{len(storage_daily)} < {min_days}')
         return {
             "id": dam_id,
+            "capacity (MCM)": storage_capacity_MCM,
             "weekly storage": pd.DataFrame(),
-            "NSR upper bound": [np.nan] * 5,
-            "NSR lower bound": [np.nan] * 5
+            "NOR upper bound": [np.nan] * 5,
+            "NOR lower bound": [np.nan] * 5
         }
 
-    # make sure that the timeseries has no missing days
-    start_date, end_date = storage_daily.date.min(), storage_daily.date.max()
-    storage_daily_filled = pd.DataFrame({'date': pd.date_range(start=start_date, end=end_date, freq='D')})
-    storage_daily = storage_daily_filled.merge(storage_daily, on='date', how='left')
+    # # make sure that the timeseries has no missing days
+    # start_date, end_date = storage_daily.date.min(), storage_daily.date.max()
+    # storage_daily_filled = pd.DataFrame({'date': pd.date_range(start=start_date, end=end_date, freq='D')})
+    # storage_daily = storage_daily_filled.merge(storage_daily, on='date', how='left')
 
     # check last year of data
-    last_year_of_data = storage_daily.date.dt.year.max()
-    first_year_of_data = storage_daily.date.dt.year.min()
+    last_year_of_data = storage_daily.index.year.max()
+    first_year_of_data = storage_daily.index.year.min()
     if cutoff_year is None or last_year_of_data < cutoff_year:
         cutoff_year = first_year_of_data
         print(f"Dam {dam_id} cutoff year set back to {first_year_of_data}")
 
     # Convert to weekly storage (as % of capacity)
-    storage_daily['year'] = storage_daily.date.dt.year
-    storage_daily['epiweek'] = storage_daily.date.dt.isocalendar().week
+    storage_daily['year'] = storage_daily.index.year
+    storage_daily['epiweek'] = storage_daily.index.isocalendar().week
     storage_daily = storage_daily[storage_daily.year >= cutoff_year]
     storage_weekly = (
         storage_daily.groupby(['year', 'epiweek'])
         # .agg(s_pct=('s_MCM', lambda x: round(100 * x.median() / storage_capacity_MCM, 2)))
-        .agg(s_pct=('s_MCM', lambda x: round(x.median() / storage_capacity_MCM, 2)))
+        .agg(s_st=('s_MCM', lambda x: round(x.median() / storage_capacity_MCM, 2)))
         .reset_index()
     )
     storage_weekly = storage_weekly[storage_weekly['epiweek'].between(1, 52)]
 
     # Check for capacity and minimum violations
     # capacity_violations = storage_weekly[storage_weekly['s_pct'] > 100]
-    capacity_violations = storage_weekly[storage_weekly['s_pct'] > 1]
-    minimum_violations = storage_weekly[storage_weekly['s_pct'] < 0]
+    capacity_violations = storage_weekly[storage_weekly['s_st'] > 1]
+    minimum_violations = storage_weekly[storage_weekly['s_st'] < 0]
     if len(capacity_violations) > 0:
         print(f"{len(capacity_violations)} capacity violations found for dam {dam_id}... ")
     if len(minimum_violations) > 0:
@@ -104,13 +114,13 @@ def fit_storage(
 
     # make sure that values don't exceed 0-100%
     # storage_weekly['s_pct'] = storage_weekly['s_pct'].clip(lower=0, upper=100)
-    storage_weekly['s_pct'] = storage_weekly['s_pct'].clip(lower=0, upper=1)
+    storage_weekly['s_st'] = storage_weekly['s_st'].clip(lower=0, upper=1)
 
-    # For flood harmonic: rank the entries by descending 's_pct' and keep the top 'n_points' for each epiweek
-    data_for_flood_harmonic = rank_and_filter_data(storage_weekly, 's_pct', n_points, ascending=False)
+    # For flood harmonic: rank the entries by descending 's_st' and keep the top 'n_points' for each epiweek
+    data_for_flood_harmonic = rank_and_filter_data(storage_weekly, 's_st', n_points, ascending=False)
     
-    # For conservation harmonic: rank the entries by ascending 's_pct' and keep the top 'n_points' for each epiweek
-    data_for_conservation_harmonic = rank_and_filter_data(storage_weekly, 's_pct', n_points, ascending=True)
+    # For conservation harmonic: rank the entries by ascending 's_st' and keep the top 'n_points' for each epiweek
+    data_for_conservation_harmonic = rank_and_filter_data(storage_weekly, 's_st', n_points, ascending=True)
 
     # Fit the flood and conservation harmonics
     p_flood_harmonic = fit_constrained_harmonic(data_for_flood_harmonic).round(3)
@@ -132,9 +142,10 @@ def fit_storage(
 
     return {
         "id": dam_id,
+        "capacity (MCM)": storage_capacity_MCM,
         "weekly storage": storage_weekly,
-        "NSR upper bound": p_flood_harmonic,
-        "NSR lower bound": p_conservation_harmonic
+        "NOR upper bound": p_flood_harmonic,
+        "NOR lower bound": p_conservation_harmonic
     }
 
 
@@ -145,7 +156,7 @@ def fit_constrained_harmonic(data: pd.DataFrame) -> np.ndarray:
     Parameters:
     -----------
     data: pandas.DataFrame
-        Table with fields 'epiweek' and 's_pct'
+        Table with fields 'epiweek' and 's_st'
     
     Returns:
     --------
@@ -172,16 +183,16 @@ def fit_constrained_harmonic(data: pd.DataFrame) -> np.ndarray:
         fitted_harmonic = pars[0] + pars[1] * sin_term_vector + pars[2] * cosin_term_vector
         fitted_harmonic = np.minimum(np.maximum(fitted_harmonic, pars[4]), pars[3])
         
-        rmse = np.sqrt(np.mean((data['s_pct'] - fitted_harmonic)**2))
+        rmse = np.sqrt(np.mean((data['s_st'] - fitted_harmonic)**2))
         return rmse
     
     # estimate the first 3 parameters by ordinary least squares
-    initial_model = smf.ols('s_pct ~ np.sin(2 * np.pi * epiweek / 52) + np.cos(2 * np.pi * epiweek / 52)', data=data).fit()
+    initial_model = smf.ols('s_st ~ np.sin(2 * np.pi * epiweek / 52) + np.cos(2 * np.pi * epiweek / 52)', data=data).fit()
     intercept, sin_term, cosine_term = initial_model.params
     
     # estimate the last 2 parameters
-    ub_on_curve = data['s_pct'].quantile(0.9)
-    lb_on_curve = data['s_pct'].quantile(0.1)
+    ub_on_curve = data['s_st'].quantile(0.9)
+    lb_on_curve = data['s_st'].quantile(0.1)
 
     if (round(intercept, 5) == 100 or round(intercept, 5) == 0 or
        (round(sin_term, 5) == 0 and round(cosine_term, 5) == 0) or

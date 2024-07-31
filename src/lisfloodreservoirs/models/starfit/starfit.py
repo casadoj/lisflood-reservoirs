@@ -73,17 +73,20 @@ class Starfit(Reservoir):
         Parameters:
         -----------
         I: float
-            Inflow (hm3/week)
+            Inflow (m3/s)
         V: float
-            Volume stored in the reservoir (hm3)
+            Volume stored in the reservoir (m3)
         doy: integer
             Doy of the year. It must be a value between 1 and 365
             
         Returns:
         --------
         Q, V: List[float]
-            Outflow (hm3/week) and updated storage (hm3)
+            Outflow (m3/s) and updated storage (m3)
         """
+        
+        # update storage
+        V += I * self.At
         
         # standardised inputs
         I_st = I / self.avg_inflow - 1
@@ -92,42 +95,33 @@ class Starfit(Reservoir):
         # flood/conservation storage that week
         doy = 365 if doy == 366 else doy
         assert 1 <= doy <= 365, f'"doy" must be a value between 1 and 365 (including both): {doy} was provided'
-        Vf, Vc = self.NOR.loc[doy, ['flood', 'conservation']]
+        Vf, Vc = self.NOR.loc[doy, ['flood', 'conservation']]            
         
-        # # compute release
-        # if V_st < Vc:
-        #     Q = self.Qmin
-        # elif Vc <= V_st <= Vf:
-        #     # harmonic component of the release
-        #     harm = self.Qharm[doy]
-        #     # residual component of the release
-        #     A_t = (V_st - Vc) / (Vf - Vc) # storage availability
-        #     eps = self.parsQresid[0] + A_t * self.parsQresid[1] + I_st * self.parsQresid[2]      
-        #     # release
-        #     Q = min(self.avg_inflow * (harm + eps + 1), self.Qmax)
-        # elif V_st > Vf:
-        #     Q = min((V_st - Vf) * self.Vtot / self.At + I, self.Qmax)
-            
-        # compute release
         # harmonic component of the release
         harm = self.Qharm[doy]
         # residual component of the release
         A_t = (V_st - Vc) / (Vf - Vc) # storage availability
         eps = self.parsQresid[0] + A_t * self.parsQresid[1] + I_st * self.parsQresid[2]      
-        # release
-        Q = self.avg_inflow * (harm + eps + 1)
+        # normal release
+        Qnor = self.avg_inflow * (harm + eps + 1)
+        
+        # compute release
         if V_st < Vc:
-            Q = min(self.Qmin + (Q - self.Qmin) * V_st / Vc, I)
+            # Q = self.Qmin # original routine
+            Q = min(self.Qmin + (Qnor - self.Qmin) * V_st / Vc, I)
         elif Vc <= V_st <= Vf:
-            Q = min(Q, self.Qmax)
+            # Q = min(Qnor, self.Qmax) # original routine
+            Q = max(min(Qnor, self.Qmax), self.Qmin)
         elif V_st > Vf:
-            Q = min((V_st - Vf) * self.Vtot / self.At + I, self.Qmax)
+            # Q = min((V_st - Vf) * self.Vtot / self.At + I, self.Qmax) # original routine
+            Q = Qnor + (self.Qmax - Qnor) * (V_st - Vf) / (1 - Vf)
 
         # ensure mass conservation
-        Q = max(min(Q, I + V / self.At), I + (V - self.Vtot) / self.At)
+        Q = max(min(Q, V / self.At), (V - self.Vtot) / self.At)
         
         # update storage
-        V += (I - Q) * self.At
+        # V += (I - Q) * self.At
+        V -= Q * self.At
         
         return Q, V
     
