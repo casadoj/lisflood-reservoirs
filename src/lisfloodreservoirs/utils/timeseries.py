@@ -1,6 +1,43 @@
 import numpy as np
 import pandas as pd
 from typing import Union, List, Dict, Tuple, Optional, Literal
+from statsmodels.distributions.empirical_distribution import ECDF
+
+
+
+def quantile_mapping(obs: pd.Series, sim: pd.Series) -> pd.Series:
+    """It corrects the bias in the "sim" time series to replicate the empirical cumulative density function of the observed time series
+    
+    Parameters:
+    -----------
+    obs: pandas.Series
+        Observed time series. May contain missing values
+    sim: pandas.Series
+        Simulated time series. May not contain missing values
+        
+    Returns:
+    --------
+    sim_bc: pandas.Series
+        Bias corrected time series of equal length as "sim"
+    """
+    
+    # remove timesteps with missing values
+    data = pd.concat((obs, sim), axis=1)
+    data.columns = ['obs', 'sim']
+    data.dropna(axis=0, how='any', inplace=True)
+
+    # empirical cumulative density functions
+    obs_ecdf = ECDF(data.obs)
+    sim_ecdf = ECDF(data.sim)
+
+    # quantiles of the input "sim"
+    sim_quantiles = sim_ecdf(sim)
+
+    # bias correct "sim"
+    x = data.obs.sort_values().unique()
+    sim_bc = np.interp(sim_quantiles, obs_ecdf(x), x)
+    
+    return pd.Series(sim_bc, index=sim.index)
 
 
 # def decomposition(data: Union[pd.DataFrame, pd.Series]) -> Tuple[Union[pd.DataFrame, pd.Series], Union[pd.DataFrame, pd.Series], Union[pd.DataFrame, pd.Series]]:
