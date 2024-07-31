@@ -32,11 +32,11 @@ The model uses two harmonic functions to define the normal operating range (NOR)
 $$
 \begin{align}
 NOR_{u} &= \min \left( \max \left( A + B \cdot \sin \, 2 \pi \omega t + C \cdot \cos \, 2 \pi \omega t, \; \hat{S}_{min} \right), \; \hat{S}_{max} \right) \\
-NOR_{low} &= \min \left( \max \left( a + b \cdot \sin \, 2 \pi \omega t + c \cdot \cos \, 2 \pi \omega t, \; \hat{s}_{min} \right), \; \hat{s}_{max} \right)
+NOR_{l} &= \min \left( \max \left( a + b \cdot \sin \, 2 \pi \omega t + c \cdot \cos \, 2 \pi \omega t, \; \hat{s}_{min} \right), \; \hat{s}_{max} \right)
 \end{align}
 $$
 
-Each of the NOR harmonics has 5 parameters: 3 defining the harmonic ($A$, $B$, $C$ in the upper bound), and 2 capping the maximum and minimum values of that NOR ($\hat{S}_{max}$, $\hat{S}_{min}$ in the upper bound). Therefore, the storage routine has 10 parameters.
+Each of the NOR harmonics has 5 parameters: 3 defining the harmonic ($A$, $B$, $C$ in the upper bound), and 2 capping the maximum and minimum values of that NOR ($\hat{S}_{max}$, $\hat{S}_{min}$ in the upper bound). Therefore, the storage routine has 10 parameterslow.
 
 > $\omega$ is the frequency. Fitting (weekly): $\omega=\frac{1}{52}$. Simulation (daily): $\omega=\frac{1}{365}$<br>
 > $t$ is the time of the year. Fitting (weekly): epistemologic week of the year. Simulation (daily): day of the year
@@ -53,8 +53,8 @@ The release function operates differently depending on the storage zone:
 
 $$
 \ddot{R}_t = \begin{cases}
-R_{min} & if \quad \hat{S}_t < NOR_{low} \\
-\min \left( \bar{I} \cdot \hat{R}_t + \bar{I} , R_{max} \right) & if \quad NOR_{low} \leq \hat{S}_t \leq NOR_{u} \\
+R_{min} & if \quad \hat{S}_t < NOR_{l} \\
+\min \left( \bar{I} \cdot \hat{R}_t + \bar{I} , R_{max} \right) & if \quad NOR_{l} \leq \hat{S}_t \leq NOR_{u} \\
 \min \left( S_{cap} \cdot \left( \hat{S}_t - NOR_{u} \right) + I_t , R_{max} \right) & if \quad \hat{S}_t > NOR_{u}
 \end{cases}
 $$
@@ -65,7 +65,7 @@ $$
 
 $$\hat{R}_t = \tilde{R}_t + \epsilon_t$$
 $$\tilde{R}_t = d \cdot sin\,2 \pi \omega t + e \cdot cos\,2 \pi \omega t + f \cdot sin\,4 \pi \omega t + g \cdot cos\,4 \pi \omega t$$
-$$\epsilon_t = h + i \frac{\hat{S}_t - NOR_{low}}{NOR_{u} - NOR_{low}} + j \cdot \hat{I}_t$$
+$$\epsilon_t = h + i \frac{\hat{S}_t - NOR_{l}}{NOR_{u} - NOR_{l}} + j \cdot \hat{I}_t$$
 
 > The release harmonic function allows for two periods of higher release throughout the year, whereas the storage harmonic only allows for one period of higher reservoir filling.
 
@@ -97,11 +97,11 @@ $$R_{NOR} = \max \left( \min \left( \bar{I} \cdot \left( \tilde{R}_t + \epsilon_
 
 #### Release below NOR
 
-I have changed the release routine because the original definition generates very noisy releases when the reservoir storage fluctuates around the lower bound of the normal operating rule ($NOR_{low}$). If storage is slightly over $NOR_{low}$, the release is a function of the harmonic and the linear models; however, when the storage is slightly below $NOR_{low}$, the release is a constant $R_{min}$. It means that from one step to the next there is a big difference in release.
+I have changed the release routine because the original definition generates very noisy releases when the reservoir storage fluctuates around the lower bound of the normal operating rule ($NOR_{l}$). If storage is slightly over $NOR_{l}$, the release is a function of the harmonic and the linear models; however, when the storage is slightly below $NOR_{l}$, the release is a constant $R_{min}$. It means that from one step to the next there is a big difference in release.
     
-I have changed the release function below $NOR_{low}$ to be the minimum value between the inflow ($I_t$) and a linear function of the reservoir filling ($\hat{S}_t$). In this way, the changes in release are smooth, and the release is at most equal to the inflow, so the resevoir does not keep emptying:
+I have changed the release function below $NOR_{l}$ to be the minimum value between the inflow ($I_t$) and a linear function of the reservoir filling ($\hat{S}_t$). In this way, the changes in release are smooth, and the release is at most equal to the inflow, so the resevoir does not keep emptying:
     
-$$R_{low} = \min \left( R_{min} + \left( R_{NOR} - R_{min} \right) \cdot \frac{\hat{S}_t}{NOR_{low}} , \, I_t \right)$$
+$$R_{l} = \min \left( R_{min} + \left( R_{NOR} - R_{min} \right) \cdot \frac{\hat{S}_t}{NOR_{l}} , \, I_t \right)$$
 
 #### Release above NOR
 
