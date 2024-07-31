@@ -222,6 +222,8 @@ class Reservoir:
             Size of the figure
         lw: float
             Line width
+        xlim: list
+            Limits of the X axis
         """
     
         figsize = kwargs.get('figsize', (12, 6))
@@ -265,6 +267,9 @@ class Reservoir:
                    xlim=(serie.index.min(), serie.index.max()))
             ax.spines[['top', 'right']].set_visible(False)
         
+        if 'xlim' in kwargs:
+            ax.set_xlim(kwargs['xlim'])
+            
         fig.legend(*ax.get_legend_handles_labels(), loc=8, ncol=1 + len(sim), frameon=False)
         
         if save is not None:
