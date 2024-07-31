@@ -73,10 +73,11 @@ def read_attributes(path: Union[str, Path],
 
 
 
-def read_timeseries(path: Union[str, Path],
-                    reservoirs: Optional[List[int]] = None,
-                    periods: Optional[Dict[int, Dict[str, pd.Timestamp]]] = None,
-                    ) -> Dict[int, pd.DataFrame]:
+def read_timeseries(
+    path: Union[str, Path],
+    reservoirs: Optional[List[int]] = None,
+    periods: Optional[Dict[int, Dict[str, pd.Timestamp]]] = None,
+) -> Dict[int, pd.DataFrame]:
     """It reads the time series in the dataset and saves them in a dictionary.
     
     Parameters:
@@ -105,11 +106,17 @@ def read_timeseries(path: Union[str, Path],
         # read time series
         file = path / f'{id}.csv'
         if file.is_file():
-            ts = pd.read_csv(file, parse_dates=True, index_col='date')
+            ts = pd.read_csv(file, parse_dates=['date'])
         else:
             print(f"File {file} doesn't exist")
             continue
-
+        
+        # make sure that the timeseries has no missing days
+        start, end = ts.date.min(), ts.date.max()
+        dates = pd.DataFrame({'date': pd.date_range(start=start, end=end, freq='D')})
+        ts = dates.merge(ts, on='date', how='left')
+        ts.set_index('date', inplace=True)
+        
         # select study period
         if periods is not None:
             start, end = [periods[id][x] for x in ['start', 'end']]
