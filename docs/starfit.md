@@ -31,8 +31,8 @@ The model uses two harmonic functions to define the normal operating range (NOR)
 
 $$
 \begin{align}
-NOR_{u} &= \min \left( \max \left( A + B \cdot \sin \, 2 \pi \omega t + C \cdot \cos \, 2 \pi \omega t, \; \hat{S}_{min} \right), \; \hat{S}_{max} \right) \\
-NOR_{l} &= \min \left( \max \left( a + b \cdot \sin \, 2 \pi \omega t + c \cdot \cos \, 2 \pi \omega t, \; \hat{s}_{min} \right), \; \hat{s}_{max} \right)
+\text{NOR}_{u} &= \min \left( \max \left( A + B \cdot \sin \, 2 \pi \omega t + C \cdot \cos \, 2 \pi \omega t, \; \hat{S}_{min} \right), \; \hat{S}_{max} \right) \\
+\text{NOR}_{l} &= \min \left( \max \left( a + b \cdot \sin \, 2 \pi \omega t + c \cdot \cos \, 2 \pi \omega t, \; \hat{s}_{min} \right), \; \hat{s}_{max} \right)
 \end{align}
 $$
 
