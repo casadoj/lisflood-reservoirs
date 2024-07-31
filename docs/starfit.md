@@ -19,8 +19,10 @@ The model is based on fitting harmonic functions (sums of sines and cosines) to 
 
 The functions are fitted on standardised variables to allow regionalization of the parameters. Storage is converted into fraction filled by dividing it by the total storage capacity ($S_{cap}$), and inflow/release are normalised by the mean inflow ($\bar{I}$).
 
-$$S_t = \frac{S_t}{S_{cap}}$$<br>
+$$\hat{S}_t = \frac{S_t}{S_{cap}}$$<br>
+
 $$\hat{R}_t = \frac{R_t - \bar{I}}{\bar{I}}$$<br>
+
 $$\hat{I}_t = \frac{I_t - \bar{I}}{\bar{I}}$$<br>
 
 ## Storage normal operating range (NOR)
