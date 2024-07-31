@@ -20,20 +20,21 @@ The model is based on fitting harmonic functions (sums of sines and cosines) to 
 The functions are fitted on standardised variables to allow regionalization of the parameters. Storage is converted into fraction filled by dividing it by the total storage capacity ($S_{cap}$), and inflow/release are normalised by the mean inflow ($\bar{I}$).
 
 $$
-\begin{align}
-\hat{S}_t &= \frac{S_t}{S} \\
-\hat{R}_t &= \frac{R_t - \bar{I}}{\bar{I}} \\
-\hat{I}_t &= \frac{I_t - \bar{I}}{\bar{I}}
-\end{align}
+\hat{S}_t = \frac{S_t}{S} \\
+\hat{R}_t = \frac{R_t - \bar{I}}{\bar{I}} \\
+\hat{I}_t = \frac{I_t - \bar{I}}{\bar{I}}
 $$
 
 ## Storage normal operating range (NOR)
 
 The model uses two harmonic functions to define the normal operating range (NOR) of the standardised storage ($\hat{S}$). These two rules define the upper and lower bounds of the normal reservoir filling ($\hat{S}$) for every week of the year. During a simulation, the routine will try to keep the reservoir in the NOR by using a different release operation depending on the storage zone (below, withing or above NOR).
 
-$$NOR_{up} = \min \left( \max \left( A + B \cdot \sin \, 2 \pi \omega t + C \cdot \cos \, 2 \pi \omega t, \; \hat{S}_{min} \right), \; \hat{S}_{max} \right)$$
-
-$$NOR_{low} = \min \left( \max \left( a + b \cdot \sin \, 2 \pi \omega t + c \cdot \cos \, 2 \pi \omega t, \; \hat{s}_{min} \right), \; \hat{s}_{max} \right)$$
+$$
+\begin{align}
+NOR_{u} &= \min \left( \max \left( A + B \cdot \sin \, 2 \pi \omega t + C \cdot \cos \, 2 \pi \omega t, \; \hat{S}_{min} \right), \; \hat{S}_{max} \right) \\
+NOR_{low} &= \min \left( \max \left( a + b \cdot \sin \, 2 \pi \omega t + c \cdot \cos \, 2 \pi \omega t, \; \hat{s}_{min} \right), \; \hat{s}_{max} \right)
+\end{align}
+$$
 
 Each of the NOR harmonics has 5 parameters: 3 defining the harmonic ($A$, $B$, $C$ in the upper bound), and 2 capping the maximum and minimum values of that NOR ($\hat{S}_{max}$, $\hat{S}_{min}$ in the upper bound). Therefore, the storage routine has 10 parameters.
 
@@ -53,8 +54,8 @@ The release function operates differently depending on the storage zone:
 $$
 \ddot{R}_t = \begin{cases}
 R_{min} & if \quad \hat{S}_t < NOR_{low} \\
-\min \left( \bar{I} \cdot \hat{R}_t + \bar{I} , R_{max} \right) & if \quad NOR_{low} \leq \hat{S}_t \leq NOR_{up} \\
-\min \left( S_{cap} \cdot \left( \hat{S}_t - NOR_{up} \right) + I_t , R_{max} \right) & if \quad \hat{S}_t > NOR_{up}
+\min \left( \bar{I} \cdot \hat{R}_t + \bar{I} , R_{max} \right) & if \quad NOR_{low} \leq \hat{S}_t \leq NOR_{u} \\
+\min \left( S_{cap} \cdot \left( \hat{S}_t - NOR_{u} \right) + I_t , R_{max} \right) & if \quad \hat{S}_t > NOR_{u}
 \end{cases}
 $$
 
@@ -64,7 +65,7 @@ $$
 
 $$\hat{R}_t = \tilde{R}_t + \epsilon_t$$
 $$\tilde{R}_t = d \cdot sin\,2 \pi \omega t + e \cdot cos\,2 \pi \omega t + f \cdot sin\,4 \pi \omega t + g \cdot cos\,4 \pi \omega t$$
-$$\epsilon_t = h + i \frac{\hat{S}_t - NOR_{low}}{NOR_{up} - NOR_{low}} + j \cdot \hat{I}_t$$
+$$\epsilon_t = h + i \frac{\hat{S}_t - NOR_{low}}{NOR_{u} - NOR_{low}} + j \cdot \hat{I}_t$$
 
 > The release harmonic function allows for two periods of higher release throughout the year, whereas the storage harmonic only allows for one period of higher reservoir filling.
 
@@ -106,7 +107,7 @@ $$R_{low} = \min \left( R_{min} + \left( R_{NOR} - R_{min} \right) \cdot \frac{\
 
 The original routine tries to bring back the reservoir to the upper bound of NOR in one time step, if that release that not exceed the maximum ($R_{max}$). That behaviour often causes noisy releases when the value of the maximum release is relatively large. Following the reasoning used before, I have changed the definition of the release in the flood zone to a linear function of the reservoir filling ($\hat{S}_t$).
 
-$$R_{up} = R_{NOR} + \left( R_{max} - R_{NOR} \right) \cdot \frac{\hat{S}_t - NOR_{up}}{1 - NOR_{up}}$$
+$$R_{u} = R_{NOR} + \left( R_{max} - R_{NOR} \right) \cdot \frac{\hat{S}_t - NOR_{u}}{1 - NOR_{u}}$$
 
 ## Results
 
