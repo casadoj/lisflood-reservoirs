@@ -8,7 +8,7 @@ I have implemented in Python the reservoir model introduced in [Turner et al. (2
 The full implementation of the Starfit reservoir routine requires the following variables:
 
 * Reservoir attributes:
-    * $S_{cap}$: total reservoir storage [hm3]
+    * $S$: total reservoir storage [hm3]
     * $\bar{I}$: average reservoir inflow [hm3/week]
 * Daily time series:
     * $S_t$: reservoir storage [hm3]
@@ -19,9 +19,13 @@ The model is based on fitting harmonic functions (sums of sines and cosines) to 
 
 The functions are fitted on standardised variables to allow regionalization of the parameters. Storage is converted into fraction filled by dividing it by the total storage capacity ($S_{cap}$), and inflow/release are normalised by the mean inflow ($\bar{I}$).
 
-$$\hat{S}_t = \frac{S_t}{S_t}$$
-$$\hat{R}_t = \frac{R_t - \bar{I}}{\bar{I}}$$
-$$\hat{I}_t = \frac{I_t - \bar{I}}{\bar{I}}$$
+$$
+\begin{align}
+\hat{S}_t &= \frac{S_t}{S} \\
+\hat{R}_t &= \frac{R_t - \bar{I}}{\bar{I}} \\
+\hat{I}_t &= \frac{I_t - \bar{I}}{\bar{I}}
+\end{align}
+$$
 
 ## Storage normal operating range (NOR)
 
