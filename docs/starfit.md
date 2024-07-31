@@ -31,6 +31,8 @@ The model uses two harmonic functions to define the normal operating range (NOR)
 
 $$\text{NOR}_{up} = \min \left( \max \left( A + B \cdot \sin \, 2 \pi \omega t + C \cdot \cos \, 2 \pi \omega t, \; \hat{S}_{min} \right), \; \hat{S}_{max} \right)$$
 
+$$\text{NOR}_{\text{up}} = \min \left( \max \left( A + B \cdot \sin \, 2 \pi \omega t + C \cdot \cos \, 2 \pi \omega t, \; \hat{S}_{\text{min}} \right), \; \hat{S}_{\text{max}} \right)$$
+
 $$\text{NOR}_{low} = \min \left( \max \left( a + b \cdot \sin \, 2 \pi \omega t + c \cdot \cos \, 2 \pi \omega t, \; \hat{s}_{min} \right), \; \hat{s}_{max} \right)$$
 
 Each of the NOR harmonics has 5 parameters: 3 defining the harmonic ($A$, $B$, $C$ in the upper bound), and 2 capping the maximum and minimum values of that NOR ($\hat{S}_{max}$, $\hat{S}_{min}$ in the upper bound). Therefore, the storage routine has 10 parameters.
