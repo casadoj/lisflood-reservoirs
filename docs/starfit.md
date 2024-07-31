@@ -31,8 +31,6 @@ The model uses two harmonic functions to define the normal operating range (NOR)
 
 $$NOR_{up} = \min \left( \max \left( A + B \cdot \sin \, 2 \pi \omega t + C \cdot \cos \, 2 \pi \omega t, \; \hat{S}_{min} \right), \; \hat{S}_{max} \right)$$
 
-$$NOR_{\text{up}} = \min \left( \max \left( A + B \cdot \sin \, 2 \pi \omega t + C \cdot \cos \, 2 \pi \omega t, \; \hat{S}_{\text{min}} \right), \; \hat{S}_{\text{max}} \right)$$
-
 $$NOR_{low} = \min \left( \max \left( a + b \cdot \sin \, 2 \pi \omega t + c \cdot \cos \, 2 \pi \omega t, \; \hat{s}_{min} \right), \; \hat{s}_{max} \right)$$
 
 Each of the NOR harmonics has 5 parameters: 3 defining the harmonic ($A$, $B$, $C$ in the upper bound), and 2 capping the maximum and minimum values of that NOR ($\hat{S}_{max}$, $\hat{S}_{min}$ in the upper bound). Therefore, the storage routine has 10 parameters.
@@ -50,10 +48,11 @@ To fit these functions, only the 3 extreme values for each week of the year are 
 
 The release function operates differently depending on the storage zone:
 
-$$\ddot{R}_t = \begin{cases}
-    R_{min} & if \quad \hat{S}_t < NOR_{low} \\
-    \min \left( \bar{I} \cdot \hat{R}_t + \bar{I} , R_{max} \right) & if \quad NOR_{low} \leq \hat{S}_t \leq NOR_{up} \\
-    \min \left( S_{cap} \cdot \left( \hat{S}_t - NOR_{up} \right) + I_t , R_{max} \right) & if \quad \hat{S}_t > NOR_{up}
+$$
+\ddot{R}_t = \begin{cases}
+R_{min} & if \quad \hat{S}_t < NOR_{low} \\
+\min \left( \bar{I} \cdot \hat{R}_t + \bar{I} , R_{max} \right) & if \quad NOR_{low} \leq \hat{S}_t \leq NOR_{up} \\
+\min \left( S_{cap} \cdot \left( \hat{S}_t - NOR_{up} \right) + I_t , R_{max} \right) & if \quad \hat{S}_t > NOR_{up}
 \end{cases}
 $$
 
