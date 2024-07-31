@@ -28,13 +28,14 @@ $$\hat{I}_t = \frac{I_t - \bar{I}}{\bar{I}}$$<br>
 The model uses two harmonic functions to define the normal operating range (NOR) of the standardised storage ($\hat{S}$). These two rules define the upper and lower bounds of the normal reservoir filling ($\hat{S}$) for every week of the year. During a simulation, the routine will try to keep the reservoir in the NOR by using a different release operation depending on the storage zone (below, withing or above NOR).
 
 $$NOR_{up} = \min \left( \max \left( A + B \cdot \sin \, 2 \pi \omega t + C \cdot \cos \, 2 \pi \omega t, \; \hat{S}_{min} \right), \; \hat{S}_{max} \right)$$
+
 $$NOR_{\text{up}} = \min \left( \max \left( A + B \cdot \sin \, 2 \pi \omega t + C \cdot \cos \, 2 \pi \omega t, \; \hat{S}_{\text{min}} \right), \; \hat{S}_{\text{max}} \right)$$
 
 $$NOR_{low} = \min \left( \max \left( a + b \cdot \sin \, 2 \pi \omega t + c \cdot \cos \, 2 \pi \omega t, \; \hat{s}_{min} \right), \; \hat{s}_{max} \right)$$
 
 Each of the NOR harmonics has 5 parameters: 3 defining the harmonic ($A$, $B$, $C$ in the upper bound), and 2 capping the maximum and minimum values of that NOR ($\hat{S}_{max}$, $\hat{S}_{min}$ in the upper bound). Therefore, the storage routine has 10 parameters.
 
-> $\omega$ is the frequency. Fitting (weekly): $\omega=\frac{1}{52}$. Simulatin (daily): $\omega=\frac{1}{365}$<br>
+> $\omega$ is the frequency. Fitting (weekly): $\omega=\frac{1}{52}$. Simulation (daily): $\omega=\frac{1}{365}$<br>
 > $t$ is the time of the year. Fitting (weekly): epistemologic week of the year. Simulation (daily): day of the year
 
 To fit these functions, only the 3 extreme values for each week of the year are used. Figure 1 clarifies the procedure. It shows the observed reservoir filling for each of the 52 weeks of year. The highest 3 values for each week (green dots) are used to fit the upper bound of the NOR, and the lowest 3 values (red dots) to fit the lower bound of the NOR.
