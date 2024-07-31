@@ -3,7 +3,7 @@
 
 ## Introduction
 
-I have implemented in Python the reservoir model introduced in [Turner et al. (2021)](https://www.sciencedirect.com/science/article/pii/S0022169421008933). The paper includes an R repository called [Starfit](https://github.com/IMMM-SFA/starfit) that includes the functions to fit the storage and release functions of this reservoir routine. I have translated these functions into Python and created a class [`Starfit`](https://github.com/casadoj/lisflood-reservoirs/blob/ResOpsUS/src/lisfloodreservoirs/models/starfit/starfit.py) that takes the fitted parameters and simulates the reservoir.
+I have implemented in Python the reservoir model introduced in [Turner et al. (2021)](https://www.sciencedirect.com/science/article/pii/S0022169421008933). The paper refers to an R repository called [Starfit](https://github.com/IMMM-SFA/starfit) that includes the functions to fit the storage and release functions of this reservoir routine. I have translated these functions into Python and created a class [`Starfit`](https://github.com/casadoj/lisflood-reservoirs/blob/ResOpsUS/src/lisfloodreservoirs/models/starfit/starfit.py) that takes the fitted parameters and simulates the reservoir.
 
 The full implementation of the Starfit reservoir routine requires the following variables:
 
@@ -15,9 +15,9 @@ The full implementation of the Starfit reservoir routine requires the following 
     * $I_t$: reservoir inflow [m3/s]
     * $R_t$: reservoir release [m3/s]
     
-The model is based on fitting harmonic functions (sums of sines and cosines) to the observed storage and outflow time series in order to learn the seasonal behaviour of the reservoir. To avoid gaps and errors in daily data, the fitting is done on weekly aggregated time series (all in hm3 units) and gpas are tried to be fileed in by mass balance. The fact that the model is fitted on weekly data does not prevent from using it on daily simulations. As we will see later, the harmonic functions include a frequency term ($\omega$). By changing this term from $\frac{1}{52}$ for weekly to $\frac{1}{365}$ for daily, we can use the same fitted functions for any of these temporal resolutions.
+The model is based on fitting harmonic functions to the observed storage and outflow time series in order to learn the seasonal behaviour of the reservoir. To avoid gaps and errors in daily data, the fitting is done on weekly aggregated time series (all in hm3 units) and gaps are tried to be filled in by mass balance. The fact that the model is fitted on weekly data does not prevent its use on daily simulations. As we will see later, the harmonic functions include a frequency term ($\omega$); by changing this term we can use the same fitted functions for any temporal resolution.
 
-The functions are fitted on standardised variables to allow regionalization of the parameters. Storage is converted into fraction filled by dividing it by the total storage capacity ($S_{cap}$), and inflow/release are normalised by the mean inflow ($\bar{I}$).
+The functions are fitted on standardised variables to allow regionalization of the parameters. Storage is converted into fraction filled by dividing it by the total storage capacity ($S$), and inflow/release are normalised by the mean inflow ($\bar{I}$).
 
 $$\hat{S}_t = \frac{S_t}{S}$$
 $$\hat{R}_t = \frac{R_t - \bar{I}}{\bar{I}}$$
@@ -25,7 +25,7 @@ $$\hat{I}_t = \frac{I_t - \bar{I}}{\bar{I}}$$
 
 ## Storage normal operating range (NOR)
 
-The model uses two harmonic functions to define the normal operating range (NOR) of the standardised storage ($\hat{S}$). These two rules define the upper and lower bounds of the normal reservoir filling ($\hat{S}$) for every week of the year. During a simulation, the routine will try to keep the reservoir in the NOR by using a different release operation depending on the storage zone (below, withing or above NOR).
+The model uses two harmonic functions to define the normal operating range (NOR) of the standardised storage ($\hat{S}$). These two rules define the upper and lower bounds of the normal reservoir filling for every week of the year. During a simulation, the routine will try to keep the reservoir in the NOR by using a different release operation depending on the storage zone (below, within or above NOR).
 
 $$
 \begin{align}
@@ -39,7 +39,7 @@ Each of the NOR harmonics has 5 parameters: 3 defining the harmonic ($A$, $B$, $
 > $\omega$ is the frequency. Fitting (weekly): $\omega=\frac{1}{52}$. Simulation (daily): $\omega=\frac{1}{365}$<br>
 > $t$ is the time of the year. Fitting (weekly): epistemologic week of the year. Simulation (daily): day of the year
 
-To fit these functions, only the 3 extreme values for each week of the year are used. Figure 1 clarifies the procedure. It shows the observed reservoir filling for each of the 52 weeks of year. The highest 3 values for each week (green dots) are used to fit the upper bound of the NOR, and the lowest 3 values (red dots) to fit the lower bound of the NOR.
+To fit these functions only the 3 extreme values for each week of the year are used. Figure 1 clarifies the procedure. It shows the observed reservoir filling for each of the 52 weeks of the year. The highest 3 values for each week (green dots) are used to fit the upper bound of the NOR, and the lowest 3 values (red dots) to fit the lower bound of the NOR.
 
 <img src="../results/ResOpsUS/starfit/355_NOR.jpg" width="600">
 
@@ -57,9 +57,9 @@ R_{min} & if \quad \hat{S}_t < NOR_{low} \\
 \end{cases}
 $$
 
-* **Below NOR**, the release is constant ($R_m$). In the original implementation, this minimum release is the 5% quantile of daily inflows. I have changed this definition to the 1% quantile because the original definition did not produce good results in simulation mode.
+* **Below NOR**, the release is constant ($R_{min}$). In the original implementation, this minimum release is the 5% quantile of daily inflows. I have changed this definition to the 1% quantile because the original definition did not produce good results in simulation mode.
 
-* When the reservoir filling is **within the NOR**, the routine models the standardised release ($\hat{R}_t$) as the sum of an harmonic model ($\tilde{R}_t$) that defines the seasonality and a linear model ($\epsilon_t$) that applies a correction based on the current reservoir filling ($\hat{S}_t$) and normalised inflow ($\hat{I}_t$).
+* When the reservoir filling is **within the NOR**, the routine models the standardised release ($\hat{R}_t$) as the sum of an harmonic model ($\tilde{R}_t$) that defines the seasonality, and a linear model ($\epsilon_t$) that applies a correction based on the current reservoir filling ($\hat{S}_t$) and normalised inflow ($\hat{I}_t$).
 
 $$
 \begin{align}
@@ -79,13 +79,13 @@ $$
 
 The above calculated release ($\ddot{R}_t$ ) needs to be checked in terms of mass balance:
 
-$$R_t = \max \left( \min \left( \ddot{R}_t, I_t + S_t \right), I_t + S_t - S_{cap} \right)$$
+$$R_t = \max \left( \min \left( \ddot{R}_t, I_t + S_t \right), I_t + S_t - S \right)$$
 
-In total, the release model has 9 parameters: 4 related to the harmonic function ($d$, $e$, $f$, $g$), 3 to the linear model ($h$, $i$, $j$), and the minimum and maximum releases ($R_{min}$, $R_{max}$). Differently to the storage model, the release model is fitted using all available values of weekly release. Figure 2 shows the fitted harmonic and linear functions of release for the reservoir 355.
+In total, the release model has 9 parameters: 4 related to the harmonic function ($d$, $e$, $f$, $g$), 3 to the linear model ($h$, $i$, $j$), and the minimum and maximum releases ($R_{min}$, $R_{max}$). Unlike the storage model, the release model is fitted using the complete set of available weekly releases. Figure 2 shows the harmonic and linear functions of release fitted for reservoir 355.
 
 <img src="../results/ResOpsUS/starfit/355_release.jpg" width="900">
 
-***Figure 2**. Fitted release model for reservoir 355. On the left panel, the fitted harmonic function ($\tilde{R}$), minimum ($R_{min}$) and maximum ($R_{max}$) releases are shown against weekly observations. On the right panel, the linear model of release residuals based on standardised inflow (X axis) and storage availability ($A_{st}$ lines).*
+***Figure 2**. Fitted release model for reservoir 355. On the left panel, the harmonic ($\tilde{R}$), minimum ($R_{min}$) and maximum ($R_{max}$) releases are shown against weekly observations. On the right panel, the linear model of release residuals based on standardised inflow (X axis) and storage availability ($A_{st}$ lines).*
 
 ### Modifications
 
@@ -99,15 +99,15 @@ $$R_{NOR} = \max \left( \min \left( \bar{I} \cdot \left( \tilde{R}_t + \epsilon_
 
 #### Release below NOR
 
-I have changed the release routine because the original definition generates very noisy releases when the reservoir storage fluctuates around the lower bound of the normal operating rule ($NOR_{low}$). If storage is slightly over $NOR_{low}$, the release is a function of the harmonic and the linear models; however, when the storage is slightly below $NOR_{low}$, the release is a constant $R_{min}$. It means that from one step to the next there is a big difference in release.
+The original definition generates very noisy releases when storage fluctuates around the lower bound of the normal operating rule ($NOR_{low}$). If storage is slightly over $NOR_{low}$, the release is a function of the harmonic and the linear models; however, when the storage is slightly below $NOR_{low}$, the release is a constant $R_{min}$. It means that from one step to the next there is a big difference in release.
     
-I have changed the release function below $NOR_{low}$ to be the minimum value between the inflow ($I_t$) and a linear function of the reservoir filling ($\hat{S}_t$). In this way, the changes in release are smooth, and the release is at most equal to the inflow, so the resevoir does not keep emptying:
+I have changed the release function below $NOR_{low}$ to be the minimum value between the inflow ($I_t$) and a linear function of the reservoir filling ($\hat{S}_t$). In this way, the changes in release are smooth, and the release is at most equal to the inflow, so the reservoir does not keep emptying:
     
 $$R_{l} = \min \left( R_{min} + \left( R_{NOR} - R_{min} \right) \cdot \frac{\hat{S}_t}{NOR_{low}} , \, I_t \right)$$
 
 #### Release above NOR
 
-The original routine tries to bring back the reservoir to the upper bound of NOR in one time step, if that release that not exceed the maximum ($R_{max}$). That behaviour often causes noisy releases when the value of the maximum release is relatively large. Following the reasoning used before, I have changed the definition of the release in the flood zone to a linear function of the reservoir filling ($\hat{S}_t$).
+The original routine tries to bring back the reservoir to the upper bound of NOR in one time step, if that release does not exceed the maximum ($R_{max}$). That behaviour often causes noisy releases when the value of the maximum release is relatively large. Following the reasoning used before, I have changed the definition of the release in the flood zone to a linear function of the reservoir filling ($\hat{S}_t$).
 
 $$R_{u} = R_{NOR} + \left( R_{max} - R_{NOR} \right) \cdot \frac{\hat{S}_t - NOR_{up}}{1 - NOR_{up}}$$
 
@@ -125,11 +125,21 @@ The results of fitting the release model are available at _Z:/nahaUsers/casadje/
 
 ### Simulation with fitted parameters
 
-I have run the model routine using the fitted parameters and two input data: the observed inflow daily time series, and the observed storage at the beginning of the simulation. This run is comparable to the bivariate calibration of the other reservoir models.
+I have run the Starfit model using the fitted parameters and two input data: the observed inflow daily time series, and the observed storage at the beginning of the simulation. 
 
 <img src="../results/ResOpsUS/starfit/355_line.jpg" width="900">
 
+***Figure 3**. Simulation of reservoir 355 with the fitted Starfit model compared with observations.*
+
+This run is comparable to the bivariate calibration of the other reservoir models, as fitting Starfit requires both storage and outflow records. There is a fundamental difference, though, between calibrating the other models and fitting Starfit. The calibration of the other models was done with a genetic algorithm, which implies multiple runs and a relatively long calibration time (several hours in the HPC). Fitting Starfit uses ordinary least squares, with takes seconds in a regular PC. 
+
+Figure 4 shows the comparison of the performance of Starfit with respect to the other 4 reservoirs models included in `lisflood-reservoirs`.
+
+<img src="../results/ResOpsUS/ecdf_KGE_SCEUA-QS.jpg" width="900">
+
 ***Figure 3**. Simulation of reservoir 355 with the fitted Starfit model, compared with observations.*
+
+Starfit ranks second, with a performance very similar to Hanazaki. Hanazaki performns slightly better in terms of storage, but slightly worse in terms of outflow. mHM is still the best performing model.
 
 ## Extra
 
