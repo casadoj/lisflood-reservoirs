@@ -19,7 +19,7 @@ The model is based on fitting harmonic functions (sums of sines and cosines) to 
 
 The functions are fitted on standardised variables to allow regionalization of the parameters. Storage is converted into fraction filled by dividing it by the total storage capacity ($S_{cap}$), and inflow/release are normalised by the mean inflow ($\bar{I}$).
 
-$$\hat{S}_t = \frac{S_t}{S_{\text{cap}}}$$<br>
+$$\hat{S}_t = \frac{S_t}{S_{cap}}$$<br>
 $$\hat{R}_t = \frac{R_t - \bar{I}}{\bar{I}}$$<br>
 $$\hat{I}_t = \frac{I_t - \bar{I}}{\bar{I}}$$<br>
 
@@ -28,6 +28,8 @@ $$\hat{I}_t = \frac{I_t - \bar{I}}{\bar{I}}$$<br>
 The model uses two harmonic functions to define the normal operating range (NOR) of the standardised storage ($\hat{S}$). These two rules define the upper and lower bounds of the normal reservoir filling ($\hat{S}$) for every week of the year. During a simulation, the routine will try to keep the reservoir in the NOR by using a different release operation depending on the storage zone (below, withing or above NOR).
 
 $$NOR_{up} = \min \left( \max \left( A + B \cdot sin \, 2 \pi \omega t + C \cdot cos \, 2 \pi \omega t, \; \hat{S}_{min} \right), \; \hat{S}_{max} \right)$$
+$$NOR_{up} = \min ( \max ( A + B \cdot sin \, 2 \pi \omega t + C \cdot cos \, 2 \pi \omega t, \; \hat{S}_{min} ), \; \hat{S}_{max} )$$
+
 $$NOR_{low} = \min \left( \max \left( a + b \cdot sin \, 2 \pi \omega t + c \cdot cos \, 2 \pi \omega t, \; \hat{s}_{min} \right), \; \hat{s}_{max} \right)$$
 
 Each of the NOR harmonics has 5 parameters: 3 defining the harmonic ($A$, $B$, $C$ in the upper bound), and 2 capping the maximum and minimum values of that NOR ($\hat{S}_{max}$, $\hat{S}_{min}$ in the upper bound). Therefore, the storage routine has 10 parameters.
