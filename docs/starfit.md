@@ -29,9 +29,13 @@ $$
 
 The model uses two harmonic functions to define the normal operating range (NOR) of the standardised storage ($\hat{S}$). These two rules define the upper and lower bounds of the normal reservoir filling ($\hat{S}$) for every week of the year. During a simulation, the routine will try to keep the reservoir in the NOR by using a different release operation depending on the storage zone (below, withing or above NOR).
 
+
+$$
+NOR_{up} = \min \left( \max \left( A + B \cdot \sin 2 \pi \omega t + C \cdot \cos 2 \pi \omega t, S_{min} \right), \; S_{max} \right)
+$$
+
 $$
 \begin{align}
-NOR_{up} &= \min \left( \max \left( A + B \cdot \sin 2 \pi \omega t + C \cdot \cos 2 \pi \omega t, \hat{S}_{min} \right), \; \hat{S}_{max} \right) \\
 NOR_{low} &= \min \left( \max \left( a + b \cdot \sin 2 \pi \omega t + c \cdot \cos 2 \pi \omega t, \hat{s}_{min} \right), \; \hat{s}_{max} \right)
 \end{align}
 $$
