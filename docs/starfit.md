@@ -32,8 +32,8 @@ The model uses two harmonic functions to define the normal operating range (NOR)
 
 $$
 \begin{align}
-NOR_{up} &= \min \left( \max \left( A + B \cdot \sin 2 \pi \omega t + C \cdot \cos 2 \pi \omega t, \hat{S}_{m} \right), \; \hat{S}_{M} \right) \\
-NOR_{low} &= \min \left( \max \left( a + b \cdot \sin 2 \pi \omega t + c \cdot \cos 2 \pi \omega t, \hat{s}_{m} \right), \; \hat{s}_{M} \right)
+NOR_{up} &= \min \left( \max \left( A + B \cdot \sin 2 \pi \omega t + C \cdot \cos 2 \pi \omega t, \hat{S}_{m} \right), \hat{S}_{M} \right) \\
+NOR_{low} &= \min \left( \max \left( a + b \cdot \sin 2 \pi \omega t + c \cdot \cos 2 \pi \omega t, \hat{s}_{m} \right), \hat{s}_{M} \right)
 \end{align}
 $$
 
@@ -64,9 +64,13 @@ $$
 
 * When the reservoir filling is **within the NOR**, the routine models the standardised release ($\hat{R}_t$) as the sum of an harmonic model ($\tilde{R}_t$) that defines the seasonality and a linear model ($\epsilon_t$) that applies a correction based on the current reservoir filling ($\hat{S}_t$) and normalised inflow ($\hat{I}_t$).
 
-$$\hat{R}_t = \tilde{R}_t + \epsilon_t$$
-$$\tilde{R}_t = d \cdot sin\,2 \pi \omega t + e \cdot cos\,2 \pi \omega t + f \cdot sin\,4 \pi \omega t + g \cdot cos\,4 \pi \omega t$$
-$$\epsilon_t = h + i \frac{\hat{S}_t - NOR_{low}}{NOR_{up} - NOR_{low}} + j \cdot \hat{I}_t$$
+$$
+\begin{align}
+\hat{R}_t &= \tilde{R}_t + \epsilon_t \\
+\tilde{R}_t &= d \cdot \sin 2 \pi \omega t + e \cdot \cos 2 \pi \omega t + f \cdot \sin 4 \pi \omega t + g \cdot \cos 4 \pi \omega t \\
+\epsilon_t &= h + i \frac{\hat{S}_t - NOR_{low}}{NOR_{up} - NOR_{low}} + j \cdot \hat{I}_t
+\end{align}
+$$
 
 > The release harmonic function allows for two periods of higher release throughout the year, whereas the storage harmonic only allows for one period of higher reservoir filling.
 
