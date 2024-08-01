@@ -118,6 +118,7 @@ def compare_flows(storage: pd.Series,
     cmap = kwargs.get('cmap', 'coolwarm_r')
     s = kwargs.get('size', 4)
     a = kwargs.get('alpha', .5)
+    scale = kwargs.get('scale', 'log')
     
     df = pd.concat((storage, outflow, inflow1, inflow2), axis=1)
     columns = df.columns

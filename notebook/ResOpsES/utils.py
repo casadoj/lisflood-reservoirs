@@ -80,52 +80,6 @@ def read_static_map(path: Union[Path, str],
 
 
 
-def filter_reservoirs(catchment: pd.Series, volume: pd.Series, catch_thr: Optional[float] = 10, vol_thr: Optional[float] = 10):
-    """
-    
-    Parameters:
-    -----------
-    catchment: pandas.Series
-        Reservoir catchment area
-    volume: pandas.series
-        Reservoir volume
-    catch_thr: float or None
-        Minimum catchment area that will be selected. Make sure that the units are the same as "catchment". If "catchment" does not report a value for a reservoir, that reservoir WILL NOT be removed, as this value can be estimated later on
-    vol_thr: float or None
-        Minimum reservoir volume required for a reservoir to be selected. Make sure that the units are the same as "volume". If "volume" does not report a value for a reservoir, the reservoir WILL be removed
-    """
-    
-    assert catchment.shape == volume.shape, '"catchment" and "volume" must have equal shape'
-    
-    n_reservoirs = catchment.shape[0]
-    
-    if catch_thr is not None:
-        mask_catch = (catchment.isnull()) | (catchment >= catch_thr)
-        print('{0} out of {1} reservoirs exceed the minimum catchment area of {2} km2 ({3} missing values)'.format(mask_catch.sum(),
-                                                                                                                   n_reservoirs,
-                                                                                                                   catch_thr,
-                                                                                                                   catchment.isnull().sum()))
-    else:
-        mask_catch = pd.Series(True, index=catchmen.index)
-    
-    if vol_thr is not None:
-        mask_vol = volume >= vol_thr
-        print('{0} out of {1} reservoirs exceed the minimum reservoir volume of {2} hm3 ({3} missing values)'.format(mask_vol.sum(),
-                                                                                                                     n_reservoirs,
-                                                                                                                     vol_thr,
-                                                                                                                     volume.isnull().sum()))
-    else:
-        mask_vol = pd.Series(True, index=volume.index)
-        
-    print('{0} out of {1} reservoirs exceed the minimum catchment area ({2} km2) and the minimum reservoir volume ({3} hm3)'.format((mask_catch & mask_vol).sum(),
-                                             n_reservoirs,
-                                             catch_thr,
-                                             vol_thr))
-    
-    return mask_catch & mask_vol
-
-
-
 def upstream_pixel(lat: float, lon: float, upArea: xr.DataArray) -> (float, float):
     """This function finds the upstream coordinates of a given point
     
@@ -163,29 +117,3 @@ def upstream_pixel(lat: float, lon: float, upArea: xr.DataArray) -> (float, floa
     pixel = upArea_.where(upArea_ == mask.max(), drop=True)
     
     return pixel.lat.data[0].round(4), pixel.lon.data[0].round(4)
-
-
-def remove_duplicates(df: pd.DataFrame, duplicates_col: str, select_col: str) -> pd.DataFrame:
-    """Given a DataFrame, it identifies duplicate entries in a column and selects that with the largest value in another column
-
-    Parameters:
-    -----------
-    df: pd.DataFrame
-        table from which duplicates will be removed
-    duplicates_col: string
-        column in "df" where duplicated values will be identified
-    select_col: string
-        column in "df" used to select one entry from the duplicates. For each duplicated value in "duplicated_col", the largest value in "select_col" will be kept
-
-    Returns:
-    --------
-    pd.DataFrame
-        The original table with duplicate values removed
-    """
-
-    for value, count in df[duplicates_col].value_counts().items():
-        if count > 1:
-            remove_idx = df.loc[df[duplicates_col] == value].sort_values(select_col, ascending=False).index[1:]
-            df.drop(remove_idx, axis=0, inplace=True)
-        else:
-            break
