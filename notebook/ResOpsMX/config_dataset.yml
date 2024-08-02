@@ -1,0 +1,24 @@
+version: v1.0
+
+url: https://sih.conagua.gob.mx/basedatos/Presas/
+
+paths:
+    GloFAS: 
+        root: Z:/nahaUsers/casadje/GloFASv4/
+        timeseries: long_run/rsfil/
+    GRanD: Z:/nahaUsers/casadje/datasets/reservoirs/GRanD/v1_3/
+    dataset: 
+        root: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsMX/
+        obs_timeseries: raw/time_series_all/
+        sim_timeseries: ancillary/LISFLOOD/
+
+period:
+    start: 1990-01-01
+    end: 2020-09-30
+
+conditions:
+    min_area: 250 # km²
+    min_volume: 10 # hm3
+    min_dor: 0.08 # degree of regulation
+    min_length: 8 # years
+    tol_bias: 0.3 # relative bias accepted between inflow and outflow

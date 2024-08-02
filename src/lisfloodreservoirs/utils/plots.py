@@ -17,9 +17,76 @@ from statsmodels.distributions.empirical_distribution import ECDF
 
 # from utils import Decomposition
 from .metrics import KGEmod, KGE
-        
-        
 
+
+
+def plot_attributes(df: pd.DataFrame,
+                    x: pd.Series,
+                    y: pd.Series,
+                    save: Optional[Union[Path, str]] = None,
+                    **kwargs):
+    """
+    It creates maps (scatter plots) of the static attributes associated to specific points.
+
+    Parameters:
+    -----------
+    df: pd.DataFrame
+        table of attributes
+    x: pd.Series
+        coordinate X of the points in "df"
+    y: pd.Series
+        coordinate Y of the points in "df"
+    save: optional, Path or str
+        location where the plot will be saved. By default it is None and the plot won't be saved
+
+    kwargs:
+    -------
+    figsize: List o Tuple
+    ncols: int
+    cmap: str
+    alpha: float
+    """
+
+    # kwargs
+    figsize = kwargs.get('figsize', (5, 4))
+    ncols_max = kwargs.get('ncols', 3)
+    cmap = kwargs.get('cmap', 'magma')
+    alpha = kwargs.get('alpha', 1)
+    s = kwargs.get('size', 5)
+    extent = kwargs.get('extent', [-9.5, 3.5, 36, 44.5])
+   
+    proj = ccrs.PlateCarree()
+    ncols, nrows = df.shape[1], 1
+    if ncols > ncols_max:
+        ncols, nrows = ncols_max, int(np.ceil(ncols / ncols_max))
+
+    fig, axes = plt.subplots(ncols=ncols,
+                             nrows=nrows,
+                             figsize=(figsize[0] * ncols, figsize[1] * nrows),
+                             subplot_kw={'projection': proj})
+    for i, col in enumerate(df.columns):
+        if nrows > 1:
+            f, c = i // ncols, i % ncols
+            ax = axes[f, c]
+        else:
+            c = i
+            ax = axes[c]
+        ax.add_feature(cf.NaturalEarthFeature('physical', 'land', '50m', edgecolor=None, facecolor='lightgray'), zorder=0)
+        ax.set_extent(extent, crs=proj)
+        sc = ax.scatter(x[df.index], y[df.index], cmap=cmap, c=df[col], s=s, alpha=alpha, label=col)
+        cbar = plt.colorbar(sc, ax=ax, orientation='horizontal', shrink=.5)
+        ax.set_title(' '.join(col.split('_')))
+        ax.axis('off');
+    
+    if c < ncols - 1:
+        for c_ in range(c + 1, ncols):
+            axes[f, c_].axis('off')
+
+    if save is not None:
+        plt.savefig(save, dpi=300, bbox_inches='tight')
+        
+        
+        
 def compare_flows(storage: pd.Series,
                   outflow: pd.Series,
                   inflow1: pd.Series,
@@ -51,6 +118,7 @@ def compare_flows(storage: pd.Series,
     cmap = kwargs.get('cmap', 'coolwarm_r')
     s = kwargs.get('size', 4)
     a = kwargs.get('alpha', .5)
+    scale = kwargs.get('scale', 'log')
     
     df = pd.concat((storage, outflow, inflow1, inflow2), axis=1)
     columns = df.columns
@@ -113,7 +181,10 @@ def compare_flows(storage: pd.Series,
         
         
         
-def create_cmap(cmap: str, bounds: List, name: str = '', specify_color: Tuple = None):
+def create_cmap(cmap: str,
+                bounds: List,
+                name: str = '',
+                specify_color: Tuple = None):
     """Given the name of a colour map and the boundaries, it creates a discrete colour ramp for future plots
     
     Inputs:

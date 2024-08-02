@@ -40,7 +40,8 @@ class Config:
         
         
 def read_attributes(path: Union[str, Path],
-                    reservoirs: Optional[List] = None
+                    reservoirs: Optional[List] = None,
+                    index_col: Optional[str] = 'GRAND_ID'
                    ) -> pd.DataFrame:
     """It reads all the attribute tables from the specified dataset and, if provided, filters the selected reservoirs.
     
@@ -50,6 +51,8 @@ def read_attributes(path: Union[str, Path],
         Directory where the dataset is stored
     reservoirs: list (optional)
         List of the reservoir ID selected
+    index_col: string (otpional)
+        Name of the column to be used as index
         
     Returns:
     --------
@@ -59,9 +62,10 @@ def read_attributes(path: Union[str, Path],
         
     # import all tables of attributes
     try:
-        attributes = pd.concat([pd.read_csv(file, index_col=0) for file in path.glob('*.csv')],
+        attributes = pd.concat([pd.read_csv(file, index_col='GRAND_ID') for file in path.glob('*.csv')],
                                axis=1,
                                join='outer')
+        attributes.index.name = 'GRAND_ID'
         if reservoirs is not None:
             if isinstance(reservoirs, list) is False:
                 reservoirs = [reservoirs]
