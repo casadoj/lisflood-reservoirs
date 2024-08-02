@@ -103,6 +103,53 @@ class Reservoir:
 
         return pd.concat((storage, inflow, outflow), axis=1)
     
+    def estimate_level(self, volume: pd.Series, elev_masl: float, dam_hgt_m: float, ) -> pd.Series:
+        """Estimates the reservoir level assuming a triangular pyramid shape
+        
+            level_masl = elev_masl - {dam_hgt_m * [1 - (volume / Vtot)**(1/3)]}
+        
+        Parameters:
+        -----------
+        volume: pandas.Series
+            Time series of reservoir storage
+        elev_masl: float
+            Elevation of the top of the dam in meters above sea level
+        dam_hgt_m: float
+            Height of the dam in meters
+            
+        Returns:
+        --------
+        level_masl: pandas.Series
+            Time series of reservoir level
+        """
+        
+        h = dam_hgt_m * (volume / self.Vtot)**(1/3)
+        level_masl = elev_masl - (dam_hgt_m - h)
+        
+        return level_masl
+    
+    def estimate_area(self, volume: pd.Series, Atot: float, ) -> pd.Series:
+        """Estimates the reservoir level assuming a triangular pyramid shape
+        
+            area = Atot * (volume / Vtot)**(2/3)
+        
+        Parameters:
+        -----------
+        volume: pandas.Series
+            Time series of reservoir storage
+        Atot: float
+            Reservoir area at maximum capacity. The units of the result will be the same as those provided here
+            
+        Returns:
+        --------
+        area: pandas.Series
+            Time series of reservoir area
+        """
+        
+        area = Atot * (volume / self.Vtot)**(2/3)
+        
+        return area
+    
     def get_params(self) -> Dict:
         """It generates a dictionary with the reservoir parameters
         
