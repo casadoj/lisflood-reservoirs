@@ -184,7 +184,7 @@ print('no. reservoirs (V > 100 hm³):\t\t{0}'.format((glofas.stor >= min_volume)
 
 
     
-![png](output_14_1.png)
+![png](reservoirs_glofas.png)
     
 
 
@@ -253,7 +253,7 @@ print('no. reservoirs (V > 500 hm³):\t{0}'.format((glwd.VOLUME_MCM >= 500).sum(
 
 
     
-![png](output_18_1.png)
+![png](reservoirs_glwd.png)
     
 
 
@@ -337,7 +337,7 @@ print('GRanD (V >= {0} hm³):\t{1} reservoirs\t\t{2:.0f} hm³ ({3:.1f}%)'.format
 
 
     
-![png](output_25_1.png)
+![png](reservoirs_grand.png)
     
 
 
@@ -535,7 +535,7 @@ grand_new_v.to_csv(f'{path_out}GRanD_selection_storage.csv')
 
 
     
-![png](output_39_0.png)
+![png](reservoirs_grand_to_add_storage.png)
     
 
 
@@ -554,7 +554,8 @@ grand_new_a.to_csv(f'{path_out}GRanD_selection_catchment_area.csv')
 
 
     
-![png](output_42_0.png)
+![png](reservoirs_grand_to_add_catchment
+.png)
     
 
 
@@ -575,7 +576,7 @@ grand_new_dor.to_csv(f'{path_out}GRanD_selection_regulation.csv')
 
 
     
-![png](output_45_0.png)
+![png](reservoirs_grand_to_add_regulation.png)
     
 
 
