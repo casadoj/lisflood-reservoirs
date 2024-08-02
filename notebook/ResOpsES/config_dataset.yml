@@ -20,5 +20,6 @@ conditions:
     min_area: 25 # km²
     min_volume: 10 # hm3
     min_dor: 0.08 # degree of regulation
+    min_dod: 0.06 # degree of disruptivity
     min_length: 8 # years
     tol_bias: 0.3 # relative bias accepted between inflow and outflow
