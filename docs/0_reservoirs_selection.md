@@ -554,8 +554,7 @@ grand_new_a.to_csv(f'{path_out}GRanD_selection_catchment_area.csv')
 
 
     
-![png](reservoirs_grand_to_add_catchment
-.png)
+![png](reservoirs_grand_to_add_catchment.png)
     
 
 
