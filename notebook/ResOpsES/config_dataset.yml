@@ -9,6 +9,8 @@ paths:
         root: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsES/
         obs_timeseries: raw/time_series_all/
         sim_timeseries: ancillary/LISFLOOD/
+        
+normalize: False # normalize time series by reservoir storage capacity
 
 period:
     start: 1990-01-01
