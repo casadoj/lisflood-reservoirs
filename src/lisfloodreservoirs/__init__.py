@@ -62,10 +62,10 @@ def read_attributes(path: Union[str, Path],
         
     # import all tables of attributes
     try:
-        attributes = pd.concat([pd.read_csv(file, index_col='GRAND_ID') for file in path.glob('*.csv')],
+        attributes = pd.concat([pd.read_csv(file, index_col=index_col) for file in path.glob('*.csv')],
                                axis=1,
                                join='outer')
-        attributes.index.name = 'GRAND_ID'
+        attributes.index.name = index_col
         if reservoirs is not None:
             if isinstance(reservoirs, list) is False:
                 reservoirs = [reservoirs]
