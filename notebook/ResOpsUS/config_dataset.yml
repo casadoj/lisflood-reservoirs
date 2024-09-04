@@ -1,14 +1,14 @@
 version: v1.1
 
 paths:
-    GloFAS: 
+    LISFLOOD: 
         root: Z:/nahaUsers/casadje/GloFASv4/
         timeseries: long_run/rsfil/
-    ResOpsUS: 
+    GRanD: Z:/nahaUsers/casadje/datasets/reservoirs/GRanD/v1_3/
+    ResOps: 
         root: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/
         obs_timeseries: raw/time_series_all/
         sim_timeseries: ancillary/LISFLOOD/
-    GRanD: Z:/nahaUsers/casadje/datasets/reservoirs/GRanD/v1_3/
 
 period:
     start: 1982-01-01
