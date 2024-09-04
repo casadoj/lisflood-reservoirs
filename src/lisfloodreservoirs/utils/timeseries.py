@@ -189,7 +189,7 @@ def clean_storage2(storage: pd.Series,
                    error_thr: float = .1,
                    inplace: bool = False
                   ) -> Optional[pd.Series]:
-    """It removes values from a reservoir storage time series that exceed an acceptable error ("error_thr") between the actual value and that of a centered, moving median of width "w"
+    """It removes values from a reservoir storage time series that exceed an acceptable error ("error_thr") between the actual value and that of a centered, moving median of width "w". Compared with the previous version of this function, the error is a quotient of the storage capacity, instead of the median storage
     
     Parameters:
     -----------
