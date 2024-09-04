@@ -102,7 +102,8 @@ def main():
     try:
         timeseries = read_timeseries(cfg.PATH_DATA / 'time_series' / 'csv',
                                      attributes.index,
-                                     periods)
+                                     periods,
+                                     variables=cfg.TARGET + [cfg.INPUT])
     except IOError as e:
         logger.error('Failed to read time series from {0}: {1}'.format(cfg.PATH_DATA / 'time_series' / 'csv', e))
         raise

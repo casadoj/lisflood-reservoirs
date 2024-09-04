@@ -91,7 +91,8 @@ def main():
     try:
         timeseries = read_timeseries(cfg.PATH_DATA / 'time_series' / 'csv',
                                      attributes.index,
-                                     periods)
+                                     periods,
+                                     variables=cfg.TARGET + [cfg.INPUT])
     except IOError as e:
         logger.error('Failed to read time series from {0}: {1}'.format(cfg.PATH_DATA / 'time_series' / 'csv', e))
         raise
@@ -120,7 +121,7 @@ def main():
                         ts.elevation if 'elevation' in ts.columns else None,
                         ts.inflow,
                         ts.outflow,
-                        attributes.loc[grand_id, ['CAP_MCM', 'CAP_GLWD']].values * 1e6,
+                        attributes.loc[grand_id, 'CAP_MCM'] * 1e6,
                         title=grand_id,
                         save=path_obs / f'{grand_id}_line.jpg'
                        )
