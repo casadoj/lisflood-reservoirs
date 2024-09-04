@@ -81,6 +81,7 @@ def read_timeseries(
     path: Union[str, Path],
     reservoirs: Optional[List[int]] = None,
     periods: Optional[Dict[int, Dict[str, pd.Timestamp]]] = None,
+    variables: Optional[List[str]] = None,
 ) -> Dict[int, pd.DataFrame]:
     """It reads the time series in the dataset and saves them in a dictionary.
     
@@ -92,14 +93,17 @@ def read_timeseries(
         List of the reservoir ID selected
     periods: dictionary (optional)
         If provided, it cuts the time series to the specified period. It is a dictionary of dictionaries, where the keys are the reservoir ID, and the values are dictionaries with two entries ('start' and 'end') that contain timestamps of the selected beginning and end of the study period
-        
+    variables: list (optional)
+        If selects the time series to be loaded. If not provided, it searches for columns 'inflow', 'storage', 'outflow', 'elevation'
+    
     Returns:
     --------
     timeseries: dictionary
         It contains the timeseries of the selected reservoirs as pandas.DataFrame
     """
     
-    variables = ['inflow', 'storage', 'outflow', 'elevation']
+    if variables is None:
+        variables = ['inflow', 'storage', 'outflow', 'elevation']
     
     if reservoirs is None:
         reservoirs = [int(file.stem) for file in path_ts.glob('*.csv')]
