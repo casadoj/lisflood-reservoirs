@@ -1,6 +1,7 @@
 import yaml
 from pathlib import Path
 from typing import Union, Optional, List, Dict
+from datetime import datetime
 
 class DatasetConfig:
     
@@ -27,7 +28,11 @@ class DatasetConfig:
         
         # period
         self.START = self.cfg['period']['start']
+        if self.START is None:
+            self.START = datetime(1990, 1, 1)
         self.END = self.cfg['period']['end']
+        if self.END is None:
+            self.END = datetime.now().date()
         
         self.NORMALIZE = self.cfg['normalize']
         
@@ -38,3 +43,15 @@ class DatasetConfig:
         self.MIN_DOD = self.cfg['conditions']['min_dod']
         self.MIN_YEARS = self.cfg['conditions']['min_years']
         self.TOL_BIAS = self.cfg['conditions']['tol_bias']
+        
+
+class APIConfig:
+    
+    def __init__(self, config_file: Union[str, Path]):
+        
+        with open(config_file, 'r', encoding='utf8') as ymlfile:
+            self.cfg = yaml.load(ymlfile, Loader=yaml.FullLoader)
+            
+        self.URL = self.cfg['url']
+        self.USERNAME = self.cfg['username']
+        self.PASSWORD = self.cfg['password']
