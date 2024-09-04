@@ -216,6 +216,7 @@ def plot_resops(storage: pd.Series = None,
                 inflow: pd.Series = None,
                 outflow: pd.Series = None,
                 capacity: Union[List[float], float] = None,
+                level: Union[List[float], float] = None,
                 save: Union[str, Path] = None, **kwargs):
     """It creates a plot with two graphs that shows the reservoir time series. The first graph is the storage-elevation curve of the reservoir (if both storage and elevation time series are available). The second graph is the time series of storage, inflow and outflow.
     
@@ -230,7 +231,9 @@ def plot_resops(storage: pd.Series = None,
     outflow: pd.Series
         Time series of reservoir outflow (m3/s)
     capacity: Union[List[float], float]
-        Values of storage capacity that will be plotted as horizontal lines in the time series plot
+        Values of storage capacity that will be plotted as horizontal lines in the plots
+    level: float or list of floats
+        Values of reservoir level that will be plotted as vertical lies in the scatter plot
     save: Union[str, Path]
         File name where the plot will be saved. By default is None and the plot is not saved.
     kwargs:
@@ -243,7 +246,7 @@ def plot_resops(storage: pd.Series = None,
         title: str
             If given, title of the plot
     """
-    
+                
     # Create the figure and define the grid specification
     fig = plt.figure(figsize=kwargs.get('figsize', (20, 6)))
     gs = gridspec.GridSpec(1, 3)
@@ -252,6 +255,16 @@ def plot_resops(storage: pd.Series = None,
     ax1 = plt.subplot(gs[0])
     if isinstance(elevation, pd.Series) and isinstance(storage, pd.Series):
         ax1.scatter(elevation, storage, s=1, c=elevation.index, cmap='Greys')
+    if capacity is not None:
+        if isinstance(capacity, float):
+            capacity = [capacity]
+        for ls, value in zip(['-', '--', ':'], capacity):
+            ax1.axhline(value, lw=.8, c='k', ls=ls)
+    if level is not None:
+        if isinstance(elevation, float):
+            level = [level]
+        for ls, value in zip(['-', '--', ':'], level):
+            ax1.axvline(value, lw=.8, c='k', ls=ls)
     ax1.set(xlabel='elevation (m)',
             ylabel='storage (hm3)')
 
@@ -260,8 +273,6 @@ def plot_resops(storage: pd.Series = None,
     if isinstance(storage, pd.Series):
         ax2.fill_between(storage.index, storage, color='lightgray', alpha=.5, label='storage')
     if capacity is not None:
-        if isinstance(capacity, float):
-            capacity = [capacity]
         for ls, value in zip(['-', '--', ':'], capacity):
             ax2.axhline(value, lw=.8, c='k', ls=ls)
     ax2.set(xlim=kwargs.get('xlim', (storage.index[0], storage.index[-1])),
