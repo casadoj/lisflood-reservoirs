@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import xarray as xr
 from typing import Union, List, Dict, Tuple, Optional, Literal
 from statsmodels.distributions.empirical_distribution import ECDF
 
@@ -394,3 +395,36 @@ def define_period(series: Union[pd.Series, pd.DataFrame],
         return starts[imax], ends[imax] - np.timedelta64(1, 'D')
     else:
         return np.nan, np.nan
+    
+    
+    
+def time_encoding(
+    da: xr.DataArray,
+    period: int
+) -> Tuple[xr.DataArray, xr.DataArray]:
+    """
+    Transforms time feature values in an xarray.DataArray to sine and cosine components.
+
+    Parameters:
+    -----------
+    da: xarray.DataArray)
+        An xarray.DataArray with time feature values (e.g., month, day of year).
+    period: integer
+        The period of the time feature (e.g., 12 for months, 7 for days of the week).
+
+    Returns:
+    --------
+    sin_da, cos_da (tuple of xarray.DataArray):
+        Sine and cosine transformations of the time feature values.
+    """
+    
+    # Normalize time feature values to [0, 2π]
+    if da.min().item() == 1:
+        norm_da = (da - 1) * 2 * np.pi / period
+    elif da.min().item() == 0:
+        norm_da = da * 2 * np.pi / period
+        
+    # correct leap years, if necessary
+    norm_da = norm_da.where(norm_da <= np.pi * 2, np.pi * 2)
+    
+    return np.sin(norm_da), np.cos(norm_da)

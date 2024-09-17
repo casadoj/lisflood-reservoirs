@@ -11,6 +11,73 @@ from typing import Union, List, Dict, Tuple, Optional, Literal
 from pathlib import Path
 import xml.etree.ElementTree as ET
 from scipy.stats import gumbel_r, gaussian_kde
+from tqdm.auto import tqdm
+
+
+
+def find_connections(
+    dst: gpd.GeoDataFrame,
+    src: gpd.GeoDataFrame,
+    max_distance: float = 0.01
+) -> Dict:
+    """Finds a mapping between the indices in two GeoDataFrames based on geographical proximity
+    
+    Parameters:
+    -----------
+    dst: geopandas.GeoDataFrame
+        Points for which an ID is searched
+    src: geopandas.GeoDataFrame
+        Points that are used as the source of the ID
+        
+    Returns:
+    --------
+    mapping: dictionary
+        The keys are indices in 'src', and the values indices in 'dst'
+    """
+    
+    mapping = {}
+    for ID, row in tqdm(dst.iterrows(), total=dst.shape[0]):
+        # compute "distance" from all points in the source
+        diff = ((src.geometry.x - row.geometry.x)**2 + (src.geometry.y - row.geometry.y)**2)**.5
+        if diff.min() <= max_distance:
+            mapping[ID] = diff.idxmin()          
+
+    return mapping
+
+
+
+def filter_domain(
+    points: gpd.GeoDataFrame,
+    domain: xr.DataArray
+):
+    """Selects the points inside the model domain.
+    
+    Parameters:
+    -----------
+    points: geopandas.GeoDataFrame
+    domain: xarray.DataArray
+        Boolean map that defines the model domain: 1 defines the domain
+    """
+    
+    def nearest_domain_value(point, domain):
+        x_idx = domain.x.get_indexer([point.x], method='nearest')[0]
+        y_idx = domain.y.get_indexer([point.y], method='nearest')[0]
+        return dom.isel(x=x_idx, y=y_idx).item()
+    
+    # filter by extent
+    lon_min, lat_min, lon_max, lat_max = np.round(domain.rio.bounds(), 6)
+    mask_extent = (lon_min <= points.geometry.x) &  (points.geometry.x <= lon_max) & (lat_min <= points.geometry.y) & (points.geometry.y <= lat_max)
+    points = points[mask_extent]
+    
+    # keep points inside the domain
+    pbar = tqdm(points.iterrows(), total=points.shape[0])
+    mask_domain = [
+        ID for ID, point in pbar
+        if domain.sel(x=point.geometry.x, y=point.geometry.y, method='nearest').item() == 1
+    ]
+    points = points.loc[mask_domain]
+    
+    return points
 
 
 
@@ -46,26 +113,32 @@ def filter_reservoirs(
     
     if catch_thr is not None:
         mask_catch = (catchment.isnull()) | (catchment >= catch_thr)
-        print('{0} out of {1} reservoirs exceed the minimum catchment area of {2} km2 ({3} missing values)'.format(mask_catch.sum(),
-                                                                                                                   n_reservoirs,
-                                                                                                                   catch_thr,
-                                                                                                                   catchment.isnull().sum()))
+        print('{0} out of {1} reservoirs exceed the minimum catchment area of {2} km2 ({3} missing values)'.format(
+            mask_catch.sum(),
+            n_reservoirs,
+            catch_thr,
+            catchment.isnull().sum()
+        ))
     else:
         mask_catch = pd.Series(True, index=catchmen.index)
     
     if vol_thr is not None:
         mask_vol = volume >= vol_thr
-        print('{0} out of {1} reservoirs exceed the minimum reservoir volume of {2} hm3 ({3} missing values)'.format(mask_vol.sum(),
-                                                                                                                     n_reservoirs,
-                                                                                                                     vol_thr,
-                                                                                                                     volume.isnull().sum()))
+        print('{0} out of {1} reservoirs exceed the minimum reservoir volume of {2} hm3 ({3} missing values)'.format(
+            mask_vol.sum(),
+            n_reservoirs,
+            vol_thr,
+            volume.isnull().sum()
+        ))
     else:
         mask_vol = pd.Series(True, index=volume.index)
         
-    print('{0} out of {1} reservoirs exceed the minimum catchment area ({2} km2) and the minimum reservoir volume ({3} hm3)'.format((mask_catch & mask_vol).sum(),
-                                             n_reservoirs,
-                                             catch_thr,
-                                             vol_thr))
+    print('{0} out of {1} reservoirs exceed the minimum catchment area ({2} km2) and the minimum reservoir volume ({3} hm3)'.format(
+        (mask_catch & mask_vol).sum(),
+        n_reservoirs,
+        catch_thr,
+        vol_thr
+    ))
     
     return mask_catch & mask_vol
 
@@ -74,7 +147,8 @@ def filter_reservoirs(
 def remove_duplicates(
     df: pd.DataFrame,
     duplicates_col: str,
-    select_col: str
+    select_col: str,
+    inplace: bool = False
 ) -> pd.DataFrame:
     """Given a DataFrame, it identifies duplicate entries in a column and selects that with the largest value in another column
 
@@ -89,10 +163,10 @@ def remove_duplicates(
 
     Returns:
     --------
-    pd.DataFrame
-        The original table with duplicate values removed
+    Removals are done inplace
     """
-
+    
+    
     for value, count in df[duplicates_col].value_counts().items():
         if count > 1:
             remove_idx = df.loc[df[duplicates_col] == value].sort_values(select_col, ascending=False).index[1:]
@@ -102,13 +176,14 @@ def remove_duplicates(
             
             
             
-def select_reservoirs(df: gpd.GeoDataFrame,
-                      sort: str,
-                      storage: str,
-                      target: float,
-                      plot: bool = True,
-                      **kwargs
-                     ) -> gpd.GeoDataFrame:
+def select_reservoirs(
+    df: gpd.GeoDataFrame,
+    sort: str,
+    storage: str,
+    target: float,
+    plot: bool = True,
+    **kwargs
+) -> gpd.GeoDataFrame:
     """Selects reservoirs that fulfil a target total storage capacity by prioritizing based on another characteristic
     
     Inputs:
