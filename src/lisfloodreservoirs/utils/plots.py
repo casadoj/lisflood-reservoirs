@@ -20,6 +20,71 @@ from .metrics import KGEmod, KGE
 
 
 
+def plot_reservoir_map(
+    geometry,
+    volume,
+    area=None,
+    save=None,
+    **kwargs
+):
+    """Creates a maps where reservoirs are represented as dots. The size of the dots reflects the reservoir storage, and the colour the catchment area (if provided)
+    
+    Parameters:
+    -----------
+    geometry: gpd.GeoSeries
+        Geometry of the points
+    volume: pandas.Series
+        Reservoir storage capacity
+    area: pandas.Series (optional)
+        Reservoir catchment area
+    save: str or pathlib.Path (optional)
+        If provided, file where the plot will be saved
+    """
+    
+    figsize = kwargs.get('figsize', (20, 5))
+    title = kwargs.get('title', None)
+    
+    # set up plot
+    fig, ax = plt.subplots(figsize=figsize, subplot_kw=dict(projection=ccrs.PlateCarree()))
+    ax.add_feature(cf.NaturalEarthFeature('physical', 'land', '50m', edgecolor='face', facecolor='lightgray'), alpha=.5, zorder=0)
+    ax.axis('off')
+    
+    # plot reservoir poitns
+    if area is not None:
+        scatter = ax.scatter(
+        geometry.x,
+        geometry.y,
+        s=volume / 1000, #np.cbrt(volume),
+        c=np.sqrt(area), #, c=np.log10(icold.DOR_PC.replace(0, .1))
+        cmap='coolwarm',
+        alpha=.7)
+    else:
+        scatter = ax.scatter(
+        geometry.x,
+        geometry.y,
+        s=volume / 1000, #np.cbrt(volume),
+        color='steelblue',
+        alpha=.7)
+    
+    # title
+    if title is not None:
+        ax.text(.5, 1.125, title, horizontalalignment='center', verticalalignment='bottom', transform=ax.transAxes, fontsize=12)
+    text = '{0} reservoirs\n{1:.0f} km³'.format(volume.shape[0], volume.sum() / 1000)
+    ax.text(.5, 1.02, text, horizontalalignment='center', verticalalignment='bottom', transform=ax.transAxes)
+    
+    # legend
+    if area is not None:
+        legend1 = ax.legend(*scatter.legend_elements(prop='colors', num=4, alpha=.5), title='catchment (km²)', bbox_to_anchor=[1.025, .6, .06, .25], frameon=False)
+        ax.add_artist(legend1)
+    legend2 = ax.legend(*scatter.legend_elements(prop='sizes', num=4, alpha=.5), title='storage (km³)', bbox_to_anchor=[1.025, .1, .1, .5], frameon=False)
+    ax.add_artist(legend2)
+
+    # save
+    if save is not None:
+        plt.savefig(save, dpi=300, bbox_inches='tight')
+        
+        
+        
 def plot_attributes(df: pd.DataFrame,
                     x: pd.Series,
                     y: pd.Series,
