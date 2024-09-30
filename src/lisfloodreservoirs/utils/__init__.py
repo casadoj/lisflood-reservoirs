@@ -1,7 +1,8 @@
 import yaml
 from pathlib import Path
 from typing import Union, Optional, List, Dict
-from datetime import datetime
+# from datetime import datetime
+import pandas as pd
 
 class DatasetConfig:
     
@@ -27,12 +28,8 @@ class DatasetConfig:
         self.PATH_TS.mkdir(parents=True, exist_ok=True)
         
         # period
-        self.START = self.cfg['period']['start']
-        if self.START is None:
-            self.START = datetime(1990, 1, 1)
-        self.END = self.cfg['period']['end']
-        if self.END is None:
-            self.END = datetime.now().date()
+        self.START = pd.to_datetime(self.cfg['period'].get('start', '1900-01-01'))
+        self.END = pd.to_datetime(self.cfg['period'].get('end', 'now')) #.date()
         
         self.NORMALIZE = self.cfg['normalize']
         
