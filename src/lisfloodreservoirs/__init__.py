@@ -127,7 +127,7 @@ def read_timeseries(
         
         # select study period
         if periods is not None:
-            start, end = [periods[id][x] for x in ['start', 'end']]
+            start, end = [periods[str(id)][f'{x}_dates'][0] for x in ['start', 'end']]
             ts = ts.loc[start:end, variables]
 
         # convert storage to m3
