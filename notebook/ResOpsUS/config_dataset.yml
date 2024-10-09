@@ -1,4 +1,4 @@
-version: v1.1
+version: v2.0
 
 paths:
     LISFLOOD: 
@@ -10,6 +10,8 @@ paths:
         obs_timeseries: raw/time_series_all/
         sim_timeseries: ancillary/LISFLOOD/
 
+normalize: True # normalize time series by reservoir storage capacity
+
 period:
     start: 1982-01-01
     end: 2019-12-30
@@ -18,5 +20,6 @@ conditions:
     min_area: 250 # km²
     min_volume: 10 # hm3
     min_dor: 0.08 # degree of regulation
-    min_length: 8 # years
+    min_dod: 0.06 # degree of disruptivity
+    min_years: 4 # years
     tol_bias: 0.3 # relative bias accepted between inflow and outflow
