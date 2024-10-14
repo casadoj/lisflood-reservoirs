@@ -118,7 +118,7 @@ def plot_attributes(df: pd.DataFrame,
     cmap = kwargs.get('cmap', 'magma')
     alpha = kwargs.get('alpha', 1)
     s = kwargs.get('size', 5)
-    extent = kwargs.get('extent', [-9.5, 3.5, 36, 44.5])
+    extent = kwargs.get('extent', [-180, 180, -90, 90])
    
     proj = ccrs.PlateCarree()
     ncols, nrows = df.shape[1], 1
