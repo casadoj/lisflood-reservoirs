@@ -487,3 +487,41 @@ def downstream_pixel(lat: float, lon: float, upArea: xr.DataArray) -> (float, fl
     pixel = upArea_.where(upArea_ == mask.min(), drop=True)
     
     return pixel.lat.data[0].round(4), pixel.lon.data[0].round(4)
+
+
+def duration_precip_indices(mask: pd.DataFrame) -> pd.Series:
+    """
+    Calculate the mean duration of precipitation extremes for each column in the mask DataFrame.
+
+    This function assumes that the input DataFrame 'mask' contains boolean-like data (0s and 1s),
+    where a 1 indicates the occurrence of a precipitation extreme and a 0 indicates no extreme.
+    The function computes the mean duration of continuous sequences of 1s (extreme events) for
+    each column, with the duration expressed in days.
+
+    Parameters:
+    -----------
+    mask : pd.DataFrame
+        A DataFrame with boolean-like values (0s and 1s), where the index represents time (as a
+        DateTimeIndex) and each column corresponds to a different location or measurement.
+
+    Returns:
+    --------
+    pd.Series
+        A Series containing the mean duration of extreme precipitation events for each column in the mask
+        DataFrame. The index of the Series corresponds to the columns of the input DataFrame.
+    """
+    
+    duration = pd.Series(index=mask.columns, dtype=float)
+    
+    mask_diff = mask.astype(int).diff(axis=0)
+    mask_diff.iloc[0] = mask.iloc[0].astype(int)
+    for col in mask.columns:
+        starts = mask_diff[mask_diff[col] == 1].index
+        ends = mask_diff[mask_diff[col] == -1].index
+        if len(starts) > len(ends):
+            ends = ends.append(mask_diff.index[[-1]])
+        elif len(starts) < len(ends):
+            starts = mask_diff.index[[0]].append(starts)  
+        duration.loc[col] = np.mean((ends - starts) / np.timedelta64(1, 'D'))
+        
+    return duration
