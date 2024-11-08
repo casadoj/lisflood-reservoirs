@@ -1,6 +1,6 @@
 catchments:
     path: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/ancillary/cutmaps
-    IDs: points.txt
+    IDs: points_123.txt
     mask_file: my_mask.nc
 static_maps:
     path: Z:/nahaUsers/grimast/GloFAS_3arcminmaps_JRC_catalogue_UPLOAD/v1.1.1/
