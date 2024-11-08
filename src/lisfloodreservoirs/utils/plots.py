@@ -34,9 +34,9 @@ def plot_reservoir_map(
     geometry: gpd.GeoSeries
         Geometry of the points
     volume: pandas.Series
-        Reservoir storage capacity
+        Reservoir storage capacity (hm3)
     area: pandas.Series (optional)
-        Reservoir catchment area
+        Reservoir catchment area (km2)
     save: str or pathlib.Path (optional)
         If provided, file where the plot will be saved
     """

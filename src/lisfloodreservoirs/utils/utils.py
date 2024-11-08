@@ -194,6 +194,8 @@ def select_reservoirs(
         Name of the field in 'df' that will be use to sort (prioritize) the selection
     storage: string
         Name of the field in 'df' that contains the reservoir storage capacity
+    target: float
+        Total storage to be reached
     plot:    boolean
         If True, a map of the selected reservoirs will be plotted. The size of the dots represents the reservoir storage capacity and the colours the sorting field.
     
