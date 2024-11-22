@@ -34,9 +34,9 @@ def plot_reservoir_map(
     geometry: gpd.GeoSeries
         Geometry of the points
     volume: pandas.Series
-        Reservoir storage capacity
+        Reservoir storage capacity (hm3)
     area: pandas.Series (optional)
-        Reservoir catchment area
+        Reservoir catchment area (km2)
     save: str or pathlib.Path (optional)
         If provided, file where the plot will be saved
     """
@@ -1086,3 +1086,52 @@ def boxplot_parameters(
     
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight')
+        
+        
+        
+def compare_attributes(df, thr, vmin, vmax, **kwargs):
+    """Pair plot comparing the attribute values in different data sources
+    
+    Parameters:
+    -----------
+    df: pandas.DataFrame
+        Values of an attributes in different data sources (columns)
+    thr: float
+        Minimum value of the attribute used in the selection
+    vmin: float
+        Minimum attribute value to be plotted
+    vmax: float
+        Maximum attribute value to be plotted
+    """
+    
+    figsize = kwargs.get('figsize', (4, 4))
+    scale = kwargs.get('scale', 'log')
+    
+    cols = df.columns
+    ncols = len(cols) - 1
+    
+    fig, ax = plt.subplots(ncols=ncols, nrows=ncols, figsize=(ncols * figsize[0], ncols * figsize[1]), sharex=True, sharey=True)
+
+    for j, colx in enumerate(cols[:-1]):
+        for i, coly in enumerate(cols[1:]):
+            if j > i:
+                ax[i, j].axis('off')
+                continue
+            ax[i, j].plot([vmin, vmax], [vmin, vmax], c='k', lw=.5, zorder=0)
+            ax[i, j].vlines(thr, vmin, thr, color='k', ls='--', lw=.5, zorder=0)
+            ax[i, j].hlines(thr, vmin, thr, color='k', ls='--', lw=.5, zorder=0)
+            ax[i, j].scatter(df[colx], df[coly], s=10, alpha=.5)
+            ax[i, j].set_xscale(scale)
+            ax[i, j].set_yscale(scale)
+            if j == 0:
+                ax[i, j].set_ylabel(coly)
+            if i == ncols - 1:
+                ax[i, j].set_xlabel(colx)
+
+            ax[i, j].set(
+                xlim=(vmin, vmax),
+                ylim=(vmin, vmax),
+            );
+    
+    if 'title' in kwargs:
+        ax[0, 1].set_title(kwargs['title']);
