@@ -168,7 +168,3 @@ def outlet_width(
     width = np.array([chanbw.sel(x=x, y=y, method='nearest').item() for x, y in zip(xs, ys)])
     
     return np.nanmin(width)
-#     # keep the width of the pixel with the largest difference with respect to the pixel upstream
-#     idx = np.argmin(width[1:] - width[:-1]) + 1
-    
-#     return width[idx]
