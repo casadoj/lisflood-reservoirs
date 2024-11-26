@@ -611,7 +611,10 @@ def duration_precip_indices(mask: pd.DataFrame) -> pd.Series:
         if len(starts) > len(ends):
             ends = ends.append(mask_diff.index[[-1]])
         elif len(starts) < len(ends):
-            starts = mask_diff.index[[0]].append(starts)  
-        duration.loc[col] = np.mean((ends - starts) / np.timedelta64(1, 'D'))
+            starts = mask_diff.index[[0]].append(starts)
+        if len(starts) == 0:
+            duration.loc[col] = 0
+        else:
+            duration.loc[col] = np.mean((ends - starts) / np.timedelta64(1, 'D'))
         
     return duration
