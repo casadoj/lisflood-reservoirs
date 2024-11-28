@@ -8,7 +8,7 @@ def plot_timeseries_BR(
     storage: pd.Series,
     elevation: pd.Series,
     outflow: Union[pd.Series, pd.DataFrame],
-    # meteo: Union[pd.Series, pd.DataFrame],
+    inflow: pd.Series,
     max_storage: Dict,
     max_elevation: Dict,
     save: Optional[Union[str, Path]] = None,
@@ -40,15 +40,16 @@ def plot_timeseries_BR(
         ax2.set_ylim(kwargs['zlim'])
     ax2.set_ylabel('elevation (masl)', color='C1');
     
-    # outflow
+    # (in/out)flow
     ax = axes[1]
-    outflow.plot(ax=ax, lw=lw)
-    ax.set(ylabel='m3/s');
-    
-    # # meteo
-    # ax = axes[2]
-    # meteo.plot(lw=1, ax=ax)
-    # ax.set(ylabel='mm');
+    ax.plot(inflow, c='C0', lw=lw, label='inflow')
+    if isinstance(outflow, pd.DataFrame):
+        for col, ls in zip(outflow.columns, ['-', '--', ':']):
+            ax.plot(outflow[col], c='C1', lw=lw, ls=ls, label=col)
+    else:
+        ax.plot(outflow, c='C1', lw=lw, label='outflow')
+    ax.set(ylabel='m3/s')
+    ax.legend(frameon=False)
     
     # title
     if 'title' in kwargs:
