@@ -1089,7 +1089,13 @@ def boxplot_parameters(
         
         
         
-def compare_attributes(df, thr, vmin, vmax, **kwargs):
+def compare_attributes(
+    df: pd.DataFrame, 
+    thr: float, 
+    vmin: float = None, 
+    vmax: float = None, 
+    **kwargs
+):
     """Pair plot comparing the attribute values in different data sources
     
     Parameters:
@@ -1110,28 +1116,33 @@ def compare_attributes(df, thr, vmin, vmax, **kwargs):
     cols = df.columns
     ncols = len(cols) - 1
     
-    fig, ax = plt.subplots(ncols=ncols, nrows=ncols, figsize=(ncols * figsize[0], ncols * figsize[1]), sharex=True, sharey=True)
+    fig, axes = plt.subplots(ncols=ncols, nrows=ncols, figsize=(ncols * figsize[0], ncols * figsize[1]), sharex=True, sharey=True)   
+    if ncols == 1:
+        axes = np.array([[axes]])
+        
+    for i, ax in enumerate(axes.flatten()):
+        r = int(i / ncols)
+        c = i % ncols
+        if c > r:
+            ax.axis('off')
+            continue
+        colx = cols[c]
+        coly = cols[r + 1]
+        ax.plot([vmin, vmax], [vmin, vmax], c='k', lw=.5, zorder=0)
+        ax.vlines(thr, vmin, thr, color='k', ls='--', lw=.5, zorder=0)
+        ax.hlines(thr, vmin, thr, color='k', ls='--', lw=.5, zorder=0)
+        ax.scatter(df[colx], df[coly], s=10, alpha=.5)
+        ax.set_xscale(scale)
+        ax.set_yscale(scale)
+        if c == 0:
+            ax.set_ylabel(coly)
+        if r == ncols - 1:
+            ax.set_xlabel(colx)
 
-    for j, colx in enumerate(cols[:-1]):
-        for i, coly in enumerate(cols[1:]):
-            if j > i:
-                ax[i, j].axis('off')
-                continue
-            ax[i, j].plot([vmin, vmax], [vmin, vmax], c='k', lw=.5, zorder=0)
-            ax[i, j].vlines(thr, vmin, thr, color='k', ls='--', lw=.5, zorder=0)
-            ax[i, j].hlines(thr, vmin, thr, color='k', ls='--', lw=.5, zorder=0)
-            ax[i, j].scatter(df[colx], df[coly], s=10, alpha=.5)
-            ax[i, j].set_xscale(scale)
-            ax[i, j].set_yscale(scale)
-            if j == 0:
-                ax[i, j].set_ylabel(coly)
-            if i == ncols - 1:
-                ax[i, j].set_xlabel(colx)
-
-            ax[i, j].set(
-                xlim=(vmin, vmax),
-                ylim=(vmin, vmax),
-            );
+        ax.set(
+            xlim=(vmin, vmax),
+            ylim=(vmin, vmax),
+        );
     
     if 'title' in kwargs:
-        ax[0, 1].set_title(kwargs['title']);
+        fig.suptitle(kwargs['title']);
