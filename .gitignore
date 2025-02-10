@@ -161,4 +161,4 @@ cython_debug/
 
 notebook/HDMS_API.yml
 
-notebook/DAHITY/api_key.txt
+./notebook/DAHITY/api_key.txt
