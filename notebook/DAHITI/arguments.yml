@@ -1,0 +1,9 @@
+format: json
+basin: La Plata
+# country: de
+# continent: Ocean
+# min_lon: -100.0
+# max_lon: -90.0
+# min_lat: 30.0
+# max_lat: 40.0
+type: reservoir
