@@ -1,0 +1,5 @@
+api_url: https://dahiti.dgfi.tum.de/api/v2/
+type: reservoir
+country: [India] # [Brazil, Paraguay, Argentina]
+variables: [water-level, surface-area, volume-variation, hypsometry]
+output_path: Z:/nahaUsers/casadje/datasets/DAHITI
