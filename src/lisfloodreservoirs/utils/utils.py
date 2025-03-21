@@ -148,7 +148,7 @@ def remove_duplicates(
     df: pd.DataFrame,
     duplicates_col: str,
     select_col: str,
-    inplace: bool = False
+    ascending: bool = False,
 ) -> pd.DataFrame:
     """Given a DataFrame, it identifies duplicate entries in a column and selects that with the largest value in another column
 
@@ -159,20 +159,25 @@ def remove_duplicates(
     duplicates_col: string
         column in "df" where duplicated values will be identified
     select_col: string
-        column in "df" used to select one entry from the duplicates. For each duplicated value in "duplicated_col", the largest value in "select_col" will be kept
-
+        column in "df" used to select one entry from the duplicates. For each duplicated value in "duplicated_col", the largest (ascending=False) or smallest (ascending=True) value in "select_col" will be kept
+    ascending: boolean
+        whether to sort the 'select_col' in ascending (True) or descending (False) order
+        
     Returns:
     --------
-    Removals are done inplace
+    A DataFrame similar to the input, but with duplicates removed
     """
     
+    df_ = df.copy()
     
-    for value, count in df[duplicates_col].value_counts().items():
+    for value, count in df_[duplicates_col].value_counts().items():
         if count > 1:
-            remove_idx = df.loc[df[duplicates_col] == value].sort_values(select_col, ascending=False).index[1:]
-            df.drop(remove_idx, axis=0, inplace=True)
+            remove_idx = df_.loc[df_[duplicates_col] == value].sort_values(select_col, ascending=ascending).index[1:]
+            df_.drop(remove_idx, axis=0, inplace=True)
         else:
             break
+            
+    return df_
             
             
             
