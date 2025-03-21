@@ -149,7 +149,6 @@ def remove_duplicates(
     duplicates_col: str,
     select_col: str,
     ascending: bool = False,
-    inplace: bool = False
 ) -> pd.DataFrame:
     """Given a DataFrame, it identifies duplicate entries in a column and selects that with the largest value in another column
 
@@ -163,12 +162,10 @@ def remove_duplicates(
         column in "df" used to select one entry from the duplicates. For each duplicated value in "duplicated_col", the largest (ascending=False) or smallest (ascending=True) value in "select_col" will be kept
     ascending: boolean
         whether to sort the 'select_col' in ascending (True) or descending (False) order
-    inplace: boolean
-        apply the removal on the input DataFrame (True) or in a new DataFrame(False)
-
+        
     Returns:
     --------
-    
+    A DataFrame similar to the input, but with duplicates removed
     """
     
     df_ = df.copy()
@@ -180,10 +177,7 @@ def remove_duplicates(
         else:
             break
             
-    if inplace:
-        df = df_
-    else:
-        return df_
+    return df_
             
             
             
