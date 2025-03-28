@@ -9,7 +9,8 @@ setup(
         'console_scripts': [
             'simulate=lisfloodreservoirs.simulate:main',
             'calibrate=lisfloodreservoirs.calibrate:main',
-            'catchstats=lisfloodreservoirs.catchstats:main'
+            'catchstats=lisfloodreservoirs.catchstats:main',
+            'ncextract=lisfloodreservoirs.ncextract:main'
         ],
     },
     install_requires=[
