@@ -7,7 +7,7 @@ paths:
     GRanD: Z:/nahaUsers/casadje/datasets/reservoirs/GRanD/v1_3/
     ResOps: 
         root: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsPT/
-        obs_timeseries: raw/time_series_all/
+        obs_timeseries: raw/time_series/
         sim_timeseries: ancillary/LISFLOOD/
         
 normalize: True # normalize time series by reservoir storage capacity
@@ -21,5 +21,5 @@ conditions:
     min_volume: 10 # hm3
     min_dor: 0.08 # degree of regulation
     min_dod: 0.06 # degree of disruptivity
-    min_years: 8 # years
+    min_years: 4 # years
     tol_bias: 0.3 # relative bias accepted between inflow and outflow
