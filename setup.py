@@ -2,26 +2,29 @@ from setuptools import setup, find_packages
 
 setup(
     name='lisflood-reservoirs',
-    version='0.1.1',
+    version='1.0.0',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     entry_points={
         'console_scripts': [
             'simulate=lisfloodreservoirs.simulate:main',
             'calibrate=lisfloodreservoirs.calibrate:main',
+            'catchstats=lisfloodreservoirs.catchstats:main'
         ],
     },
     install_requires=[
+        'cartopy',
+        'dask',
+        'matplotlib',
+        'netcdf4',
         'numpy',
         'pandas',
-        'xarray',
-        'matplotlib',
+        'pyyaml',
         'seaborn',
-        'cartopy',
+        'spotpy',
         'statsmodels',
         'tqdm',
-        'pyyaml',
-        'spotpy'
+        'xarray',
     ],
     author='Jesús Casado Rodríguez',
     author_email='jesus.casado-rodriguez@ec.europa.eu',
