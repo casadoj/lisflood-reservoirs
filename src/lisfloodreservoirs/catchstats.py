@@ -24,13 +24,6 @@ import psutil
 import traceback
 
 
-# Set up logging
-LOG_FORMAT = "%(asctime)s | %(levelname)s | %(message)s"
-LOG_FILE = 'debug_{0}.log'.format(datetime.now().strftime("%Y%m%d%H%M"))
-logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT,
-                    filename=LOG_FILE, filemode="w")
-
-
 def log_memory_usage():
     """Log memory usage to help detect issues related to segmentation faults."""
     process = psutil.Process()
@@ -337,6 +330,18 @@ def main(argv=sys.argv):
                         default=False, help="Overwrite existing output files")
 
     args = parser.parse_args()
+
+    # set up logging
+    log_format = "%(asctime)s | %(levelname)s | %(message)s"
+    output_dir = Path(args.output)
+    output_dir.mkdir(parents=True, exist_ok=True)
+    log_file = output_dir / f'catchstats_{datetime.now():%Y%m%d%H%M}.log'
+    logging.basicConfig(
+        level=logging.INFO,
+        format=log_format,
+        filename=log_file,
+        filemode="w"
+    )
 
     try:
         maps = read_inputmaps(args.input)
