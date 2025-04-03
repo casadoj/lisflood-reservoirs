@@ -10,11 +10,11 @@ paths:
     ResOps: 
         root: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsAU/
         obs_timeseries: raw/time_series/
-        sim_timeseries: ancillary/ncextract/
+        sim_timeseries: ancillary/ncextract/dis24/
 
 period:
     start: 1980-01-02
-    end: 2020-01-01
+    end: 2023-12-31
     
 normalize: True
 
