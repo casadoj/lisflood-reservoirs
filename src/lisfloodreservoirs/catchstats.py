@@ -13,12 +13,30 @@ See the Licence for the specific language governing permissions and limitations 
 import argparse
 import os
 from pathlib import Path
-import pandas as pd
 import sys
 import time
+from datetime import datetime
 import xarray as xr
 from typing import Dict, List, Union, Optional
 from tqdm.auto import tqdm
+import logging
+import psutil
+import traceback
+
+
+# Set up logging
+LOG_FORMAT = "%(asctime)s | %(levelname)s | %(message)s"
+LOG_FILE = 'debug_{0}.log'.format(datetime.now().strftime("%Y%m%d%H%M"))
+logging.basicConfig(level=logging.DEBUG, format=LOG_FORMAT,
+                    filename=LOG_FILE, filemode="w")
+
+
+def log_memory_usage():
+    """Log memory usage to help detect issues related to segmentation faults."""
+    process = psutil.Process()
+    mem_info = process.memory_info()
+    # Convert to MB
+    logging.debug(f"Memory Usage: {mem_info.rss / (1024 * 1024):.2f} MB")
 
 
 def check_coordinates(ds: Union[xr.Dataset, xr.DataArray]) -> Union[xr.Dataset, xr.DataArray]:
@@ -37,7 +55,7 @@ def check_coordinates(ds: Union[xr.Dataset, xr.DataArray]) -> Union[xr.Dataset, 
 
 
 def read_inputmaps(inputmaps: Union[str, Path]) -> xr.Dataset:
-    """It reads the input maps in NetCDF format from the input directory
+    """Reads NetCDF files from the input directory
 
     Parameters:
     -----------
@@ -49,24 +67,27 @@ def read_inputmaps(inputmaps: Union[str, Path]) -> xr.Dataset:
     ds: xr.Dataset    
     """
 
+    logging.info(f"Reading input maps from {inputmaps}")
+    log_memory_usage()
+
     inputmaps = Path(inputmaps)
     if not inputmaps.is_dir():
-        print(f'ERROR: {inputmaps} is missing or not a directory!')
+        logging.error(f'{inputmaps} is missing or not a directory!')
         sys.exit(1)
 
     filepaths = list(inputmaps.glob('*.nc'))
     if not filepaths:
-        print(f'ERROR: No NetCDF files found in "{inputmaps}"')
+        logging.error(f'No NetCDF files found in {inputmaps}')
         sys.exit(2)
 
-    print(f'{len(filepaths)} input NetCDF files found in "{inputmaps}"')
+    logging.info(f'{len(filepaths)} NetCDF files found in {inputmaps}')
 
     try:
         # for dynamic maps
         ds = xr.open_mfdataset(
             filepaths,
             chunks='auto',
-            parallel=True,
+            # parallel=True, # ! the tool crashes when activated
             engine='netcdf4'
         )
         ds.close()
@@ -77,11 +98,13 @@ def read_inputmaps(inputmaps: Union[str, Path]) -> xr.Dataset:
         ds = xr.Dataset({file.stem.split('_')[0]: xr.open_dataset(
             file, engine='netcdf4')['Band1'] for file in filepaths})
         ds.close()
+
     if 'wgs_1984' in ds:
         ds = ds.drop_vars('wgs_1984')
 
-    # check coordinates
     ds = check_coordinates(ds)
+
+    logging.info("Successfully read input maps.")
 
     return ds
 
@@ -100,18 +123,21 @@ def read_masks(mask: Union[str, Path]) -> Dict[int, xr.DataArray]:
         keys represent the catchment ID and the values boolean maps of the catchment
     """
 
+    logging.info(f"Reading masks from {mask}")
+    log_memory_usage()
+
     # check masks
     mask = Path(mask)
     if not mask.is_dir():
-        print(f'ERROR: {mask} is not a directory!')
+        logging.error(f'{mask} is not a directory!')
         sys.exit(1)
 
     maskpaths = list(mask.glob('*.nc'))
     if not maskpaths:
-        print(f'ERROR: No NetCDF files found in "{mask}"')
+        loggig.error(f'No NetCDF files found in "{mask}"')
         sys.exit(2)
 
-    print(f'{len(maskpaths)} mask NetCDF files found in "{mask}"')
+    logging.info(f'{len(maskpaths)} mask NetCDF files found in "{mask}"')
 
     # load masks
     masks = {}
@@ -128,8 +154,10 @@ def read_masks(mask: Union[str, Path]) -> Dict[int, xr.DataArray]:
             aoi = check_coordinates(aoi)
             masks[ID] = aoi
         except Exception as e:
-            print(f'ERROR: The mask {maskpath} could not be read: {e}')
+            logging.error(f'The mask {maskpath} could not be read: {e}')
             continue
+
+    logging.info("Successfully read masks.")
 
     return masks
 
@@ -149,14 +177,14 @@ def read_pixarea(pixarea: Union[str, Path]) -> xr.DataArray:
 
     pixarea = Path(pixarea)
     if not pixarea.is_file():
-        print(f'ERROR: {pixarea} is not a file!')
+        logging.error(f'{pixarea} is not a file!')
         sys.exit(1)
 
     try:
         weight = xr.open_dataset(pixarea, engine='netcdf4')['Band1']
         weight.close()
     except Exception as e:
-        print(f'ERROR: The weighing map "{pixarea}" could not be loaded: {e}')
+        logging.error(f'The weighing map "{pixarea}" could not be loaded: {e}')
         sys.exit(2)
 
     # check coordinates
@@ -195,6 +223,9 @@ def catchment_statistics(maps: Union[xr.DataArray, xr.Dataset],
     A xr.Dataset of all catchment statistics or a NetCDF file for each catchment in the "masks" dictionary
     """
 
+    logging.info("Starting catchment statistics computation...")
+    log_memory_usage()
+
     start_time = time.perf_counter()
 
     if isinstance(maps, xr.DataArray):
@@ -231,13 +262,14 @@ def catchment_statistics(maps: Union[xr.DataArray, xr.Dataset],
 
     # compute statistics for each catchemnt
     for ID in tqdm(masks.keys(), desc='processing catchments'):
-    # for ID in masks.keys():
+        # for ID in masks.keys():
+
+        logging.info(f"Processing catchment ID {ID}")
 
         if output is not None:
             fileout = output / f'{ID:04}.nc'
             if fileout.exists() and not overwrite:
-                print(
-                    f'Output file {fileout} already exists. Moving forward to the next catchment')
+                logging.info(f"Skipping existing output file {fileout}")
                 continue
 
         # create empty Dataset
@@ -274,7 +306,7 @@ def catchment_statistics(maps: Union[xr.DataArray, xr.Dataset],
 
     end_time = time.perf_counter()
     elapsed_time = end_time - start_time
-    print(f"Time elapsed: {elapsed_time:0.2f} seconds")
+    logging.info(f"Processing completed in {elapsed_time:.2f} seconds")
 
     if output is None:
         results = xr.concat(results, dim='id')
@@ -313,13 +345,10 @@ def main(argv=sys.argv):
         catchment_statistics(maps, masks, args.statistic, weight=weight,
                              output=args.output, overwrite=args.overwrite)
     except Exception as e:
-        print(f'ERROR: {e}')
+        logging.error(f'Fatal error: {e}')
+        traceback.print_exc()
         sys.exit(1)
 
 
-def main_script():
-    sys.exit(main())
-
-
 if __name__ == "__main__":
-    main_script()
+    sys.exit(main())
