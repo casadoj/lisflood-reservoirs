@@ -8,6 +8,8 @@ from scipy.stats import linregress
 from pathlib import Path
 import pickle
 from typing import Union, Optional, Dict, List, Literal
+import logging
+logger = logging.getLogger('release')
 
 from inputs import read_reservoir_attributes, read_reservoir_data
 from functions import aggregate_to_epiweeks, back_calc_missing_flows
@@ -15,8 +17,8 @@ from storage import fit_storage, create_storage_harmonic
 
 # CONSTANTS
 
-# minimum allowable data points to use release and inflow without any back-calculating
-min_r_i_datapoints = 260 # 5 years
+# # minimum allowable data points to use release and inflow without any back-calculating
+# min_r_i_datapoints = 260 # 5 years
 # minimum allowable number of days of data to define release max min
 min_r_maxmin_days = 365
 # release constraint quantile
@@ -25,7 +27,6 @@ r_st_max_quantile = 0.99 # 0.95
 # tolerance for r-squared value of release residual model.
 # Models with lower r-squared value than r_sq_tol are discarded.
 r_sq_tol = 0.2 # 0.2 in the repository, 0.3 according to the paper
-
 
 
 def fit_release(
@@ -37,6 +38,7 @@ def fit_release(
     NOR_path: Union[str, Path] = None,
     capacity: str = 'CAP_MCM',
     cutoff_year: Optional[int] = None,
+    min_weeks: int = 260, # 5 years
 ) -> Dict:
     """Fit parameters of weekly-varying release function
     
@@ -58,6 +60,8 @@ def fit_release(
         Field in the reservoir attributes used as reservoir storage capacity. By default "CAP_MCM"
     cutoff_year: integer (optional)
         Trim the time series to start this year
+    min_weeks: integer
+        Minimum allowable data points to use release and inflow without any back-calculating. By default are the number of weeks in 5 years
         
     Returns:
     --------
@@ -82,7 +86,7 @@ def fit_release(
     if attributes is None:
         # import, if not provided
         attributes = read_reservoir_attributes(GRanD_path, dam_id)
-    print(f"Fitting release function for dam {dam_id}: {attributes['DAM_NAME']}")
+    logger.info(f"Fitting release function for dam {dam_id}: {attributes['DAM_NAME']}")
     storage_capacity_MCM = attributes[capacity]
     
     # read daily time series
@@ -113,7 +117,7 @@ def fit_release(
             'conservation': model_storage["NOR lower bound"]
         })
     if storage_target_parameters.isna().all().all():
-        print("Storage targets unavailable due to lack of data!")
+        logger.warning("Storage targets unavailable due to lack of data!")
         return {}
 
     # add time variables and filter daily data
@@ -129,8 +133,8 @@ def fit_release(
     weekly_ops_NA_removed = weekly_ops_NA_removed.dropna(subset=['r', 'i'])
 
     # check if there is sufficient data
-    if len(weekly_ops_NA_removed) <= min_r_i_datapoints:
-        print("Insufficient data to build release function")
+    if len(weekly_ops_NA_removed) <= min_weeks:
+        logger.warning("Insufficient data to build release function")
         return {
             "id": dam_id,
             "mean inflow (MCM/wk)": np.nan,
@@ -142,7 +146,7 @@ def fit_release(
 
     # get most representative mean flow value
     # either from daily or weekly (back-calculated) data
-    if daily_ops.i.count() > min_r_i_datapoints * 7:
+    if daily_ops.i.count() > min_weeks * 7:
         i_mean = daily_ops.i.mean(skipna=True) * 7
     else:
         i_mean = weekly_ops_NA_removed.i.mean()
@@ -185,10 +189,10 @@ def fit_release(
         training_data
         .assign(
             st_r_harmonic=lambda df: (
-                st_r_harmonic[0] * np.sin(2 * np.pi * df['epiweek'] / 52) +
-                st_r_harmonic[1] * np.cos(2 * np.pi * df['epiweek'] / 52) +
-                st_r_harmonic[2] * np.sin(4 * np.pi * df['epiweek'] / 52) +
-                st_r_harmonic[3] * np.cos(4 * np.pi * df['epiweek'] / 52)
+                st_r_harmonic.iloc[0] * np.sin(2 * np.pi * df['epiweek'] / 52) +
+                st_r_harmonic.iloc[1] * np.cos(2 * np.pi * df['epiweek'] / 52) +
+                st_r_harmonic.iloc[2] * np.sin(4 * np.pi * df['epiweek'] / 52) +
+                st_r_harmonic.iloc[3] * np.cos(4 * np.pi * df['epiweek'] / 52)
             )
         )
         .assign(
@@ -201,22 +205,28 @@ def fit_release(
                               data=data_for_linear_model_of_release_residuals).fit()
     st_r_residual_model_coef = st_r_residual_model.params.round(3)
     # deal with any negative coefficients by setting to zero and re-fitting
-    if st_r_residual_model_coef[1] < 0 and st_r_residual_model_coef[2] >= 0:
+    if st_r_residual_model_coef['a_st'] < 0 and st_r_residual_model_coef['i_st'] >= 0:
         st_r_residual_model = ols('r_st_resid ~ i_st',
                                   data=data_for_linear_model_of_release_residuals).fit()
-        st_r_residual_model_coef = np.array([st_r_residual_model.params['Intercept'], 0, st_r_residual_model.params['i_st']]).round(3)
-    if st_r_residual_model_coef[2] < 0 and st_r_residual_model_coef[1] >= 0:
+        st_r_residual_model_coef = pd.Series(
+            data=np.array([st_r_residual_model.params['Intercept'], 0, st_r_residual_model.params['i_st']]).round(3),
+            index=['Intercept', 'a_st', 'i_st']
+        )
+    if st_r_residual_model_coef['a_st'] >= 0 and st_r_residual_model_coef['i_st'] < 0:
         st_r_residual_model = ols('r_st_resid ~ a_st',
                                   data=data_for_linear_model_of_release_residuals).fit()
-        st_r_residual_model_coef = np.array([st_r_residual_model.params['Intercept'], st_r_residual_model.params['a_st'], 0]).round(3)
+        st_r_residual_model_coef = pd.Series(
+            data=np.array([st_r_residual_model.params['Intercept'], st_r_residual_model.params['a_st'], 0]).round(3),
+            index=['Intercept', 'a_st', 'i_st']
+        )
     # remove release residual model if one of the following conditions is not met
-    if st_r_residual_model.rsquared_adj < r_sq_tol or st_r_residual_model_coef[1] < 0 or st_r_residual_model_coef[2] < 0:
-        print("Release residual model will be discarded; (release will be based harmonic function only)")
-        st_r_residual_model_coef = np.zeros(3)
+    if st_r_residual_model.rsquared_adj < r_sq_tol or st_r_residual_model_coef['a_st'] < 0 or st_r_residual_model_coef['i_st'] < 0:
+        logger.warning("Release residual model will be discarded; release will be based on the harmonic function only")
+        st_r_residual_model_coef = pd.Series(np.zeros(3), index=['Intercept', 'a_st', 'i_st'])
         
-    # conver residual parameters to pandas.Series
-    if isinstance(st_r_residual_model_coef, np.ndarray):
-        st_r_residual_model_coef = pd.Series(st_r_residual_model_coef, index=['Intercept', 'a_st', 'i_st'])
+    # # conver residual parameters to pandas.Series
+    # if isinstance(st_r_residual_model_coef, np.ndarray):
+    #     st_r_residual_model_coef = pd.Series(st_r_residual_model_coef, index=['Intercept', 'a_st', 'i_st'])
 
     return {
         "id": dam_id,
@@ -227,7 +237,6 @@ def fit_release(
         "constraints": pd.Series([r_st_min, r_st_max],
                                  index=['min', 'max'])
     }
-
 
 
 def create_release_harmonic(
@@ -270,7 +279,6 @@ def create_release_harmonic(
                            p4 * np.cos(4 * np.pi * harmonic[col] / t))
 
     return harmonic#.set_index('epiweek', drop=True)
-
 
 
 def create_release_linear(parameters: pd.Series) -> xr.DataArray:
