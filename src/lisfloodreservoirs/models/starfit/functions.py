@@ -109,25 +109,38 @@ def plot_release(
         
         
         
-def plot_nor(weekly_storage: pd.DataFrame, NOR: pd.DataFrame, save=None, **kwargs):
+def plot_nor(
+    weekly_storage: pd.DataFrame,
+    NOR: pd.DataFrame, 
+    n_points: int = 3,
+    save: Optional[Union[str, Path]] = None, 
+    **kwargs
+):
     """
     Plots the weekly storage data with highlighted maximum and minimum observations
     and fills reservoir zones based on NOR (Normal Operating Range) data. The plot
     includes a legend positioned to the right-center of the figure, outside of the axes.
     
     Parameters:
-    weekly_storage (pd.DataFrame): A DataFrame containing the weekly storage data.
-        It must contain at least the following columns:
-        - epiweek: The epidemiological week of the observation.
-        - s_st: The storage percentage for the corresponding epiweek.
-    NOR (pd.DataFrame): A DataFrame containing the Normal Operating Range data.
-        It must contain at least the following columns:
-        - index: The index, which represents the epiweek.
-        - flood: The flood threshold percentage for the corresponding epiweek.
-        - conservation: The conservation threshold percentage for the corresponding epiweek.
-    save (str, optional): Path to save the figure. If None, the figure is not saved.
+    -----------
+    weekly_storage: pandas.DataFrame
+        A DataFrame containing the weekly storage data.
+            It must contain at least the following columns:
+            - epiweek: The epidemiological week of the observation.
+            - s_st: The storage percentage for the corresponding epiweek.
+    NOR: pandas.DataFrame
+        A DataFrame containing the Normal Operating Range data.
+            It must contain at least the following columns:
+            - index: The index, which represents the epiweek.
+            - flood: The flood threshold percentage for the corresponding epiweek.
+            - conservation: The conservation threshold percentage for the corresponding epiweek.
+    n_points: integer (optional)
+        Number of maximum/minimum weekly storage values used to fit the flood/conservative storage harmonic function
+    save: string or pathlib.Path (optional)
+        Path to save the figure. If None, the figure is not saved.
     
     Keyword Arguments:
+    ------------------
     figsize (tuple of int): The size of the figure in inches (default: (6, 4.5)).
     title (str): The title of the plot. If None, no title is set (default: None).
     size (int): The size of the scatter plot markers for max. and min. observations (default: 8).
@@ -135,9 +148,11 @@ def plot_nor(weekly_storage: pd.DataFrame, NOR: pd.DataFrame, save=None, **kwarg
                    (default: 0.3).
     
     Returns:
+    --------
     None: The function creates a plot and does not return any value.
     
     Example Usage:
+    --------------
     >>> plot_nor(weekly_storage_df, NOR_df, save="output_plot.png", figsize=(10, 7), title="Weekly Storage vs. NOR")
     
     The function will plot the data, show the legend on the right side, and optionally save the
@@ -153,9 +168,9 @@ def plot_nor(weekly_storage: pd.DataFrame, NOR: pd.DataFrame, save=None, **kwarg
     
     # observations
     ax.scatter(weekly_storage.epiweek, weekly_storage.s_st, c='k', s=8, alpha=alpha, label='observed')
-    top = rank_and_filter_data(weekly_storage, 's_st', 3, ascending=False)
+    top = rank_and_filter_data(weekly_storage, 's_st', n_points, ascending=False)
     ax.scatter(top.epiweek, top.s_st, c='green', s=s, alpha=alpha * 2, label='max. obs.')
-    bottom = rank_and_filter_data(weekly_storage, 's_st', 3, ascending=True)
+    bottom = rank_and_filter_data(weekly_storage, 's_st', n_points, ascending=True)
     ax.scatter(bottom.epiweek, bottom.s_st, c='maroon', s=s, alpha=alpha * 2, label='min. obs.')
     
     # reservoir zones
