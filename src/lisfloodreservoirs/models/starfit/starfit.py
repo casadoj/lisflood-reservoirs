@@ -13,6 +13,7 @@ class Starfit(Reservoir):
     harmonic storage and release patterns for flood and conservation purposes.
 
     Parameters:
+    -----------
     Vtot (float): The total volume of the reservoir [MCM].
     avg_inflow (float): The average inflow into the reservoir [MCM/day].
     pars_Vf (List): Parameters defining the harmonic storage pattern for flood conditions.
@@ -23,6 +24,7 @@ class Starfit(Reservoir):
     Qmax (float): The maximum allowable release from the reservoir [MCM/day].
 
     Attributes:
+    -----------
     avg_inflow (float): Stores the average inflow value provided during initialization.
     NOR (DataFrame): A pandas DataFrame containing the normalized operational rules
                      for flood and conservation storage, indexed by day of the year.
