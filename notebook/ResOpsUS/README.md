@@ -1,3 +1,7 @@
+# [ResOpsUS](https://www.nature.com/articles/s41597-022-01134-7): Reservoir Operations USA
+
+A dataset that includes records for 679 major reservoirs across the US. The time series include inflow, storage, outflow and evaporation, although not all variables are available for all reservoirs. The reservoir characteristics (storage capacity, surface area, catchment area, use...) is taken from the Global Reservoir and Dam dataBase ([GRanD](https://www.globaldamwatch.org/grand/)).
+
 * [ ] The notebooks called _5.*_simulation_{MODEL}.ipynb_  are test runs of each reservoir routine. Now they could all be integrated into a single notebook in which the configuration file defines the reservoir routine to be used and the function `lisfloodreservoirs.models.get_model()` instanciates the correct routine.
 
 * [ ] All the notebooks called _6.*_{MODEL}*.ipynb_ are calibrations (or comparisons of calibration) for the different reservoir routines and univariate (storage or outflow) or bivariate (storage and outflow) calibrations. They can all be fused into a single file now; the configuration file must identify the calibration algorithm (SCE-US or MC), the target variables and the reservoir routine to be used. The function `lisfloodreservoirs.calibrations.get_calibrator()` uses these parameters to instanciate the correct calibration.
