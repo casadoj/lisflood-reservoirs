@@ -25,7 +25,7 @@ def main():
     # read argument specifying the configuration file
     parser = argparse.ArgumentParser(
         description="""
-        Run the reservoir routine with a specified configuration file.
+        Run the reservoir routine with default parameters.
         """
     )
     parser.add_argument('-c', '--config-file', type=str, required=True, help='Path to the configuration file')
