@@ -7,7 +7,7 @@ from typing import Union, Optional, Dict, List, Literal
 import logging
 logger = logging.getLogger('storage')
 
-from inputs import read_reservoir_attributes, read_reservoir_data, rank_and_filter_data
+from .inputs import read_reservoir_attributes, read_reservoir_data, rank_and_filter_data
 
 
 def fit_storage(

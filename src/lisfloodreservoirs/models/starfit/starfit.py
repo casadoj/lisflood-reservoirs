@@ -2,9 +2,10 @@ import numpy as np
 import pandas as pd
 from typing import List, Optional, Literal
 
-from storage import create_storage_harmonic
-from release import create_release_harmonic
-from lisfloodreservoirs.models.basemodel import Reservoir
+from .storage import create_storage_harmonic
+from .release import create_release_harmonic
+from ..basemodel import Reservoir
+
 
 class Starfit(Reservoir):
     """
@@ -115,7 +116,7 @@ class Starfit(Reservoir):
         harm = self.Qharm[doy]
         # residual component of the release
         A_t = (V_st - Vc) / (Vf - Vc) # storage availability
-        eps = self.parsQresid[0] + A_t * self.parsQresid[1] + I_st * self.parsQresid[2]      
+        eps = self.parsQresid['Intercept'] + A_t * self.parsQresid['a_st'] + I_st * self.parsQresid['i_st']      
         # normal release
         Qnor = self.avg_inflow * (harm + eps + 1)
         
@@ -170,7 +171,7 @@ class Starfit(Reservoir):
         inflow.name = 'inflow'
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
-        for date, I in inflow.iteritems():
+        for date, I in inflow.items():
             storage[date] = Vo
             # compute outflow and new storage
             Q, V = self.timestep(I, Vo, date.dayofyear)

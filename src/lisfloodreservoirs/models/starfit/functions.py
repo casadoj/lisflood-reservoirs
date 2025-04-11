@@ -8,7 +8,7 @@ import matplotlib.colors as colors
 from typing import Optional, Union, Dict, List, Tuple
 from pathlib import Path
 
-from inputs import rank_and_filter_data
+from .inputs import rank_and_filter_data
 
 
 def plot_release(
@@ -108,7 +108,6 @@ def plot_release(
         plt.close(fig)
         
         
-        
 def plot_nor(
     weekly_storage: pd.DataFrame,
     NOR: pd.DataFrame, 
@@ -193,7 +192,6 @@ def plot_nor(
         plt.close(fig)
         
         
-
 def find_closest_dam():
     """Finds the dam that is closest in terms of purposes served and Euclidean distance
     
@@ -209,7 +207,6 @@ def find_closest_dam():
     """
     
     pass
-
 
 
 def aggregate_to_epiweeks(daily: pd.DataFrame) -> pd.DataFrame:
@@ -254,13 +251,11 @@ def aggregate_to_epiweeks(daily: pd.DataFrame) -> pd.DataFrame:
     return weekly
 
 
-
 def epiweek_to_date(year, epiweek):
     # Convert epiweek to a date string where the week starts on Sunday
     d = f'{year:.0f}-W{int(epiweek)-1}-0'  # Set to Sunday
     # Use '%U' for weeks starting on Sunday and '%w' set to '0' for Sunday
     return pd.to_datetime(d, format='%Y-W%U-%w')
-
 
 
 def back_calc_missing_flows(

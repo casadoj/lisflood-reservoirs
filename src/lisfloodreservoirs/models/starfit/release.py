@@ -11,9 +11,9 @@ from typing import Union, Optional, Dict, List, Literal
 import logging
 logger = logging.getLogger('release')
 
-from inputs import read_reservoir_attributes, read_reservoir_data
-from functions import aggregate_to_epiweeks, back_calc_missing_flows
-from storage import fit_storage, create_storage_harmonic
+from .inputs import read_reservoir_attributes, read_reservoir_data
+from .functions import aggregate_to_epiweeks, back_calc_missing_flows
+from .storage import fit_storage, create_storage_harmonic
 
 # CONSTANTS
 
