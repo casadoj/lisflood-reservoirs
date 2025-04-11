@@ -1,13 +1,15 @@
-import numpy as np
-import pandas as pd
-from tqdm.auto import tqdm
-from pathlib import Path
-import yaml
-import spotpy
-import pickle
-import copy
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import argparse
 import logging
+import yaml
+import pickle
+from pathlib import Path
+
+import pandas as pd
+from tqdm import tqdm
+import copy
 from datetime import datetime
 
 from . import Config, read_attributes, read_timeseries
@@ -15,15 +17,17 @@ from .models import get_model, default_attributes
 from .utils.metrics import compute_performance
 from .utils.timeseries import create_demand
 from .utils.plots import plot_resops
+from .utils.logging import setup_logger
 
 
 def main():
 
-    # ## CONFIGURATION
-    # ## -------------
-
     # read argument specifying the configuration file
-    parser = argparse.ArgumentParser(description='Run the reservoir routine with a specified configuration file.')
+    parser = argparse.ArgumentParser(
+        description="""
+        Run the reservoir routine with a specified configuration file.
+        """
+    )
     parser.add_argument('-c', '--config-file', type=str, required=True, help='Path to the configuration file')
     parser.add_argument('-o', '--overwrite', action='store_true', help='Overwrite existing simulation files', default=False)
     args = parser.parse_args()
@@ -31,87 +35,60 @@ def main():
     # read configuration file
     cfg = Config(args.config_file)
     
-    
-    # ## Logger
-    
-    # create logger
-    logger = logging.getLogger('simulate-reservoirs')
-    logger.setLevel(logging.INFO)
-    logger.propagate = False
-    log_format = logging.Formatter('%(asctime)s | %(levelname)s | %(name)s | %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-    # log on screen
-    c_handler = logging.StreamHandler()
-    c_handler.setFormatter(log_format)
-    c_handler.setLevel(logging.INFO)
-    logger.addHandler(c_handler)
-    # log file
-    log_path = cfg.PATH_DEF / 'logs'
-    log_path.mkdir(exist_ok=True)
-    log_file = log_path / '{0:%Y%m%d%H%M}_simulate_{1}.log'.format(datetime.now(),
-                                                                   '_'.join(args.config_file.split('.')[0].split('_')[1:]))
-    f_handler = logging.FileHandler(log_file)
-    f_handler.setFormatter(log_format)
-    f_handler.setLevel(logging.INFO)
-    logger.addHandler(f_handler)
+    # set up logger
+    logger = setup_logger(
+        name=__name__,
+        log_level=logging.INFO,
+        log_file=f'{datetime.now():%Y%m%d%H%M}_simulate_{cfg.MODEL}.log'
+    )
 
     logger.info(f'Default simulation results will be saved in: {cfg.PATH_DEF}')
     
     
-    # ## DATA
-    # ## ----
-
-    # ### Attributes
-
-    # list of reservoirs to be trained
+    # === Load reservoir list ===
     try:
         reservoirs = pd.read_csv(cfg.RESERVOIRS_FILE, header=None).squeeze().tolist()
-    except IOError as e:
-        logger.error(f'Failed to open {cfg.RESERVOIRS_FILE}: {e}')
+    except IOError:
+        logger.exception(f'Failed to open {cfg.RESERVOIRS_FILE}')
         raise
 
-    # import all tables of attributes
+    # === Load attributes ===
     try:
         attributes = read_attributes(cfg.PATH_DATA / 'attributes', reservoirs)
-    except IOError as e:
-        logger.error('Failed to read attribute tables from {0}: {1}'.format(cfg.PATH_DATA / 'attributes', e))
+        logger.info(f'{attributes.shape[0]} reservoirs in the attribute tables')
+    except IOError:
+        logger.exception('Failed to read attribute tables from {0}'.format(cfg.PATH_DATA / 'attributes'))
         raise
-    logger.info(f'{attributes.shape[0]} reservoirs in the attribute tables')
 
-    # #### Time series
-
-    # training periods
+    # === Load time periods ===
     try:
         with open(cfg.PERIODS_FILE, 'rb') as file:
             periods = pickle.load(file)
-    except IOError as e:
-        logger.error(f'Failed to open {cfg.PERIODS_FILE}: {e}')
+    except IOError:
+        logger.exception(f'Failed to open {cfg.PERIODS_FILE}')
         raise
 
-    # read time series
+    # === read time series ===
     try:
         timeseries = read_timeseries(cfg.PATH_DATA / 'time_series' / 'csv',
                                      attributes.index,
                                      periods,
                                      variables=['inflow', 'outflow', 'storage'])
-    except IOError as e:
-        logger.error('Failed to read time series from {0}: {1}'.format(cfg.PATH_DATA / 'time_series' / 'csv', e))
+        logger.info(f'{len(timeseries)} reservoirs with timeseries')
+    except IOError:
+        logger.exception('Failed to read time series from {0}: {1}'.format(cfg.PATH_DATA / 'time_series' / 'csv'))
         raise
-    logger.info(f'{len(timeseries)} reservoirs with timeseries')
 
 
-    # ## SIMULATE RESERVOIR ROUTINE
-    # ## --------------------------
-    
-    # reservoirs already simulated
-    id_def = list(np.unique([int(file.stem.split('_')[0]) for file in cfg.PATH_DEF.glob('*performance.csv')])) if args.overwrite is False else []
-
+    # === Simulate reservoir routine ===
     for grand_id, ts in tqdm(timeseries.items(), desc='simulating reservoir'):
-        
-        if grand_id in id_def:
-            logger.warning(f'Reservoir {grand_id:>4} has already been simulated with default parameters. Skipping simulation.')
+
+        out_file = cfg.PATH_DEF / f'{grand_id}_simulation.csv'
+        if out_file.exists() and not args.overwrite:
+            logger.info(f'Simulation already exists for {grand_id}, skipping (use --overwrite to force)')
             continue
-        else:
-            logger.info(f'Simulating reservoir {grand_id:>4}')
+            
+        logger.info(f'Simulating reservoir {grand_id:>4}')
 
         # plot observed time series
         try:
@@ -126,13 +103,11 @@ def main():
                         save=path_obs / f'{grand_id}_line.jpg'
                        )
             logger.info(f'Line plot of observations from reservoir {grand_id}')
-        except IOError as e:
-            logger.error(f'The line plot of observed records could not be generated: {e}')
+        except IOError:
+            logger.exception(f'The line plot of observed records could not be generated')
         
-        # ESTIMATE DEFAULT PARAMETERS
-        
+        # estimate default parameters
         try:
-            
             # storage limits (m3)
             Vtot = ts.storage.max()
             Vmin = max(0, min(0.1 * Vtot, ts.storage.min()))
@@ -147,23 +122,23 @@ def main():
                 demand = None
                 
             # default reservoir attributes
-            reservoir_attrs = default_attributes(cfg.MODEL,
-                                                 ts.inflow,
-                                                 Vtot,
-                                                 Vmin,
-                                                 Qmin=max(0, ts.outflow.min()),
-                                                 A=int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6),
-                                                 storage=ts.storage,
-                                                 demand=demand) 
+            reservoir_attrs = default_attributes(
+                cfg.MODEL,
+                ts.inflow,
+                Vtot,
+                Vmin,
+                Qmin=max(0, ts.outflow.min()),
+                A=int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6),
+                storage=ts.storage,
+                demand=demand
+            ) 
             
-        except RuntimeError as e:
-            logger.error(f'Default parameters for reservoir {grand_id} could not be estimated: {e}')
+        except RuntimeError:
+            logger.exception(f'Default parameters for reservoir {grand_id} could not be estimated')
             continue
 
-        # SIMULATION WITH DEFAULT PARAMETERS
-
+        # simulation with default parameters
         try:
-
             # declare the reservoir
             res = get_model(cfg.MODEL, **reservoir_attrs)
 
@@ -182,19 +157,19 @@ def main():
 
             logger.info(f'Reservoir {grand_id} correctly simulated')
 
-        except RuntimeError as e:
-            logger.error(f'Reservoir {grand_id} could not be simulated: {e}')
+        except RuntimeError:
+            logger.exception(f'Reservoir {grand_id} could not be simulated')
             continue
 
-        # ANALYSE RESULTS
+        # === Analyse results ===
         
         # performance
         try:
             performance_def = compute_performance(ts, sim_def)
             performance_def.to_csv(cfg.PATH_DEF / f'{grand_id}_performance.csv', float_format='%.3f')
             logger.info(f'Performance of reservoir {grand_id} has been computed')
-        except IOError as e:
-            logger.error(f'The performance of reservoir {grand_id} could not be exported: {e}')
+        except IOError:
+            logger.exception(f'The performance of reservoir {grand_id} could not be exported')
         
         # scatter plot simulation vs observation
         try:
@@ -205,8 +180,8 @@ def main():
                         save=cfg.PATH_DEF / f'{grand_id}_scatter_obs_sim.jpg',
                        )
             logger.info(f'Scatter plot of simulation from reservoir {grand_id}')
-        except IOError as e:
-            logger.error(f'The scatter plot of reservoir {grand_id} could not be generated: {e}')
+        except IOError:
+            logger.exception(f'The scatter plot of reservoir {grand_id} could not be generated')
         
         # line plot simulation vs observation
         try:
@@ -217,8 +192,8 @@ def main():
                          save=cfg.PATH_DEF / f'{grand_id}_line_obs_sim.jpg',
                        )
             logger.info(f'Line plot of simulation from reservoir {grand_id}')
-        except IOError as e:
-            logger.error(f'The line plot of reservoir {grand_id} could not be generated: {e}')
+        except IOError:
+            logger.exception(f'The line plot of reservoir {grand_id} could not be generated')
 
         del res, sim_def, sim_cfg, reservoir_attrs, performance_def
 
