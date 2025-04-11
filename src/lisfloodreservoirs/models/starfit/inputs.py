@@ -4,7 +4,8 @@ import pandas as pd
 import geopandas as gpd
 from typing import Union, Optional, List, Tuple, Dict
 from pathlib import Path
-
+import logging
+logger = logging.getLogger('release')
 
 
 def read_reservoir_data(
@@ -29,11 +30,17 @@ def read_reservoir_data(
     # read data
     USRDATS_path = Path(USRDATS_path) if isinstance(USRDATS_path, str) else USRDATS_path
     file_path = USRDATS_path / 'time_series_all' / f'ResOpsUS_{dam_id}.csv'
-    timeseries = pd.read_csv(file_path,
-                             usecols=['date', 'storage', 'inflow', 'outflow', 'elevation', 'evaporation'],
-                             parse_dates=['date'])
+    if file_path.is_file():
+        timeseries = pd.read_csv(
+            file_path,
+            usecols=['date', 'storage', 'inflow', 'outflow', 'elevation', 'evaporation'],
+            parse_dates=['date']
+        )
+    else:
+        logger.error(f'File not found: {file_path}')
+        return None
     
-    # make sure that the timeseries has no missing days
+    # make sure that the timeseries have no missing days
     start, end = timeseries.date.min(), timeseries.date.max()
     dates = pd.DataFrame({'date': pd.date_range(start=start, end=end, freq='D')})
     timeseries = dates.merge(timeseries, on='date', how='left')
@@ -41,10 +48,10 @@ def read_reservoir_data(
     return timeseries.rename(columns={'storage': 's_MCM', 'inflow': 'i_cumecs', 'outflow': 'r_cumecs'})
 
 
-
 def read_reservoir_attributes(
     GRanD_path: Union[str, Path],
-    dam_id: Optional[int] = None):
+    dam_id: Optional[int] = None
+) -> pd.DataFrame:
     """Reads reservoir attributes from GRanD
     
     Parameters:
@@ -60,11 +67,13 @@ def read_reservoir_attributes(
         Table of reservoir attributes for selected dams    
     """
 
-
     file_path = f"{GRanD_path}/GRanD_dams_v1_3.shp"
-    attributes = gpd.read_file(file_path)
-    attributes.set_index('GRAND_ID', inplace=True, drop=False)
-    # attributes_all = gdf[gdf['COUNTRY'] == "United States"].copy()
+    if file_path.is_file():
+        attributes = gpd.read_file(file_path)
+        attributes.set_index('GRAND_ID', inplace=True, drop=False)
+        # attributes_all = gdf[gdf['COUNTRY'] == "United States"].copy()
+    else:
+        logger.error(f'File not found: {file_path}')
 
     if dam_id is None:
         return attributes
@@ -73,27 +82,28 @@ def read_reservoir_attributes(
         assert len(attributes) == 1, "Dam ID should match exactly one dam."
         return attributes
 
-def read_GRanD_HUC8():
-    """gets HUC8 for all US GRanD IDs
-    
-    Returns:
-    --------
-    tibble of HUC8s
-    """
-    
-    # Assuming that 'starfit' is the name of the directory where the 'extdata' folder is located
-    # and 'GRAND_HUC8.csv' is located inside the 'extdata' directory
-    file_path = "starfit/extdata/GRAND_HUC8.csv"
-    df = pd.read_csv(file_path, comment="#")
-    return df
 
+# def read_GRanD_HUC8() -> pd.DataFrame:
+#     """gets HUC8 for all US GRanD IDs
+    
+#     Returns:
+#     --------
+#     pandas.DataFrame of HUC8s
+#     """
+    
+#     # Assuming that 'starfit' is the name of the directory where the 'extdata' folder is located
+#     # and 'GRAND_HUC8.csv' is located inside the 'extdata' directory
+#     file_path = "starfit/extdata/GRAND_HUC8.csv"
+#     df = pd.read_csv(file_path, comment="#")
+#     return df
 
 
 def rank_and_filter_data(
     df: pd.DataFrame,
     rank_col: str,
     n_points: int,
-    ascending: bool = True):
+    ascending: bool = True
+) -> pd.DataFrame:
     """
     Rank the entries of the dataframe 'df' by the 'rank_col' and keep the top 'n_points'
     for each group defined by 'epiweek'. The ranking can be done in ascending or descending order.

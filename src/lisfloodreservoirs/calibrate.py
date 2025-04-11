@@ -1,31 +1,31 @@
-import numpy as np
-import pandas as pd
-from tqdm.auto import tqdm
-from pathlib import Path
-import yaml
-import spotpy
-import pickle
-import copy
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+
 import argparse
 import logging
+import yaml
+import pickle
+from pathlib import Path
+
+import pandas as pd
+from tqdm import tqdm
+import spotpy
+import copy
 from datetime import datetime
 
 from . import Config, read_attributes, read_timeseries
 from .models import get_model
+from .calibration import get_calibrator, read_results
 from .utils.metrics import KGEmod, compute_performance
 from .utils.utils import return_period
 from .utils.timeseries import create_demand
 from .utils.plots import plot_resops
-from .calibration import get_calibrator, read_results
-
+from .utils.logging import setup_logger
 
 
 def main():
 
-    # ## CONFIGURATION
-    # ## -------------
-
-    # read argument specifying the configuration file
+    # parse arguments
     parser = argparse.ArgumentParser(
         description="""
         Run the calibration script with a specified configuration file.
@@ -37,82 +37,56 @@ def main():
         """
     )
     parser.add_argument('-c', '--config-file', type=str, required=True, help='Path to the configuration file')
-    parser.add_argument('-o', '--overwrite', action='store_true', help='Overwrite existing simulation files', default=False)
+    parser.add_argument('-o', '--overwrite', action='store_true', default=False, help='Overwrite existing simulation files')
     args = parser.parse_args()
 
+    # read configuration file
     cfg = Config(args.config_file)
-    
-    
-    # ## Logger
-    
-    # create logger
-    logger = logging.getLogger('calibrate-reservoirs')
-    logger.setLevel(logging.INFO)
-    logger.propagate = False
-    log_format = logging.Formatter('%(asctime)s | %(levelname)s | %(name)s | %(message)s', datefmt='%Y-%m-%d %H:%M:%S')
-    # log on screen
-    c_handler = logging.StreamHandler()
-    c_handler.setFormatter(log_format)
-    c_handler.setLevel(logging.INFO)
-    logger.addHandler(c_handler)
-    # log file
-    log_path = cfg.PATH_CALIB / 'logs'
-    log_path.mkdir(exist_ok=True)
-    log_file = log_path / '{0:%Y%m%d%H%M}_calibrate_{1}.log'.format(datetime.now(),
-                                                                   '_'.join(args.config_file.split('.')[0].split('_')[1:]))
-    f_handler = logging.FileHandler(log_file)
-    f_handler.setFormatter(log_format)
-    f_handler.setLevel(logging.INFO)
-    logger.addHandler(f_handler)
+
+    # set up logger
+    logger = setup_logger(
+        name=__name__,
+        log_level=logging.INFO,
+        log_file=f'{datetime.now():%Y%m%d%H%M}_calibrate_{cfg.MODEL}.log'
+    )
     
     logger.info(f'Calibration results will be saved in: {cfg.PATH_CALIB}')
-
     
-    # ## DATA
-    # ## ----
-
-    # ### Attributes
-
-    # list of reservoirs to be trained
+    # === Load reservoir list ===
     try:
         reservoirs = pd.read_csv(cfg.RESERVOIRS_FILE, header=None).squeeze().tolist()
-    except IOError as e:
-        logger.error(f'Failed to open {cfg.RESERVOIRS_FILE}: {e}')
+    except IOError:
+        logger.exception(f'Failed to open {cfg.RESERVOIRS_FILE}')
         raise
 
-    # import all tables of attributes
+    # === Load attributes ===
     try:
         attributes = read_attributes(cfg.PATH_DATA / 'attributes', reservoirs)
-    except IOError as e:
-        logger.error('Failed to read attribute tables from {0}: {1}'.format(cfg.PATH_DATA / 'attributes', e))
+        logger.info(f'{attributes.shape[0]} reservoirs in the attribute tables')
+    except IOError:
+        logger.exception('Failed to read attribute tables from {0}'.format(cfg.PATH_DATA / 'attributes'))
         raise
-    logger.info(f'{attributes.shape[0]} reservoirs in the attribute tables')
 
-    # #### Time series
-
-    # training periods
+    # === Load time periods ===
     try:
         with open(cfg.PERIODS_FILE, 'rb') as file:
             periods = pickle.load(file)
-    except IOError as e:
-        logger.error(f'Failed to open {cfg.PERIODS_FILE}: {e}')
+    except IOError:
+        logger.exception(f'Failed to open {cfg.PERIODS_FILE}')
         raise
 
-    # read time series
+    # === read time series ===
     try:
         timeseries = read_timeseries(cfg.PATH_DATA / 'time_series' / 'csv',
                                      attributes.index,
                                      periods,
                                      variables=['inflow', 'outflow', 'storage'])
-    except IOError as e:
-        logger.error('Failed to read time series from {0}: {1}'.format(cfg.PATH_DATA / 'time_series' / 'csv', e))
+        logger.info(f'{len(timeseries)} reservoirs with timeseries')
+    except IOError:
+        logger.exception('Failed to read time series from {0}'.format(cfg.PATH_DATA / 'time_series' / 'csv'))
         raise
-    logger.info(f'{len(timeseries)} reservoirs with timeseries')
 
-
-    # ## CALIBRATION
-    # ## -----------
-
+    # === Calibration ===
     for grand_id, ts in tqdm(timeseries.items(), desc='simulating reservoir'):
             
         # storage attributes (m3)
@@ -131,8 +105,7 @@ def main():
         else:
             demand = None
 
-        # CALIBRATE
-        
+        # calibrate
         try:
             
             # configure calibration kwargs
@@ -167,12 +140,11 @@ def main():
                 sceua.sample(cfg.MAX_ITER, ngs=cfg.COMPLEXES, kstop=3, pcento=0.01, peps=0.1)
                 logger.info(f'Calibration of reservoir{grand_id} successfully finished')
             
-        except RuntimeError as e:
-            logger.error(f'Reservoir {grand_id} could not be calibrated: {e}')
+        except RuntimeError:
+            logger.exception(f'Reservoir {grand_id} could not be calibrated')
             continue
             
-        # SIMULTE OPTIMIZED RESERVOIR
-        
+        # simulate optimized reservoir
         try:
             
             # read calibration results
@@ -197,19 +169,19 @@ def main():
             
             logger.info(f'Simulation of the calibrated reservoir {grand_id} successfully finished')
             
-        except RuntimeError as e:
-            logger.error(f'Calibrated reservoir {grand_id} could not be simulated: {e}')
+        except RuntimeError:
+            logger.exception(f'Calibrated reservoir {grand_id} could not be simulated')
             continue
             
-        # ANALYSE RESULTS
+        # === Analyse results ===
         
         # performance
         try:
             performance_cal = compute_performance(ts, sim_cal)
             performance_cal.to_csv(cfg.PATH_CALIB / f'{grand_id}_performance.csv', float_format='%.3f')
             logger.info(f'Performance of reservoir {grand_id} has been computed')
-        except IOError as e:
-            logger.error(f'The performance of reservoir {grand_id} could not be exported: {e}')
+        except IOError:
+            logger.exception(f'The performance of reservoir {grand_id} could not be exported')
             
         # scatter plot calibration vs observation
         try:
@@ -220,8 +192,8 @@ def main():
                         save=cfg.PATH_CALIB / f'{grand_id}_scatter.jpg',
                        )
             logger.info(f'Scatter plot of simulation from reservoir {grand_id}')
-        except IOError as e:
-            logger.error(f'The scatter plot of reservoir {grand_id} could not be generated: {e}')
+        except IOError:
+            logger.exception(f'The scatter plot of reservoir {grand_id} could not be generated')
             
         # line plot calibration (vs default simulation) vs observation
         try:
@@ -240,8 +212,8 @@ def main():
                          save=cfg.PATH_CALIB / f'{grand_id}_line.jpg',
                        )
             logger.info(f'Line plot of simulation from reservoir {grand_id}')
-        except IOError as e:
-            logger.error(f'The line plot of reservoir {grand_id} could not be generated: {e}')
+        except IOError:
+            logger.exception(f'The line plot of reservoir {grand_id} could not be generated')
             
         del res, calibrator, sim_cal, sim_cfg, calibrated_attrs, performance_cal
         try:

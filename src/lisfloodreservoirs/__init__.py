@@ -2,6 +2,8 @@ import yaml
 from pathlib import Path
 from typing import Union, Optional, List, Dict
 import pandas as pd
+from tqdm.auto import tqdm
+
 
 class Config:
     def __init__(self, config_file):
@@ -36,7 +38,6 @@ class Config:
         else:
             raise ValueError('ERROR. Only univariate or bivariate calibrations are supported')
         self.PATH_CALIB.mkdir(parents=True, exist_ok=True)
-        
         
         
 def read_attributes(path: Union[str, Path],
@@ -76,7 +77,6 @@ def read_attributes(path: Union[str, Path],
     return attributes
 
 
-
 def read_timeseries(
     path: Union[str, Path],
     reservoirs: Optional[List[int]] = None,
@@ -110,30 +110,29 @@ def read_timeseries(
         
     # read time series
     timeseries = {}
-    for id in reservoirs:
+    for ID in tqdm(reservoirs):
         # read time series
-        file = path / f'{id}.csv'
+        file = path / f'{ID}.csv'
         if file.is_file():
-            ts = pd.read_csv(file, parse_dates=['date'])
+            ts = pd.read_csv(file)
+            ts['date'] = pd.to_datetime(ts['date'])
+            ts = ts.set_index('date').sort_index().asfreq('D')
         else:
             print(f"File {file} doesn't exist")
             continue
         
-        # make sure that the timeseries has no missing days
-        start, end = ts.date.min(), ts.date.max()
-        dates = pd.DataFrame({'date': pd.date_range(start=start, end=end, freq='D')})
-        ts = dates.merge(ts, on='date', how='left')
-        ts.set_index('date', inplace=True)
-        
-        # select study period
-        if periods is not None:
-            start, end = [periods[str(id)][f'{x}_dates'][0] for x in ['start', 'end']]
-            ts = ts.loc[start:end, variables]
+        try:
+            # select study period
+            if periods is not None:
+                start, end = [periods[str(ID)][f'{x}_dates'][0] for x in ['start', 'end']]
+                ts = ts.loc[start:end, variables]
 
-        # convert storage to m3
-        ts.iloc[:, ts.columns.str.contains('storage')] *= 1e6
+            # convert storage to m3
+            ts.iloc[:, ts.columns.str.contains('storage')] *= 1e6
 
-        # save time series
-        timeseries[id] = ts
+            # save time series
+            timeseries[ID] = ts
+        except Exception as e:
+            print(f'Time series for ID {ID} could not be saved:\n{e}')
         
     return timeseries

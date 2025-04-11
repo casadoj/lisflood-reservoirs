@@ -4,9 +4,10 @@ import statsmodels.formula.api as smf
 from scipy.optimize import minimize
 from pathlib import Path
 from typing import Union, Optional, Dict, List, Literal
+import logging
+logger = logging.getLogger('storage')
 
-from inputs import read_reservoir_attributes, read_reservoir_data, rank_and_filter_data
-
+from .inputs import read_reservoir_attributes, read_reservoir_data, rank_and_filter_data
 
 
 def fit_storage(
@@ -58,7 +59,7 @@ def fit_storage(
     # extract reservoir storage capacity
     if attributes is None:
         attributes = read_reservoir_attributes(GRanD_path, dam_id)
-    print(f"Fitting targets for dam {dam_id}: {attributes['DAM_NAME']}")
+    logger.info(f"Fitting targets for dam {dam_id}: {attributes['DAM_NAME']}")
     storage_capacity_MCM = attributes[capacity]
     
     if storage_daily is None:
@@ -70,7 +71,7 @@ def fit_storage(
     storage_daily = storage_daily.loc[storage_daily.s_MCM.notnull()]
     
     if len(storage_daily) < min_days:
-        print(f'{len(storage_daily)} < {min_days}')
+        logger.warning(f'Number of days with storage data ({len(storage_daily)}) smaller than the minimum ({min_days})')
         return {
             "id": dam_id,
             "capacity (MCM)": storage_capacity_MCM,
@@ -89,7 +90,7 @@ def fit_storage(
     first_year_of_data = storage_daily.index.year.min()
     if cutoff_year is None or last_year_of_data < cutoff_year:
         cutoff_year = first_year_of_data
-        print(f"Dam {dam_id} cutoff year set back to {first_year_of_data}")
+        logger.info(f"Cutoff year set back to {first_year_of_data}")
 
     # Convert to weekly storage (as % of capacity)
     storage_daily['year'] = storage_daily.index.year
@@ -108,9 +109,9 @@ def fit_storage(
     capacity_violations = storage_weekly[storage_weekly['s_st'] > 1]
     minimum_violations = storage_weekly[storage_weekly['s_st'] < 0]
     if len(capacity_violations) > 0:
-        print(f"{len(capacity_violations)} capacity violations found for dam {dam_id}... ")
+        logger.warning(f"{len(capacity_violations)} capacity violations found... ")
     if len(minimum_violations) > 0:
-        print(f"{len(minimum_violations)} minimum violations found for dam {dam_id}... ")
+        logger.warning(f"{len(minimum_violations)} minimum violations found... ")
 
     # make sure that values don't exceed 0-100%
     # storage_weekly['s_pct'] = storage_weekly['s_pct'].clip(lower=0, upper=100)
@@ -147,7 +148,6 @@ def fit_storage(
         "NOR upper bound": p_flood_harmonic,
         "NOR lower bound": p_conservation_harmonic
     }
-
 
 
 def fit_constrained_harmonic(data: pd.DataFrame) -> np.ndarray:
@@ -208,7 +208,6 @@ def fit_constrained_harmonic(data: pd.DataFrame) -> np.ndarray:
     pars = optimized_constrained_harmonic.x
     
     return pars
-
 
 
 def create_storage_harmonic(

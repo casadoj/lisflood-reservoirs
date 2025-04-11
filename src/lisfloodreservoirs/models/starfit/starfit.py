@@ -2,10 +2,10 @@ import numpy as np
 import pandas as pd
 from typing import List, Optional, Literal
 
-from storage import create_storage_harmonic
-from release import create_release_harmonic
+from .storage import create_storage_harmonic
+from .release import create_release_harmonic
+from ..basemodel import Reservoir
 
-from lisfloodreservoirs.models.basemodel import Reservoir
 
 class Starfit(Reservoir):
     """
@@ -13,28 +13,43 @@ class Starfit(Reservoir):
     harmonic storage and release patterns for flood and conservation purposes.
 
     Parameters:
-    Vtot (float): The total volume of the reservoir [MCM].
-    avg_inflow (float): The average inflow into the reservoir [MCM/day].
-    pars_Vf (List): Parameters defining the harmonic storage pattern for flood conditions.
-    pars_Vc (List): Parameters defining the harmonic storage pattern for conservation.
-    pars_Qharm (List): Parameters defining the harmonic release pattern from the reservoir.
-    pars_Qresid (List): Parameters for calculating residual releases from the reservoir.
-    Qmin (float): The minimum allowable release from the reservoir [MCM/day].
-    Qmax (float): The maximum allowable release from the reservoir [MCM/day].
+    -----------
+    Vtot: float
+        The total volume of the reservoir [MCM].
+    avg_inflow (float): 
+        The average inflow into the reservoir [MCM/day].
+    pars_Vf: List 
+        Parameters defining the harmonic storage pattern for flood conditions.
+    pars_Vc: List 
+        Parameters defining the harmonic storage pattern for conservation.
+    pars_Qharm: List 
+        Parameters defining the harmonic release pattern from the reservoir.
+    pars_Qresid: List 
+        Parameters for calculating residual releases from the reservoir.
+    Qmin: float 
+        The minimum allowable release from the reservoir [MCM/day].
+    Qmax: float 
+        The maximum allowable release from the reservoir [MCM/day].
 
     Attributes:
-    avg_inflow (float): Stores the average inflow value provided during initialization.
-    NOR (DataFrame): A pandas DataFrame containing the normalized operational rules
-                     for flood and conservation storage, indexed by day of the year.
-    Qharm (Series): A pandas Series containing the harmonic release pattern, indexed
-                    by day of the year.
-    parsQresid (List): Stores the parameters for residual releases.
-    Qmax (float): The maximum allowable release from the reservoir.
+    -----------
+    avg_inflow: float 
+        Stores the average inflow value provided during initialization.
+    NOR: pandas.DataFrame
+        A pandas DataFrame containing the normalized operational rules for flood and conservation storage, indexed by day of the year.
+    Qharm: pandas.Series
+        A pandas Series containing the harmonic release pattern, indexed by day of the year.
+    parsQresid: List
+        Stores the parameters for residual releases.
+    Qmax: float 
+        The maximum allowable release from the reservoir.
 
     Methods:
+    --------
     Inherits all methods from the Reservoir class and does not define any new explicit methods.
 
     Notes:
+    ------
     The class extends the functionality of the Reservoir base class by incorporating
     additional attributes related to harmonic storage and release patterns. It uses
     daily frequencies for these patterns and sets up the operational rules based on
@@ -101,7 +116,7 @@ class Starfit(Reservoir):
         harm = self.Qharm[doy]
         # residual component of the release
         A_t = (V_st - Vc) / (Vf - Vc) # storage availability
-        eps = self.parsQresid[0] + A_t * self.parsQresid[1] + I_st * self.parsQresid[2]      
+        eps = self.parsQresid['Intercept'] + A_t * self.parsQresid['a_st'] + I_st * self.parsQresid['i_st']      
         # normal release
         Qnor = self.avg_inflow * (harm + eps + 1)
         
@@ -156,7 +171,7 @@ class Starfit(Reservoir):
         inflow.name = 'inflow'
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
-        for date, I in inflow.iteritems():
+        for date, I in inflow.items():
             storage[date] = Vo
             # compute outflow and new storage
             Q, V = self.timestep(I, Vo, date.dayofyear)
