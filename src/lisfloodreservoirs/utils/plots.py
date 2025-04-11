@@ -3,6 +3,7 @@ os.environ['USE_PYGEOS'] = '0'
 import matplotlib as mpl
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
+from matplotlib.patches import Patch
 import matplotlib.gridspec as gridspec
 import geopandas as gpd
 import seaborn as sns
@@ -17,7 +18,6 @@ from statsmodels.distributions.empirical_distribution import ECDF
 
 # from utils import Decomposition
 from .metrics import KGEmod, KGE
-
 
 
 def plot_reservoir_map(
@@ -84,7 +84,6 @@ def plot_reservoir_map(
         plt.savefig(save, dpi=300, bbox_inches='tight')
         
         
-        
 def plot_attributes(df: pd.DataFrame,
                     x: pd.Series,
                     y: pd.Series,
@@ -149,7 +148,6 @@ def plot_attributes(df: pd.DataFrame,
 
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight')
-        
         
         
 def compare_flows(storage: pd.Series,
@@ -245,7 +243,6 @@ def compare_flows(storage: pd.Series,
         plt.close(fig)
         
         
-        
 def create_cmap(cmap: str,
                 bounds: List,
                 name: str = '',
@@ -273,7 +270,6 @@ def create_cmap(cmap: str,
     norm = mpl.colors.BoundaryNorm(bounds, cmap.N)
     
     return cmap, norm
-
 
 
 def plot_resops(storage: pd.Series = None,
@@ -359,7 +355,6 @@ def plot_resops(storage: pd.Series = None,
         plt.close(fig)
         
         
-        
 # def plot_decomposition(obs: Decomposition, sim: Decomposition, id: int, lims: List[float] = [.1, .67, .97], save: Union[str, Path] = None, **kwargs):
 #     """It creates a figure that compares the decomposition of the observed and simulated time series. The figure is composed of 4 plots: original time series, trend, seasonality and residuals. Each plot includes the performance in terms of modified KGE and its components.
     
@@ -428,7 +423,6 @@ def plot_resops(storage: pd.Series = None,
 
 #     if save is not None:
 #         plt.savefig(save, dpi=300, bbox_inches='tight');
-
 
 
 def plot_decomposition(sim: pd.DataFrame, obs: pd.DataFrame = None, lims: List[float] = None, save: Union[str, Path] = None, **kwargs):
@@ -504,7 +498,6 @@ def plot_decomposition(sim: pd.DataFrame, obs: pd.DataFrame = None, lims: List[f
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight')
         plt.close(fig)
-        
         
 
 # def storage_outflow(storage: pd.Series, outflow: pd.Series, storage2: pd.Series = None, outflow2: pd.Series = None, s_lims: List = None, q_lims: List = None, save: Union[Path, str] = None, **kwargs):
@@ -630,7 +623,6 @@ def plot_decomposition(sim: pd.DataFrame, obs: pd.DataFrame = None, lims: List[f
 #         plt.savefig(save, dpi=300, bbox_inches='tight')
         
         
-        
 def reservoir_scatter(sim: pd.DataFrame, x: str, y: str, obs: pd.DataFrame = None, x_thr: List = None, y_thr: List = None, legend: bool = True, ax: Axes = None, **kwargs):
     """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
     
@@ -722,8 +714,7 @@ def reservoir_scatter(sim: pd.DataFrame, x: str, y: str, obs: pd.DataFrame = Non
     
     if legend:
         ax.legend(frameon=False, loc=2)
-
-        
+ 
         
 def reservoir_kde(sim: pd.DataFrame, obs: pd.DataFrame = None, x: str = None, y: str = None, thr: List = None, ax: Axes = None, **kwargs):
     """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
@@ -815,7 +806,6 @@ def reservoir_kde(sim: pd.DataFrame, obs: pd.DataFrame = None, x: str = None, y:
         if yticklabels is False:
             ax.set_yticklabels([])
 
-            
             
 def reservoir_analysis(sim: pd.DataFrame, obs: pd.DataFrame = None, x1: str = 'storage', x2: str = 'inflow', y: str = 'outflow', x_thr: List = None, y_thr: List = None, save: Union[Path, str] = None, **kwargs):
     """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line
@@ -910,7 +900,6 @@ def reservoir_analysis(sim: pd.DataFrame, obs: pd.DataFrame = None, x1: str = 's
         plt.close(fig)
         
         
-        
 def maps_performance(x: pd.Series, y: pd.Series, performance: pd.DataFrame, s: Union[pd.Series, int] = None, polygons: gpd.GeoDataFrame = None, save: Union[Path, str] = None, **kwargs):
     """It creates a figure that contains 4 maps with the KGE and its 3 components.
     
@@ -981,7 +970,6 @@ def maps_performance(x: pd.Series, y: pd.Series, performance: pd.DataFrame, s: U
         plt.savefig(save, dpi=300, bbox_inches='tight')
         
         
-        
 def plot_iterations(iters: pd.DataFrame, pareto: pd.DataFrame, best_iter: int, cols: List = ['like1', 'like2'], save: Union[str, Path] = None, **kwargs):
     """It creates a scatter plot that shows the performance of the iterations in the calibration. On top of the scatter plot a line depicts the Pareto front, from which the best iteration is taken.
     
@@ -1016,7 +1004,6 @@ def plot_iterations(iters: pd.DataFrame, pareto: pd.DataFrame, best_iter: int, c
     fig.legend(frameon=False, loc=1, bbox_to_anchor=[1.175, .7, .1, .2])
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight');
-        
         
         
 def boxplot_parameters(
@@ -1088,7 +1075,6 @@ def boxplot_parameters(
         plt.savefig(save, dpi=300, bbox_inches='tight')
         
         
-        
 def compare_attributes(
     df: pd.DataFrame, 
     thr: float, 
@@ -1146,3 +1132,105 @@ def compare_attributes(
     
     if 'title' in kwargs:
         fig.suptitle(kwargs['title']);
+
+
+def boxplot_comparison(
+    performance: xr.Dataset,
+    ax_dim: str,
+    col_dim: str,
+    metric: str = 'KGE',
+    save: Optional[Union[str, Path]] = None,
+    **kwargs,
+):
+    """
+    Generate side-by-side boxplots comparing model performance across different metrics, storage/outflow components,
+    and categories (e.g., model types or parameter sets).
+
+    Parameters
+    ----------
+    performance : xr.Dataset
+        An xarray dataset containing performance scores. It must include the specified `ax_dim`, `col_dim`, 
+        and a 'metric' dimension, with variables named 'storage' and 'outflow'.
+    ax_dim : str
+        Dimension of the dataset to map to different subplots (columns of subplots). Typically a grouping like 
+        region or threshold.
+    col_dim : str
+        Dimension that identifies the groups within each boxplot (e.g., different models, scenarios, etc.).
+    metric : str, optional
+        Performance metric to be plotted (default is 'KGE'). This selects a slice from the 'metric' dimension.
+    save : str or Path, optional
+        Path to save the figure. If None, the plot is not saved.
+
+    **kwargs : dict, optional
+        Additional plot customization options:
+        - width (float): Width of each boxplot group (default: 0.15)
+        - figsize (tuple): Size of the figure in inches (default: (6, 3))
+        - alpha (float): Transparency of the boxplot fill (default: 0.7)
+
+    Notes
+    -----
+    The function also computes a composite performance index called 'storage & outflow', calculated as:
+        1 - sqrt[(1 - storage)^2 + (1 - outflow)^2]
+    This is included alongside the individual 'storage' and 'outflow' scores.
+
+    A color-coded legend is added automatically based on the values in `col_dim`.
+
+    Returns
+    -------
+    None
+        Displays the plot and optionally saves it to file.
+    """
+
+    w = kwargs.get('width', .15)
+    figsize = kwargs.get('figsize', (6, 3))
+    alpha = kwargs.get('alpha', .7)
+    
+    colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivegreen']
+    colors = {str(key): color for key, color in zip(performance[col_dim].data, colors)}
+    
+    n = len(performance[ax_dim])
+    fig, axes = plt.subplots(ncols=n, figsize=(figsize[0] * n, figsize[1]))#, sharey=True)
+
+    for ax, title in zip(axes, performance[ax_dim].data):
+    
+        perf = performance.sel({ax_dim: title, 'metric': metric})
+        perf = perf.dropna(col_dim, how='all')
+        
+        perf_dct = {var: perf[var].to_pandas().transpose() for var in ['storage', 'outflow']}
+        perf_dct['storage &\noutflow'] = 1 - ((1 - perf_dct['storage'])**2 + (1 - perf_dct['outflow'])**2)**.5
+    
+        ticks_labels = {x: var for x, var in enumerate(perf_dct, start=1)}
+        for x, var in ticks_labels.items():
+            df = perf_dct[var]
+            pos = x - (df.shape[1] / 2 - .5) * w
+            for i, (col, c) in enumerate(colors.items()):
+                if col not in df.columns:
+                    continue
+                ax.boxplot(
+                    df[col],
+                    positions=[pos + i * w],
+                    widths=[w * .9],
+                    patch_artist=True,
+                    showfliers=False,
+                    capprops=dict(linewidth=0),
+                    boxprops=dict(facecolor=c, edgecolor='none', alpha=alpha),
+                    whiskerprops=dict(color=c),
+                    medianprops=dict(color='k')
+                )
+        ax.tick_params(axis='x', length=0)
+        ax.set(
+            ylim=(-1, 1),
+            ylabel=metric,
+            title=title
+        )
+        ax.spines[['top', 'right', 'bottom']].set_visible(False)
+        ax.set_xticks(list(ticks_labels.keys()))
+        ax.set_xticklabels(list(ticks_labels.values()))
+        ax.set_yticks([-1, -.5, 0, .5, 1])
+        
+    # Add legend
+    legend_handles = [Patch(facecolor=c, edgecolor='none', alpha=.7, label=col) for col, c in colors.items()]
+    fig.legend(handles=legend_handles, frameon=False, loc=6, bbox_to_anchor=[.90, 0, .05, 1]);
+
+    if save is not None:
+        plt.savefig(save, dpi=300, bbox_inches='tight');
