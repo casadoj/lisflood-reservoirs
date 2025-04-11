@@ -7,7 +7,7 @@ setup(
     package_dir={'': 'src'},
     entry_points={
         'console_scripts': [
-            'sim_reservoir=lisfloodreservoirs.simulate:main',
+            'run_reservoir=lisfloodreservoirs.simulate:main',
             'cal_reservoir=lisfloodreservoirs.calibrate:main',
             'fit_starfit=lisfloodreservoirs.fit_starfit:main',
             'run_starfit=lisfloodreservoirs.run_starfit:main',
