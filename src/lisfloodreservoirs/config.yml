@@ -2,9 +2,9 @@
 # In this example, we will use the mHM reservoir routine and calibrate it using "storage" as the target variable.
 
 data:
-    path: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.1/
-    reservoirs: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.1/selection/reservoirs.txt
-    periods: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/v1.1/selection/periods.pkl
+    path: /PATH_ROOT/ResOpsUS/v2.0/
+    reservoirs: /PATH_ROOT/ResOpsUS/v2.0/selection/reservoirs.txt
+    periods: /PATH_ROOT/ResOpsUS/v2.0/selection/periods.pkl
 
 simulation:
     model: mhm
@@ -12,7 +12,7 @@ simulation:
     # config:
         # routine: 1
         # limit_Q: True
-    path: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/results/
+    path: /PATH_ROOT/ResOpsUS/v2.0/results/
 
 calibration:
     input:
@@ -21,4 +21,4 @@ calibration:
         - storage
     max_iter: 1000
     complexes: 4
-    path: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/results/
+    path: /PATH_ROOT/ResOpsUS/v2.0/results/
