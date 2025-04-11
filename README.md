@@ -10,7 +10,7 @@ Five different reservoir routines are implemented in this repository:
 * The routine in the hydrological model [mHM](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2023WR035433) (class  [`mHM`](./src/lisfloodreservoirs/models/mhm.py))
 * The reservoir model [Starfit](https://www.sciencedirect.com/science/article/pii/S0022169421008933?via%3Dihub) (class [`Starfit`](./src/lisfloodreservoirs/models/starfit/Starfit.py))
 
-Apart from the tools to train and fit these reservoir routines, it contains multiple Jupyter Notebooks to create datasets of reservoir attributes and observed time series in several countries: [US](notebook/ResOpsUS/), [Mexico](./notebook/ResOpsMX/), [Brazil](./notebook/ResOpsBR/), [Spain](./notebook/ResOpsUS/)... These datasets have the same structure as the [CARAVAN](https://github.com/kratzert/Caravan) dataset, and are meant not only as the input data for the reservoir routines in this repository, but also to be used as input for deep learning models.
+Apart from the tools to train and fit these reservoir routines, it contains multiple Jupyter Notebooks to create datasets of reservoir attributes and observed time series in several countries: [US](notebook/ResOpsUS/README.md), [Mexico](./notebook/ResOpsMX/README.md), [Brazil](./notebook/ResOpsBR/README.md), [Spain](./notebook/ResOpsUS/README.md)... These datasets have the same structure as the [CARAVAN](https://github.com/kratzert/Caravan) dataset, and are meant not only as the input data for the reservoir routines in this repository, but also to be used as input for deep learning models.
 
 ## Installation
 
@@ -56,7 +56,7 @@ To run the tools from the command prompt, the instruction is always the same onl
 fit_starfit --config-file config.yml
 ```
 
-#### `run_reservoir`
+#### [`run_reservoir`](./src/lisfloodreservoirs/simulate.py)
 
 This tool simulates the reservoir module with default parameters. It is applicable to the **linear**, **LISFLOOD**, **Hanazaki** and **mHM** models.
 
@@ -74,7 +74,7 @@ options:
                           Overwrite existing simulation files. Default: False
 ```
 
-#### `cal_reservoir`
+#### [`cal_reservoir`](./src/lisfloodreservoirs/calibrate.py)
 
 This tool calibrates the reservoir model using the algorithm Shuffle Complex Evolution - University of Arizona (SCE-UA). It is applicable to the **linear**, **LISFLOOD**, **Hanazaki** and **mHM** models, and it can calibrate the observed storage, outflow, or both at the same time. Eventually, the model is run with the optimised parameters.
 
@@ -97,7 +97,7 @@ options:
                           Overwrite existing simulation files. Default: False
 ```
 
-#### `fit_starfit`
+#### [`fit_starfit`](./src/lisfloodreservoirs/fit_starfit.py)
 
 This tool fits the Starfit reservoir model to the observed data.
 
@@ -117,7 +117,7 @@ options:
                           Overwrite existing model. Default: False
 ```
 
-#### `run_starfit`
+#### [`run_starfit`](./src/lisfloodreservoirs/run_starfit.py)
 
 This tool runs the Starfit reservoir model that was previously fitted with the tool [`fit_starfit`](#fit_starfit).
 
