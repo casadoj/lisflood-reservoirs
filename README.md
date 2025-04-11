@@ -8,9 +8,9 @@ Five different reservoir routines are implemented in this repository:
 * The routine in the hydrological model [LISFLOOD](https://ec-jrc.github.io/lisflood-model/3_03_optLISFLOOD_reservoirs/) (class [`Lisflood`](./src/lisfloodreservoirs/models/lisflood.py))
 * The routine in the hydrological model [CaMa-Flood](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021MS002944) (class [`Hanazaki`](./src/lisfloodreservoirs/models/hanazaki.py))
 * The routine in the hydrological model [mHM](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2023WR035433) (class  [`mHM`](./src/lisfloodreservoirs/models/mhm.py))
-* The reservoir model [Starfit](https://www.sciencedirect.com/science/article/pii/S0022169421008933?via%3Dihub) (class [`Starfit`](./src/lisfloodreservoirs/models/starfit/Starfit.py))
+* The reservoir model [Starfit](https://www.sciencedirect.com/science/article/pii/S0022169421008933?via%3Dihub) (class [`Starfit`](./src/lisfloodreservoirs/models/starfit/starfit.py))
 
-Apart from the tools to train and fit these reservoir routines, it contains multiple Jupyter Notebooks to create datasets of reservoir attributes and observed time series in several countries: [US](notebook/ResOpsUS/README.md), [Mexico](./notebook/ResOpsMX/README.md), [Brazil](./notebook/ResOpsBR/README.md), [Spain](./notebook/ResOpsUS/README.md)... These datasets have the same structure as the [CARAVAN](https://github.com/kratzert/Caravan) dataset, and are meant not only as the input data for the reservoir routines in this repository, but also to be used as input for deep learning models.
+Apart from the tools to train and fit these reservoir routines, it contains multiple Jupyter Notebooks to create datasets of reservoir attributes and observed time series in several countries: [US](notebook/ResOpsUS/), [Mexico](./notebook/ResOpsMX/), [Brazil](./notebook/ResOpsBR/), [Spain](./notebook/ResOpsUS/)... These datasets have the same structure as the [CARAVAN](https://github.com/kratzert/Caravan) dataset, and are meant not only as the input data for the reservoir routines in this repository, but also to be used as input for deep learning models.
 
 ## Installation
 
