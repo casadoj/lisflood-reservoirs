@@ -1178,14 +1178,14 @@ def boxplot_comparison(
     Returns
     -------
     None
-        Displays the plot and optionally saves it to file.
+        Displays the plot and optionally saves it to a file.
     """
 
     w = kwargs.get('width', .15)
     figsize = kwargs.get('figsize', (6, 3))
     alpha = kwargs.get('alpha', .7)
     
-    colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivegreen']
+    colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivedrab']
     colors = {str(key): color for key, color in zip(performance[col_dim].data, colors)}
     
     n = len(performance[ax_dim])
