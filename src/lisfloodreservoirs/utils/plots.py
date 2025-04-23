@@ -1196,8 +1196,8 @@ def boxplot_comparison(
         perf = performance.sel({ax_dim: title, 'metric': metric})
         perf = perf.dropna(col_dim, how='all')
         
-        perf_dct = {var: perf[var].to_pandas().transpose() for var in ['storage', 'outflow']}
-        perf_dct['storage &\noutflow'] = 1 - ((1 - perf_dct['storage'])**2 + (1 - perf_dct['outflow'])**2)**.5
+        perf_dct = {var: perf[var].to_pandas().transpose() for var in ['outflow', 'storage']}
+        perf_dct['outflow &\nstorage'] = 1 - ((1 - perf_dct['outflow'])**2 + (1 - perf_dct['storage'])**2)**.5
     
         ticks_labels = {x: var for x, var in enumerate(perf_dct, start=1)}
         for x, var in ticks_labels.items():
