@@ -94,16 +94,16 @@ class Camaflood(Reservoir):
             Outflow (m3/s), updated storage (m3) and area (m2)
         """
         
-        # estimate reservoir area
-        if self.Atot:
-            A = self.estimate_area(V)      
+        # estimate reservoir area at the beginning of the time step
+        if self.Atot and (P or E):
+            Ao = self.estimate_area(V)      
             
         # update reservoir storage with the inflow volume, precipitation and evaporation
         V += I * self.At
         if P and self.Atot:
-            V += P * 1e-3 * A
+            V += P * 1e-3 * Ao
         if E and self.Atot:
-            V -= E * 1e-3 * A
+            V -= E * 1e-3 * Ao
         if D:
             V -= D
         
@@ -137,11 +137,14 @@ class Camaflood(Reservoir):
         assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
         assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
         assert 0 <= Q, 'The simulated outflow is negative'
-        
+
+        # estimate reservoir area at the end of the time step
         if self.Atot:
-            return Q, V, A
+            A = self.estimate_area(V)
         else:
-            return Q, V, np.nan
+            A = np.nan
+            
+        return Q, V, A
     
     def routine(
         self, 
