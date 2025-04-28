@@ -1,0 +1,2699 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+<!--[if lt IE 7]>      <html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en" class="no-js lt-ie9 lt-ie8 lt-ie7 co-ui"> <![endif]-->
+<!--[if IE 7]>         <html  xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en" class="no-js lt-ie9 lt-ie8 co-ui"> <![endif]-->
+<!--[if IE 8]>         <html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en" class="no-js lt-ie9 co-ui"> <![endif]-->
+<!--[if gt IE 8]><!-->
+<html xmlns="https://www.w3.org/1999/xhtml" xml:lang="en" lang="en" class="co-ui"><!--<![endif]--><!-- remove class no-js if js is available --><head>
+                                                <!-- BEGIN_HEAD -->
+                                                <!-- START_SNIPPET:part6 -->
+                                                <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+                                                <meta charset="utf-8">
+                                                <meta name="viewport" content="width=device-width, initial-scale=1">
+                                                
+                                                <meta name="theme-color" content="#000000">
+                                                <meta name="application-name" content="1">
+                                                <meta name="msapplication-TileColor" content="#FFFFFF">
+                                            <link rel="preconnect" crossorigin="" href="https://contentmanager.copernicus.org/"><link rel="icon" size="16x16" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_16x16_.ico" type="image/x-icon"><link rel="icon" size="24x24" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_24x24_.ico" type="image/x-icon"><link rel="icon" size="32x32" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_32x32_.ico" type="image/x-icon"><link rel="icon" size="48x48" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_48x48_.ico" type="image/x-icon"><link rel="icon" size="64x64" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_64x64_.ico" type="image/x-icon"><link rel="icon" size="228x228" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_228x228_.png" type="image/png-icon"><link rel="icon" size="195x195" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_195x195_.png" type="image/png-icon"><link rel="icon" size="196x196" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_196x196_.png" type="image/png-icon"><link rel="icon" size="128x128" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_128x128_.png" type="image/png-icon"><link rel="icon" size="96x96" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_96x96_.png" type="image/png-icon"><link rel="apple-touch-icon-precomposed" size="180x180" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_180x180_.png" type="image/png-icon"><link rel="apple-touch-icon-precomposed" size="120x120" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_120x120_.png" type="image/png-icon"><link rel="apple-touch-icon-precomposed" size="152x152" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_152x152_.png" type="image/png-icon"><link rel="apple-touch-icon-precomposed" size="76x76" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_76x76_.png" type="image/png-icon"><link rel="apple-touch-icon-precomposed" size="57x57" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_57x57_.ico" type="image/png-icon"><link rel="apple-touch-icon-precomposed" size="144x144" href="https://www.hydrology-and-earth-system-sciences.net/favicon_copernicus_144x144_.png" type="image/png-icon"><script type="text/javascript" src="HESS%20-%20Submission_files/mustache.min.js"></script><script type="text/javascript" src="HESS%20-%20Submission_files/jquery.min.js"></script><script type="text/javascript" src="HESS%20-%20Submission_files/copernicus.min.js"></script><script type="text/javascript" src="HESS%20-%20Submission_files/htmlgenerator-v2.js"></script><script type="text/javascript" src="HESS%20-%20Submission_files/photoswipe.min.js"></script><script type="text/javascript" src="HESS%20-%20Submission_files/photoswipe-ui-default.min.js"></script><link rel="stylesheet" type="text/css" media="all" href="HESS%20-%20Submission_files/dzsparallaxer.css"><script type="text/javascript" src="HESS%20-%20Submission_files/dzsparallaxer.js"></script><link rel="stylesheet" type="text/css" media="all" id="hasBootstrap" href="HESS%20-%20Submission_files/bootstrap.min.css"><link rel="stylesheet" type="text/css" media="all" href="HESS%20-%20Submission_files/bootstrap-media.min.css"><link rel="stylesheet" type="text/css" media="all" href="HESS%20-%20Submission_files/bootstrap-grid.min.css"><link rel="stylesheet" type="text/css" media="all" href="HESS%20-%20Submission_files/bootstrap-reboot.min.css"><script type="text/javascript" src="HESS%20-%20Submission_files/popper.js"></script><script type="text/javascript" src="HESS%20-%20Submission_files/bootstrap.min.js"></script><link rel="preconnect" crossorigin="" href="https://cdn.copernicus.org/"><link rel="stylesheet" type="text/css" media="all" href="HESS%20-%20Submission_files/unsemantic.min.css"><link rel="stylesheet" type="text/css" media="all" href="HESS%20-%20Submission_files/photoswipe.css"><link rel="stylesheet" type="text/css" media="all" href="HESS%20-%20Submission_files/dark-icon-skin.css"><link rel="stylesheet" type="text/css" media="all" href="HESS%20-%20Submission_files/copernicus-min.css"><link rel="stylesheet" type="text/css" media="all" href="HESS%20-%20Submission_files/fontawesome.css"><link rel="stylesheet" type="text/css" media="all" href="HESS%20-%20Submission_files/all.font.css"><link rel="stylesheet" type="text/css" media="projection, handheld, screen, tty, tv, print" href="HESS%20-%20Submission_files/co_cms_font_open_sans_v_15.css"><link rel="stylesheet" type="text/css" media="projection, handheld, screen, tty, tv, print" href="HESS%20-%20Submission_files/template_one_column_base_2023_202301261343_1676458272.css"><link rel="stylesheet" type="text/css" media="print" href="HESS%20-%20Submission_files/template_one_column_base_print_2023_1674737524.css"><script src="HESS%20-%20Submission_files/co_common.js" type="text/javascript">
+</script><script src="HESS%20-%20Submission_files/co_auth_check.js" type="text/javascript">
+</script><script src="HESS%20-%20Submission_files/onload_javascript_actions.js" type="text/javascript">
+</script><script src="HESS%20-%20Submission_files/template-one-column_2023_1674737530.js" type="text/javascript">
+</script><!-- END_SNIPPET:part6 --><!-- END_HEAD --><meta name="global_projectID" content="13"><meta name="global_pageID" content="10813"><meta name="global_pageIdentifier" content="submission"><meta name="global_moBaseURL" content="https://meetingorganizer.copernicus.org/"><meta name="global_projectShortcut" content="HESS"><meta name="global_projectDomain" content="https://www.hydrology-and-earth-system-sciences.net/"><title>HESS - Submission </title><meta name="data-non-mobile-optimized-message" content=""></head><body><!-- $$BODY_HEAD$$ --><header id="printheader" class="d-none d-print-block container">
+
+    <!-- START_SNIPPET:part7 -->
+
+    <img src="HESS%20-%20Submission_files/graphic_egu_claim_logo_blue.png" alt="" style="width: 508px; height: 223px;">
+
+</header>
+
+<header class="d-print-none mb-n3 version-2023" id="has-banner">
+
+    <div class="container">
+
+        <div class="row no-gutters mr-0 ml-0 align-items-center header-wrapper mb-lg-3">
+
+            <div class="col-auto pr-3">
+
+                <div class="layout__moodboard-logo-year-container">
+
+                    <a class="layout__moodboard-logo-link" target="_blank" href="http://www.egu.eu/">
+
+                    <div class="layout__moodboard-logo">
+
+                        <img src="HESS%20-%20Submission_files/graphic_egu_claim_logo_blue.png" alt="" style="width: 508px; height: 223px;">
+
+                    </div>
+
+                    </a>
+
+                </div>
+
+            </div>
+
+            <div class="d-none d-lg-block col text-md-right layout__title-desktop">
+
+                <div class="layout__m-location-and-time">
+
+                    <a class="moodboard-title-link" href="https://www.hydrology-and-earth-system-sciences.net/">
+
+                    Hydrology and Earth System Sciences
+
+                    </a>
+
+                </div>
+
+            </div>
+
+            <div class="d-none d-md-block d-lg-none col text-md-right layout__title-tablet">
+
+                <div class="layout__m-location-and-time">
+
+                    <a class="moodboard-title-link" href="https://www.hydrology-and-earth-system-sciences.net/">
+
+                    Hydrology and Earth System Sciences
+
+                    </a>
+
+                </div>
+
+            </div>
+
+            <div class="col layout__m-location-and-time-mobile d-md-none text-center layout__title-mobile">
+
+                <a class="moodboard-title-link" href="https://www.hydrology-and-earth-system-sciences.net/">
+
+                HESS
+
+                </a>
+
+            </div>
+
+            <!-- End Logo -->
+
+            <div class="col-auto text-right">
+
+                <button class="navbar-toggler light mx-auto mr-sm-0" type="button" data-toggle="collapse" data-target="#navbar_menu" aria-controls="navbar_menu" aria-expanded="false" aria-label="Toggle navigation">
+
+                    <span class="navbar-toggler-icon light"></span>
+
+                </button>
+
+            </div>
+
+            <!-- Topbar -->
+
+            <div class="topbar d-print-none">
+
+                <!-- <iframe
+				frameborder="0"
+				id="co_auth_check_authiframecontainer"
+				style="width: 179px; height: 57px; margin: 0; margin-bottom: 5px; margin-left: 10px; margin-top: -15px; padding: 0; border: none; overflow: hidden; background-color: transparent; display: none;"
+				src=""></iframe> -->
+
+            </div>
+
+            <!-- End Topbar -->
+
+        </div>
+
+    </div>
+
+    <div class="banner-navigation-breadcrumbs-wrapper">
+
+        <div id="navigation">
+
+            <nav class="container navbar navbar-expand-lg navbar-light"><!-- Logo -->
+
+                <div class="collapse navbar-collapse CMSCONTAINER" id="navbar_menu">
+
+                <div id="cmsbox_125373" class="cmsbox navbar-collapse"><button style="display: none;" class="navbar-toggler navigation-extended-toggle-button" type="button" data-toggle="collapse" data-target="#navbar_menu" aria-controls="navbarSupportedContent" aria-expanded="false" aria-label="Toggle navigation">
+    <span class="navbar-toggler-icon"></span>
+</button>
+<div class="navbar-collapse CMSCONTAINER collapse show" id="navbarSupportedContent">
+            <ul class="navbar-nav mr-auto no-styling">
+                    <li class="nav-item  ">
+                        <a target="_parent" class="nav-link  " href="https://www.hydrology-and-earth-system-sciences.net/home.html"><i class="fal fa-home fa-lg" title="Home"></i></a>
+                </li>
+                    <li class="nav-item  megamenu ">
+                        <a target="_self" class="nav-link dropdown-toggle  " href="#" id="navbarDropdown10810" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Articles &amp; preprints
+                            <span class="caret"></span></a>
+                        <div class="dropdown-menu  level-1 " aria-labelledby="navbarDropdown10810">
+                            <div class="container">
+                                <div class="row">
+                                <div class="col-md-12 col-lg-4 col-sm-12">
+                                            <div class="dropdown-header">Recent</div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://hess.copernicus.org/">Recent papers</a>
+                                    </div>
+                                            <div class="dropdown-header">Highlights</div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://hess.copernicus.org/editors_choice.html">Editor's choice</a>
+                                    </div>
+                                            <div class="dropdown-header">Regular articles</div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://hess.copernicus.org/research_article.html">Research articles</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://hess.copernicus.org/review_article.html">Review articles</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://hess.copernicus.org/technical_note.html">Technical notes</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://hess.copernicus.org/opinion_article.html">Opinion articles</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://hess.copernicus.org/education_and_communication.html">Education and communication</a>
+                                    </div>
+                                            </div>
+                                            <div class="col-md-12 col-lg-4 col-sm-12">
+                                            <div class="dropdown-header">Special issues</div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://hess.copernicus.org/special_issues.html">Published SIs</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/articles_and_preprints/scheduled_sis.html">Scheduled SIs</a>
+                                    </div>
+                                            <div class="dropdown-header">EGU Compilations</div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_blank" class="" href="https://encyclopedia-of-geosciences.net/">Encyclopedia of Geosciences</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_blank" class="" href="https://egusphere.net/">EGUsphere</a>
+                                    </div>
+                                            </div>
+                                            <div class="col-md-12 col-lg-4 col-sm-12">
+                                            <div class="dropdown-header">Alerts</div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/articles_and_preprints/subscribe_to_alerts.html">Subscribe to alerts</a>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                </li>
+                    <li class="nav-item  ">
+                        <a target="_parent" class="nav-link active " href="https://www.hydrology-and-earth-system-sciences.net/submission.html">Submission</a>
+                </li>
+                    <li class="nav-item  dropdown ">
+                        <a target="_self" class="nav-link dropdown-toggle  " href="#" id="navbarDropdown10814" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Policies
+                            <span class="caret"></span></a>
+                        <div class="dropdown-menu  level-1 " aria-labelledby="navbarDropdown10814">
+                            <div>
+                                <div>
+                                <div class="col-md-12 col-lg-12 col-sm-12">
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/licence_and_copyright.html">Licence &amp; copyright</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/general_terms.html">General terms</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/publication_policy.html">Publication policy</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/data_policy.html">Data policy</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/publication_ethics.html">Publication ethics</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/competing_interests_policy.html">Competing interests policy</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/appeals_and_complaints.html">Appeals &amp; complaints</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/proofreading_guidelines.html">Proofreading guidelines</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/obligations_for_authors.html">Obligations for authors</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/obligations_for_editors.html">Obligations for editors</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/obligations_for_referees.html">Obligations for referees</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/author_name_change.html">Inclusive author name-change policy</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/policies/inclusivity_in_global_research.html">Inclusivity in global research</a>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                </li>
+                    <li class="nav-item  dropdown ">
+                        <a target="_self" class="nav-link dropdown-toggle  " href="#" id="navbarDropdown378" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">Peer review
+                            <span class="caret"></span></a>
+                        <div class="dropdown-menu  level-1 " aria-labelledby="navbarDropdown378">
+                            <div>
+                                <div>
+                                <div class="col-md-12 col-lg-12 col-sm-12">
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/peer_review/interactive_review_process.html">Interactive review process</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/peer_review/finding_an_editor.html">Finding an editor</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/peer_review/review_criteria.html">Review criteria</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://webforms.copernicus.org/HESS/referee-application">Become a referee</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a data-non-mobile-optimized="1" target="_parent" class="" href="https://editor.copernicus.org/HESS/my_manuscript_overview">Manuscript tracking</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/peer_review/reviewer_recognition.html">Reviewer recognition</a>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                </li>
+                    <li class="nav-item  ">
+                        <a target="_parent" class="nav-link  " href="https://www.hydrology-and-earth-system-sciences.net/editorial_board.html">Editorial board</a>
+                </li>
+                    <li class="nav-item  dropdown ">
+                        <a target="_self" class="nav-link dropdown-toggle  " href="#" id="navbarDropdown6115" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">About
+                            <span class="caret"></span></a>
+                        <div class="dropdown-menu  level-1 " aria-labelledby="navbarDropdown6115">
+                            <div>
+                                <div>
+                                <div class="col-md-12 col-lg-12 col-sm-12">
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/aims_and_scope.html">Aims &amp; scope</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/subject_areas.html">Subject areas</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/manuscript_types.html">Manuscript types</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/article_processing_charges.html">Article processing charges</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/financial_support.html">Financial support</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/news_and_press.html">News &amp; press</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/egu_resources.html">EGU resources</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/promote_your_work.html">Promote your work</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/journal_statistics.html">Journal statistics</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/journal_metrics.html">Journal metrics</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/abstracted_and_indexed.html">Abstracted &amp; indexed</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/article_level_metrics.html">Article level metrics</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/faqs.html">FAQs</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/contact.html">Contact</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/xml_harvesting_and_oai-pmh.html">XML harvesting &amp; OAI-PMH</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/jim_dooge_award.html">Jim Dooge Award</a>
+                                    </div>
+                                        <div class="dropdown-item level-2  " style="list-style: none">
+                                            <a target="_parent" class="" href="https://www.hydrology-and-earth-system-sciences.net/about/outstanding_editor_award.html">Outstanding Editor Award</a>
+                                    </div>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                </li>
+                    <li class="nav-item  ">
+                        <a target="_parent" class="nav-link  " href="https://www.hydrology-and-earth-system-sciences.net/egu_publications.html">EGU publications</a>
+                </li>
+                    <li class="nav-item  ">
+                        <a target="_blank" class="nav-link  " data-non-mobile-optimized="1" href="https://editor.copernicus.org/HESS/"><i class="fal fa-sign-in-alt fa-lg" title="Login"></i></a>
+                </li>
+                <!-- Topbar -->
+                <li class="d-print-none d-lg-none pt-2 topbar-mobile">
+                    <!-- <iframe
+				frameborder="0"
+				id="co_auth_check_authiframecontainer"
+				style="width: 179px; height: 57px; margin: 0; margin-bottom: 5px; margin-left: 10px; margin-top: -15px; padding: 0; border: none; overflow: hidden; background-color: transparent; display: none;"
+				src=""></iframe> -->
+                </li>
+                <!-- End Topbar -->
+            </ul>
+</div>
+</div></div>
+
+            </nav>
+
+        </div>
+
+        <section id="banner" class="banner dzsparallaxer use-loading auto-init height-is-based-on-content mode-scroll loaded dzsprx-readyall">
+
+            <div class="divimage dzsparallaxer--target layout__moodboard-banner" data-src="" style="transform: translate3d(0px, 0px, 0px);"></div>
+
+            <!-- END_SNIPPET:part7 -->
+
+            <div id="headers-content-container" class="container CMSCONTAINER">
+
+
+
+            <div id="cmsbox_125432" class="cmsbox ">            <span class="header-small text-uppercase"><!-- START_HEADLINE_ORDER_FIRST --><!-- END_HEADLINE_ORDER_FIRST -->&nbsp;</span>
+            <h1 class="display-4 header-get-function ">
+                <!-- START_HEADLINE_ORDER_SECOND -->Submission<!-- END_HEADLINE_ORDER_SECOND -->&nbsp;
+            </h1>
+</div></div>
+
+        </section>
+
+
+
+        <div id="breadcrumbs" class="breadcrumbs">
+
+            <div class="container">
+
+                <div class="row align-items-center">
+
+                    <div class="d-none d-sm-block text-nowrap pageactions"></div>
+
+                    <!-- START_SEARCH -->
+
+                    <!-- END_SEARCH -->
+
+                    <!-- The template part snippet fo breadcrubs is in source code-->
+
+                    <div class="justify-content-between col-auto col-md CMSCONTAINER" id="breadcrumbs_content_container"><div id="cmsbox_1091610" class="cmsbox "><!-- tpl: templates/get_functions/get_breadcrumbs/index -->
+<!-- START_BREADCRUMBS_CONTAINER -->
+<ol class="breadcrumb">
+    <!-- START_BREADCRUMBS -->
+    <!-- START_SNIPPET:part8 -->
+        <li class="breadcrumb-item home"><a href="https://www.hydrology-and-earth-system-sciences.net/">Home</a></li>
+            <li class="breadcrumb-item active">Submission</li>
+    <!-- END_SNIPPET:part8 -->
+    <!-- END_BREADCRUMBS -->
+</ol>
+<!-- END_BREADCRUMBS_CONTAINER -->
+</div></div>
+
+                    <!-- START_SNIPPET:part10 -->
+
+                    <div class="col col-md-4 text-right page-search CMSCONTAINER" id="search_content_container"><div id="cmsbox_1091539" class="cmsbox "><!-- v1.31 -->
+<!-- 1.31: added placeholder for test system sanitizing-->
+<!-- 1.3: #855 -->
+<!-- 1.2: #166 -->
+<!-- CMS ressources/FinderBreadcrumbBox.html -->
+<!-- START_SITE_SEARCH -->
+<!-- Root element of PhotoSwipe. Must have class pswp. -->
+<div class="pswp" tabindex="-1" role="dialog" aria-hidden="true">
+
+    <!-- Background of PhotoSwipe.
+         It's a separate element as animating opacity is faster than rgba(). -->
+    <div class="pswp__bg"></div>
+
+    <!-- Slides wrapper with overflow:hidden. -->
+    <div class="pswp__scroll-wrap">
+
+        <!-- Container that holds slides.
+            PhotoSwipe keeps only 3 of them in the DOM to save memory.
+            Don't modify these 3 pswp__item elements, data is added later on. -->
+        <div class="pswp__container">
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+            <div class="pswp__item"></div>
+        </div>
+
+        <!-- Default (PhotoSwipeUI_Default) interface on top of sliding area. Can be changed. -->
+        <div class="pswp__ui pswp__ui--hidden">
+
+            <div class="pswp__top-bar">
+
+                <!--  Controls are self-explanatory. Order can be changed. -->
+
+                <div class="pswp__counter"></div>
+
+                <button class="pswp__button pswp__button--close" title="Close (Esc)"></button>
+
+
+                <button class="pswp__button pswp__button--fs" title="Toggle fullscreen"></button>
+
+                <!-- Preloader demo http://codepen.io/dimsemenov/pen/yyBWoR -->
+                <!-- element will get class pswp__preloader--active when preloader is running -->
+                <div class="pswp__preloader">
+                    <div class="pswp__preloader__icn">
+                        <div class="pswp__preloader__cut">
+                            <div class="pswp__preloader__donut"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pswp__share-modal pswp__share-modal--hidden pswp__single-tap">
+                <div class="pswp__share-tooltip"></div>
+            </div>
+
+            <button class="pswp__button pswp__button--arrow--left" title="Previous (arrow left)">
+            </button>
+
+            <button class="pswp__button pswp__button--arrow--right" title="Next (arrow right)">
+            </button>
+
+            <div class="pswp__caption ">
+                <div class="pswp__caption__center"></div>
+            </div>
+
+        </div>
+
+    </div>
+
+</div>
+<div class="row align-items-center no-gutters py-1" id="search-wrapper">
+
+    <div class="col-auto pl-0 pr-1">
+        <a id="templateSearchInfoBtn" role="button" tabindex="99" data-container="body" data-toggle="popover" data-placement="bottom" data-trigger="click" data-original-title="" title=""><span class="fal fa-info-circle"></span></a>
+    </div>
+
+    <div class="col pl-0 pr-1">
+        <input type="search" placeholder="Search" name="q" class="form-control form-control-sm" id="search_query_solr">
+    </div>
+    <div class="col-auto pl-0">
+        <button title="Start site search" id="start_site_search_solr" class="btn btn-sm btn-success"><span class="co-search"></span></button>
+    </div>
+</div>
+
+<div class="text-left">
+    <div id="templateSearchInfo" class="d-none">
+        <div>
+            <p>
+                Multiple terms: term1 term2<br>
+                <i>red apples</i><br>
+                returns results with all terms like:<br>
+                <i>Fructose levels in <strong>red</strong> and <strong>green</strong> apples</i><br>
+            </p>
+            <p>
+                Precise match in quotes: "term1 term2"<br>
+                <i>"red apples"</i><br>
+                returns results matching exactly like:<br>
+                <i>Anthocyanin biosynthesis in <strong>red apples</strong></i><br>
+            </p>
+
+            <p>
+                Exclude a term with -: term1 -term2<br>
+                <i>apples -red</i><br>
+                returns results containing <i><strong>apples</strong></i> but not <i><strong>red</strong></i>:<br>
+                <i>Malic acid in green <strong>apples</strong></i><br>
+            </p>
+        </div>
+    </div>
+
+    <div class="modal " id="templateSearchResultModal" role="dialog" aria-labelledby="Search results" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header modal-header--sticky shadow one-column d-block">
+                    <div class="row no-gutters mx-1">
+                        <div class="col mr-3">
+                                <h1 class="" id="resultsSearchHeader"><span id="templateSearchResultNr"></span> hit<span id="templateSearchResultNrPlural">s</span> for <span id="templateSearchResultTerm"></span></h1>
+                            </div>
+                        <div class="col-auto">
+                            <a id="scrolltopmodal" href="javascript:void(0)" onclick="scrollModalTop();" style="display: none;"><i class="co-home"></i></a>
+
+                        </div>
+                        <div class="col-auto">
+                                <button data-dismiss="modal" aria-label="Close" class="btn btn-danger mt-1">Close</button>
+                            </div>
+                    </div>
+                </div>
+                <div class="modal-body one-column">
+                    <!-- $$co-sanitizing-slot1$$ -->
+                    <div class="grid-container mx-n3"><div class="grid-85 tablet-grid-85">
+                        <button aria-label="Refine" id="refineSearchModal" class="btn btn-primary float-left mt-4">Refine your search</button>
+                        <button aria-label="Refine" id="refineSearchModalHide" class="btn btn-danger float-left d-none mt-4">Hide refinement</button>
+                    </div></div>
+                    <div class="grid-container mx-n3"><div class="grid-100 tablet-grid-100"><div id="templateRefineSearch" class="d-none"></div></div></div>
+
+                <div id="templateSearchResultContainer" class="searchResultsModal mx-n3"></div>
+                <div class="grid-container mb-0"><div class="grid-100 tablet-grid-100"><div id="templateSearchResultContainerEmpty" class="co-notification d-none">There are no results for your search term.</div></div></div>
+            </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+    <!-- feedback network problems -->
+    <div class="modal " id="templateSearchErrorModal1" role="dialog" aria-labelledby="Search results" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content p-3">
+                <div class="modal-body text-left">
+                    <h1 class="mt-0 pt-0">Network problems</h1>
+                    <div class="co-error">We are sorry, but your search could not be completed due to network problems. Please try again later.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- feedback server timeout -->
+    <div class="modal " id="templateSearchErrorModal2" role="dialog" aria-labelledby="Search results" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content p-3">
+                <div class="modal-body text-left">
+                    <h1 class="mt-0 pt-0">Server timeout</h1>
+                    <div class="co-error">We are sorry, but your search could not be completed due to server timeouts. Please try again later.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- feedback invalid search term -->
+    <div class="modal " id="templateSearchErrorModal3" role="dialog" aria-labelledby="Search results" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content p-3">
+                <div class="modal-body text-left">
+                    <h1 class="mt-0 pt-0">Empty search term</h1>
+                    <div class="co-error">You have applied the search with an empty search term. Please revisit and try again.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- feedback too many requests -->
+    <div class="modal " id="templateSearchErrorModal4" role="dialog" aria-labelledby="Search results" aria-hidden="true">
+        <div class="modal-dialog modal-lg modal-dialog-centered">
+            <div class="modal-content p-3">
+                <div class="modal-body text-left">
+                    <h1 class="mt-0 pt-0">Too many requests</h1>
+                    <div class="co-error">We are sorry, but we have received too many parallel search requests. Please try again later.</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- loading -->
+    <div class="modal " id="templateSearchLoadingModal" role="dialog" aria-labelledby="Search results" aria-hidden="true">
+        <div class="modal-dialog modal-sm modal-dialog-centered">
+            <div class="modal-content p-3 co_LoadingDotsContainer">
+                <div class="modal-body">
+                    <div class="text">Searching</div>
+                    <div class="dots d-flex justify-content-center"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div></div>
+            </div>
+        </div>
+    </div>
+
+</div>
+<style>
+    /*.modal {*/
+    /*    background: rgba(255, 255, 255, 0.8);*/
+    /*}*/
+    .modal-header--sticky {
+        position: sticky;
+        top: 0;
+        background-color: inherit;
+        z-index: 1055;
+    }
+    .grid-container
+    {
+        margin-bottom: 1em;
+        /*padding-left: 0;*/
+        /*padding-right: 0;*/
+    }
+    #templateSearchInfo{
+        display: none;
+        background-color: var(--background-color-primary);
+        margin-top: 1px;
+        z-index: 5;
+        border: 1px solid var(--color-primary);
+        opacity: .8;
+        font-size: .7rem;
+        border-radius: .25rem;
+    }
+
+
+    #templateSearchLoadingModal .co_LoadingDotsContainer
+    {
+        z-index: 1000;
+    }
+    #templateSearchLoadingModal .co_LoadingDotsContainer .text
+    {
+        text-align: center;
+        font-weight: bold;
+        padding-bottom: 1rem;
+    }
+    #templateSearchLoadingModal .co_LoadingDotsContainer .dot
+    {
+        background-color: #0072BC;
+        border: 2px solid white;
+        border-radius: 50%;
+        float: left;
+        height: 2rem;
+        width: 2rem;
+        margin: 0 5px;
+        -webkit-transform: scale(0);
+        transform: scale(0);
+        -webkit-animation: animation_dots_breath 1000ms ease infinite 0ms;
+        animation: animation_dots_breath 1000ms ease infinite 0ms;
+    }
+    #templateSearchLoadingModal .co_LoadingDotsContainer .dot:nth-child(2)
+    {
+        -webkit-animation: animation_dots_breath 1000ms ease infinite 300ms;
+        animation: animation_dots_breath 1000ms ease infinite 300ms;
+    }
+    #templateSearchLoadingModal .co_LoadingDotsContainer .dot:nth-child(3)
+    {
+        -webkit-animation: animation_dots_breath 1000ms ease infinite 600ms;
+        animation: animation_dots_breath 1000ms ease infinite 600ms;
+    }
+    #templateSearchResultModal [class*="grid-"] {
+        padding-left: 10px !important;
+        padding-right: 10px !important;
+    }
+    #templateSearchResultTerm {
+        font-weight: bold;
+    }
+
+    #resultsSearchHeader {
+        display: block !important;
+    }
+    #scrolltopmodal {
+        font-size: 3.0em;
+        margin-top: 0 !important;
+        margin-right: 15px;
+    }
+
+    @-webkit-keyframes animation_dots_breath {
+        50% {
+            -webkit-transform: scale(1);
+            transform: scale(1);
+            opacity: 1;
+        }
+        100% {
+            opacity: 0;
+        }
+    }
+    @keyframes animation_dots_breath {
+        50% {
+            -webkit-transform: scale(1);
+            transform: scale(1);
+            opacity: 1;
+        }
+        100% {
+            opacity: 0;
+        }
+    }
+
+    @media (min-width: 768px) and (max-width: 991px) {
+        #templateSearchResultModal .modal-dialog {
+            max-width: 90%;
+        }
+    }
+
+</style>
+<script>
+
+    if(document.querySelector('meta[name="global_moBaseURL"]').content == "https://meetingorganizer.copernicus.org/")
+        FINDER_URL = document.querySelector('meta[name="global_moBaseURL"]').content.replace('meetingorganizer', 'finder-app')+"search/library.php";
+    else
+        FINDER_URL = document.querySelector('meta[name="global_moBaseURL"]').content.replace('meetingorganizer', 'finder')+"search/library.php";
+
+    SEARCH_INPUT = document.getElementById('search_query_solr');
+    SEARCH_INPUT_MODAL = document.getElementById('search_query_modal');
+    searchRunning = false;
+
+    offset = 20;
+    INITIAL_OFFSET = 20;
+
+    var MutationObserver = window.MutationObserver || window.WebKitMutationObserver || window.MozMutationObserver;
+    const targetNodeSearchModal = document.getElementById("templateSearchResultModal");
+    const configSearchModal = { attributes: true, childList: true, subtree: true };
+
+    // Callback function to execute when mutations are observed
+    const callbackSearchModal = (mutationList, observer) => {
+        for (const mutation of mutationList) {
+            if (mutation.type === "childList") {
+                // console.log("A child node has been added or removed.");
+                picturesGallery();
+            } else if (mutation.type === "attributes") {
+                // console.log(`The ${mutation.attributeName} attribute was modified.`);
+            }
+        }
+    };
+
+    // Create an observer instance linked to the callback function
+    const observer = new MutationObserver(callbackSearchModal);
+
+    // Start observing the target node for configured mutations
+    observer.observe(targetNodeSearchModal, configSearchModal);
+
+    function _addEventListener()
+    {
+        document.getElementById('search_query_solr').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter')
+                _runSearch();
+        });
+        document.getElementById('start_site_search_solr').addEventListener('click', (e) => {
+            _runSearch();
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        });
+
+        $('#templateSearchResultModal').scroll(function() {
+            if ($(this).scrollTop()) {
+                $('#scrolltopmodal:hidden').stop(true, true).fadeIn().css("display","inline-block");
+            } else {
+                $('#scrolltopmodal').stop(true, true).fadeOut();
+            }
+        });
+
+    }
+
+    function scrollModalTop()
+    {
+        $('#templateSearchResultModal').animate({ scrollTop: 0 }, 'slow');
+        // $('#templateSearchResultModal').scrollTop(0);
+
+    }
+
+    function picturesGallery()
+    {
+        $('body').off('click', '.paperlist-avatar img');
+        $('body').off('click', '#templateSearchResultContainer .paperlist-avatar img');
+        searchPaperListAvatar = [];
+        searchPaperListAvatarThumb = [];
+        search_pswpElement = document.querySelectorAll('.pswp')[0];
+        if (typeof search_gallery != "undefined") {
+            search_gallery = null;
+        }
+        $('body').on('click', '#templateSearchResultContainer .paperlist-avatar img', function (e) {
+            if(searchPaperListAvatarThumb.length === 0 && searchPaperListAvatar.length === 0) {
+                $('#templateSearchResultContainer .paperlist-avatar img').each(function () {
+
+                    var webversion = $(this).attr('data-web');
+                    var width = $(this).attr('data-width');
+                    var height = $(this).attr('data-height');
+                    var caption = $(this).attr('data-caption');
+
+                    var figure = {
+                        src: webversion,
+                        w: width,
+                        h: height,
+                        title: caption
+                    };
+                    searchPaperListAvatarThumb.push($(this)[0]);
+                    searchPaperListAvatar.push(figure);
+                });
+            }
+            var target = $(this);
+            var index = $('#templateSearchResultContainer .paperlist-avatar img').index(target);
+            var options = {
+                showHideOpacity:false,
+                bgOpacity:0.8,
+                index:index,
+                spacing:0.15,
+                history: false,
+                focus:false,
+                getThumbBoundsFn: function(index) {
+                    var thumbnail = searchPaperListAvatarThumb[index];
+                    var pageYScroll = window.pageYOffset || document.documentElement.scrollTop;
+                    var rect = thumbnail.getBoundingClientRect();
+                    return {x:rect.left, y:rect.top + pageYScroll, w:rect.width};
+                }
+            };
+            search_gallery = new PhotoSwipe( search_pswpElement, PhotoSwipeUI_Default,[searchPaperListAvatar[index]],options);
+            search_gallery.init();
+        });
+    }
+    function showError(code, msg)
+    {
+        console.error(code, msg);
+
+        $("#templateSearchLoadingModal").modal("hide");
+
+        switch(code)
+        {
+            case -3: 	// http request fail
+            case -2: 	// invalid MO response
+            case 4: 	// CORS
+            case 1: 	// project
+                $("#templateSearchErrorModal1").modal({});
+                break;
+            case -1: 	// timeout
+                $("#templateSearchErrorModal2").modal({});
+                break;
+            case 2: 	// empty term
+                $("#templateSearchErrorModal3").modal({});
+                break;
+            case 3: 	// DOS
+                $("#templateSearchErrorModal4").modal({});
+                break;
+            default:
+                $("#templateSearchErrorModal1").modal({});
+                break;
+        }
+    }
+    function clearForm() {
+        var myFormElement = document.getElementById("library-filters")
+        var elements = myFormElement.elements;
+        $(".form-check-input").prop('checked', false).change().parent().removeClass('active');
+        for(i=0; i<elements.length; i++) {
+            field_type = elements[i].type.toLowerCase();
+            switch(field_type) {
+                case "text":
+                case "password":
+                case "textarea":
+                case "hidden":
+                    elements[i].value = "";
+                    break;
+                case "radio":
+                case "checkbox":
+                    if (elements[i].checked) {
+                        elements[i].checked = false;
+                    }
+                    break;
+
+                case "select-one":
+                case "select-multi":
+                    elements[i].selectedIndex = -1;
+                    break;
+
+                default:
+                    break;
+            }
+        }
+    }
+
+    function generateShowMoreButton(offset, term)
+    {
+        var code = '<button aria-label="ShowMore"  id="showMore" class="btn btn-success float-right mr-2" data-offset="' + offset + '">Show more</button>';
+        return code;
+    }
+
+    function hideModal(id)
+    {
+        $("#"+id).modal('hide');
+    }
+
+    function showModal(id)
+    {
+        $("#"+id).modal({});
+    }
+
+    function prepareForPhotoSwipe()
+    {
+        searchPaperListAvatar = [];
+        searchPaperListAvatarThumb = [];
+        search_pswpElement = document.querySelectorAll('.pswp')[0];
+    }
+
+    function _sendAjax(projectID, term)
+    {
+        let httpRequest = new XMLHttpRequest();
+        if(searchRunning)
+        {
+            console.log("Search running");
+            return;
+        }
+
+        if (!httpRequest) {
+            console.error("Giving up :( Cannot create an XMLHTTP instance");
+            showError(-1);
+            return false;
+        }
+
+        // httpRequest.timeout = 20000; // time in milliseconds
+        httpRequest.withCredentials = false;
+        httpRequest.ontimeout = (e) => {
+            showError(-1, "result timeout");
+            searchRunning = false;
+        };
+        httpRequest.onreadystatechange = function()
+        {
+            if (httpRequest.readyState === XMLHttpRequest.DONE)
+            {
+                searchRunning = false;
+
+                if (httpRequest.status === 200) {
+                    let rs = JSON.parse(httpRequest.responseText);
+                    if(rs)
+                    {
+                        if(rs.isError)
+                        {
+                            showError(rs.errorCode, rs.errorMessage);
+                        }
+                        else
+                        {
+                            let html = rs.resultHTMLs;
+                            $("#modal_search_query").val(rs.term);
+                            $("#templateSearchResultTerm").html(rs.term);
+                            $("#templateSearchResultNr").html(rs.resultsNr);
+                            $("#templateRefineSearch").html(rs.filter);
+                            if(rs.filter == false)
+                            {
+                                console.log('filter empty');
+                                $("#refineSearchModal").removeClass('d-block').addClass('d-none');
+                            }
+
+                            if(rs.resultsNr==1)
+                                $("#templateSearchResultNrPlural").hide();
+                            else
+                                $("#templateSearchResultNrPlural").show();
+                            if(rs.resultsNr==0)
+                            {
+                                hideModal('templateSearchLoadingModal');
+                                $("#templateSearchResultContainer").html("");
+                                $("#templateSearchResultContainerEmpty").removeClass("d-none");
+                                showModal('templateSearchResultModal');
+                            }
+                            else
+                            {
+                                if((rs.resultsNr - offset)>0)
+                                {
+                                    html = html + generateShowMoreButton(offset, term);
+                                }
+                                $("#templateSearchResultContainerEmpty").addClass("d-none");
+                                if( offset == INITIAL_OFFSET)
+                                {
+                                    hideModal('templateSearchLoadingModal');
+                                    $("#templateSearchResultContainer").html(html);
+                                    showModal('templateSearchResultModal');
+                                }
+                                else
+                                {
+                                    $('#showMore').remove();
+                                    startHtml = $("#templateSearchResultContainer").html();
+                                    $("#templateSearchResultContainer").html(startHtml + html);
+                                }
+                                // prepareForPhotoSwipe();
+                            }
+                        }
+                    }
+                    else
+                    {
+                        showError(-2, "invalid result");
+                    }
+                } else {
+                    showError(-3, "There was a problem with the request.");
+                }
+            }
+        };
+        if(offset == INITIAL_OFFSET)
+        {
+            hideModal('templateSearchResultModal');
+            showModal('templateSearchLoadingModal');
+        }
+
+        httpRequest.open("GET", FINDER_URL+"?project="+projectID+"&term="+encodeURI(term)+((offset>INITIAL_OFFSET)?("&offset="+(offset-INITIAL_OFFSET)) : ""));
+        httpRequest.send();
+        searchRunning = true;
+    }
+
+    function _runSearch()
+    {
+        var projectID = document.querySelector('meta[name="global_projectID"]').content;
+        var term = _searchTrimInput(SEARCH_INPUT.value);
+
+        if(term.length > 0)
+        {
+            _sendAjax(projectID, term);
+        }
+        else
+        {
+            showError(2, 'Empty search term')
+        }
+    }
+    function _searchTrimInput(str) {
+        return str.replace(/^\s+|\s+$/gm, '');
+    }
+
+    function run()
+    {
+        _addEventListener();
+
+        $('#templateSearchInfoBtn, #modalSearchInfoBtn').popover({
+            sanitize: false,
+            html: true,
+            content: $("#templateSearchInfo").html(),
+            placement: "bottom",
+            template: '<div class="popover" role="tooltip"><div class="arrow"></div><button class="m-1 float-right btn btn-sm btn-danger" id="templateSearchInfoClose"><i class="fas fa-times-circle"></i></button><h3 class="popover-header"></h3><div class="popover-body"></div></div>',
+            title: "Search tips",
+        });
+        $(document).click(function (e) {
+            let t = $(e.target);
+            let a = t && t.attr("data-toggle")!=="popover" && t.parent().attr("data-toggle")!=="popover";
+            let b = t && $(".popover").has(t).length===0;
+            if(a && b)
+            {
+                $('#templateSearchInfoBtn').popover('hide');
+                $('#modalSearchInfoBtn').popover('hide');
+            }
+        });
+        $('#templateSearchInfoBtn').on('shown.bs.popover', function () {
+            $("#templateSearchInfoClose").click(function(e){
+                $('#templateSearchInfoBtn').popover('hide');
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                return false;
+            });
+        })
+        $('#templateSearchResultModal').on('hidden.bs.modal', function(e) {
+            $('body').off('click', '#templateSearchResultContainer .paperlist-avatar img');
+            var pswpElement = document.querySelectorAll('.pswp')[0];
+            var gallery = null;
+            var paperListAvatar = [];
+            var paperListAvatarThumb = [];
+            $('.paperlist-avatar img').each(function(){
+                var webversion = $(this).attr('data-web');
+                var width = $(this).attr('data-width');
+                var height = $(this).attr('data-height');
+                var caption =$(this).attr('data-caption');
+
+                var figure = {
+                    src:webversion,
+                    w:width,
+                    h:height,
+                    title:caption
+                };
+                paperListAvatarThumb.push($(this)[0]);
+                paperListAvatar.push(figure);
+            });
+            $('body').on('click', '.paperlist-avatar img', function (e) {
+                if(paperListAvatarThumb.length === 0 && paperListAvatar.length === 0){
+                    $('.paperlist-avatar img').each(function(){
+                        var webversion = $(this).attr('data-web');
+                        var width = $(this).attr('data-width');
+                        var height = $(this).attr('data-height');
+                        var caption =$(this).attr('data-caption');
+
+                        var figure = {
+                            src:webversion,
+                            w:width,
+                            h:height,
+                            title:caption
+                        };
+                        paperListAvatarThumb.push($(this)[0]);
+                        paperListAvatar.push(figure);
+                    });
+                }
+                var target = $(this);
+                var index = $('.paperlist-avatar img').index(target);
+                var options = {
+                    showHideOpacity:true,
+                    bgOpacity:0.8,
+                    index:index,
+                    spacing:0.15,
+                    getThumbBoundsFn: function(index) {
+
+                        var thumbnail = paperListAvatarThumb[index];
+                        var pageYScroll = window.pageYOffset || document.documentElement.scrollTop;
+                        var rect = thumbnail.getBoundingClientRect();
+                        return {x:rect.left, y:rect.top + pageYScroll, w:rect.width};
+                    }
+                };
+                gallery = new PhotoSwipe( pswpElement, PhotoSwipeUI_Default,[paperListAvatar[index]],options);
+                gallery.init();
+            });
+
+        });
+        $('#templateSearchResultModal').on('hide.bs.modal', function(e) {
+            $("#templateRefineSearch").removeClass('d-block').addClass('d-none');
+            $("#refineSearchModalHide").removeClass('d-block').addClass('d-none');
+            $("#refineSearchModal").removeClass('d-none').addClass('d-block');
+            offset = INITIAL_OFFSET;
+        })
+
+        $(document).on("click", "#showMore", function(e){
+            offset+=INITIAL_OFFSET;
+            runSearchModal()
+            e.stopPropagation();
+            e.stopImmediatePropagation();
+            return false;
+        });
+
+
+
+        $(document).ready(function() {
+            $(document).on("click", "#refineSearchModal", function (e) {
+                $("#templateRefineSearch").removeClass('d-none').addClass('d-block');
+                $(this).removeClass('d-block').addClass('d-none');
+                $("#refineSearchModalHide").removeClass('d-none').addClass('d-block');
+            });
+            $(document).on("click", "#refineSearchModalHide", function (e) {
+                $("#templateRefineSearch").removeClass('d-block').addClass('d-none');
+                $(this).removeClass('d-block').addClass('d-none');
+                $("#refineSearchModal").removeClass('d-none').addClass('d-block');
+            });
+
+            $(document).on("click", "#modal_start_site_search", function (e) {
+                runSearchModal();
+                e.stopPropagation();
+                e.stopImmediatePropagation();
+                return false;
+            });
+        });
+    }
+
+    function runSearchModal()
+    {
+        var projectID = document.querySelector('meta[name="global_projectID"]').content;
+        var queryString = $('#library-filters').serialize();
+        var term = _searchTrimInput($('#modal_search_query').val());
+        term+='&'+queryString;
+        if(term.length > 0)
+        {
+            _sendAjax(projectID, term);
+        }
+        else
+        {
+            showError(2, 'Empty search term')
+        }
+    }
+
+    if(document.getElementById('search_query_solr'))
+    {
+        run();
+    }
+
+</script>
+<!-- END_SITE_SEARCH --></div></div>
+
+                    <!-- END_SNIPPET:part10 -->
+
+                </div>
+
+            </div>
+
+        </div>
+
+    
+
+</header>
+
+<!--=== Content ===-->
+
+<main class="one-column version-2023">
+
+    <div id="content" class="container">
+
+        <div id="page_content_container" class="CMSCONTAINER content-container">
+
+            <!-- $$CONTENT$$ -->
+
+            <!-- START_LEFT_REMOVABLE_SECTION -->
+
+            <!-- END_LEFT_REMOVABLE_SECTION -->
+
+        <div id="cmsbox_115883" class="cmsbox "><h1>Submit your manuscript</h1>
+<p>Thank you very much for your interest in submitting a manuscript. 
+Please find your way through the manuscript preparation and file 
+submission:</p>
+<div class="co-content-box" id="top">
+    <div class="mb-2"><a href="#getready">Get ready</a></div>
+    <div class="mb-2"><a href="#assets">Prepare your assets</a></div>
+    <div class="mb-2"><a href="#reviewfiles">Files for the review process &amp; preprint posting</a></div>
+    <div class="mb-2"><a href="#templates">Templates for your manuscript file</a></div>
+    <div class="mb-2"><a href="#articlefiles">Files for journal article production</a></div>
+    <div class="mb-2"><a href="#manuscriptcomposition">Manuscript composition</a></div>
+    <div class="mb-2"><a href="#figurestables">Figures &amp; tables</a></div>
+    <div class="mb-2"><a href="#mapsaerials">Maps &amp; aerials</a></div>
+    <div class="mb-2"><a href="#math">Mathematical notation and terminology</a></div>
+    <div class="mb-2"><a href="#english">English guidelines and house standards</a></div>
+    <div><a href="#references">References</a></div>
+</div></div><div id="cmsbox_115884" class="cmsbox "><div class="row align-items-center">
+	<div class="col-8">
+		<h2 id="getready">Get ready</h2>
+	</div>
+	<div class="col-4 text-right">
+		<a class="scrollto back-to-top" href="#top"><span class="hide-on-mobile">[Back to top]</span><span class="hide-on-desktop hide-on-tablet">top</span></a>
+	</div>
+</div>
+<p>Before submitting your manuscript for peer review, you are kindly requested to do the following:</p>
+<ul>
+	<li>to download the <a href="#templates">Copernicus manuscript templates</a> for LaTeX or MS WORD, or to follow the instructions for R Markdown submissions;</li>
+	<li>to prepare your <strong>manuscript</strong> *.pdf file according to the <a href="#manuscriptcomposition">manuscript preparation guidelines</a>
+ including line numbers and page numbers. Should you have used AI tools 
+to generate (parts of) your manuscript, please describe the usage either
+ in the Methods section or the Acknowledgements;</li>
+	<li>to prepare your <strong>abstract</strong> text and your <strong>short summary</strong>, both to be pasted into the file upload form, as well as your supplement file as *.pdf or *.zip archive, if applicable;</li>
+	<li>to identify <strong>funding sources</strong> to be entered during manuscript registration;</li><li>to choose the appropriate <a href="https://www.hydrology-and-earth-system-sciences.net/about/manuscript_types.html">manuscript type</a>;</li>
+	<li>to read our section on <a href="#reviewfiles">files for the review process</a>;</li>
+	<li>to ensure that your <strong>figures' colour schemes</strong> allow readers with colour vision deficiencies to correctly interpret your findings (see our guidelines for <a href="#figurestables">figures &amp; tables</a>);</li>
+	<li>to ensure that your <strong>figure files</strong> are labelled 
+correctly with Arabic numerals (e.g. fig01, fig02), compiled as *.pdf, 
+*.ps, *.eps, *.jpg, *.png, or *.tif files with a resolution of 300 dpi, 
+panels are collected into one figure file, the reproduction rights have 
+been secured, and our guidelines for <a href="#figurestables">figures &amp; tables</a> are followed;</li>
+	<li>to ensure that your <strong>maps and aerial files</strong> follow our guidelines for <a href="#mapsaerials">maps &amp; aerials</a>,
+ the reproduction rights have been secured, and copyright statements or 
+credits are included in your maps and aerials according to the 
+regulations of the provider;</li>
+	<li>to ensure that your <strong>references</strong> follow our <a href="#references">guidelines for references</a>;</li>
+	<li>to agree and comply with the <a href="https://www.hydrology-and-earth-system-sciences.net/policies/general_terms.html">general terms</a>&nbsp;and the <a href="https://www.hydrology-and-earth-system-sciences.net/about/article_processing_charges.html">article processing charges</a>;</li>
+	<li>to agree and comply with the <a href="https://www.hydrology-and-earth-system-sciences.net/policies/licence_and_copyright.html">licence and copyright agreement</a>;</li>
+	<li>to agree and comply with the <a href="https://www.hydrology-and-earth-system-sciences.net/policies/obligations_for_authors.html">general obligations for authors</a>;</li>
+	<li>to register the manuscript in order to receive a link to upload the
+ manuscript files into the online system Copernicus Office Editor. The 
+registration also defines the manuscript subject areas and index terms 
+as the basis for the <a href="https://www.hydrology-and-earth-system-sciences.net/peer_review/finding_an_editor.html">editor assignment</a>.</li>
+</ul>
+<p>While preparing their manuscript, authors are kindly requested to consider the manuscript <a href="https://www.hydrology-and-earth-system-sciences.net/peer_review/review_criteria.html">review criteria</a>
+ to meet the quality standards and to reduce the peer-review processing 
+time.&nbsp;We recommend that any data set used in your manuscript is 
+submitted to a reliable data repository and linked from your manuscript 
+through a DOI. Please see our <a href="https://www.hydrology-and-earth-system-sciences.net/policies/data_policy.html">data policy</a>. Please also consider other assets like software &amp; model code or video supplements.</p></div><div id="cmsbox_117819" class="cmsbox "><a class="btn btn-primary mt-3 mb-3 d-inline-block" target="_blank" href="https://editor.copernicus.org/HESS/manuscript_registration">Register your manuscript for file submission</a></div><div id="cmsbox_115886" class="cmsbox "><div class="row align-items-center">
+	<div class="col-8">
+		<h2 id="assets">Prepare your assets</h2>
+	</div>
+	<div class="col-4 text-right">
+		<a class="scrollto back-to-top" href="#top"><span class="hide-on-mobile">[Back to top]</span><span class="hide-on-desktop hide-on-tablet">top</span></a>
+	</div>
+</div>
+<p>Once your manuscript is about to appear online you will be asked upon
+ upload of production files to provide DOIs (digital object identifiers)
+ for assets to your work. While a supplement is stored in the journal 
+online library alongside your work, other assets as described below must
+ be submitted to specialized repositories. Please consider providing at 
+least preliminary links to such assets for the period of peer review to 
+allow reviewers to access these essential additions.</p>
+<div class="mt--3">
+	<h3 class="show-hide" data-toggle="#software" data-duration="300">Software and model code</h3><span class="show-hide toggle-arrow co-arrow-grey ml-2 h2-font-size" data-toggle="#software" data-duration="300"></span>
+</div>
+<div class="answer" id="software" style="display: none;">
+	<p>Authors are encouraged to deposit software, algorithms, and model 
+code in FAIR-aligned repositories/archives whenever possible. These 
+research outputs are then cited in the manuscript using the received DOI
+ and included in the reference list. The manuscript must then include a 
+section entitled "Code availability" or, in the case of data and code, 
+"Code and data availability".</p>
+</div>
+<div class="mt--3">
+	<h3 class="show-hide" data-toggle="#datasets" data-duration="300">Data sets</h3><span class="show-hide toggle-arrow co-arrow-grey ml-2 h2-font-size" data-toggle="#datasets" data-duration="300"></span>
+</div>
+<div class="answer" id="datasets" style="display: none;">
+	<p>Authors are requested to follow our <a href="https://www.hydrology-and-earth-system-sciences.net/policies/data_policy.html">data policy</a> including</p>
+	<ul>
+		<li>the deposit of research data (i.e. the material necessary to 
+validate the research findings) that correspond to manuscripts, 
+preprints, or journal articles in reliable FAIR-aligned data 
+repositories that assign persistent identifiers (preferably digital 
+object identifiers (DOIs)). Suitable repositories can be found at <a target="_blank" href="https://www.re3data.org/">https://www.re3data.org/</a>;</li>
+		<li>the proper citation of data sets in the text and the <a href="#references">reference list</a> including the persistent identifier. For data sets hosted on GitHub, authors are kindly asked to <a href="https://help.github.com/en/github/creating-cloning-and-archiving-repositories/referencing-and-citing-content" target="_blank">issue a DOI through Zenodo</a> and include this DOI in the reference list;</li>
+		<li>the inclusion of a statement on how their underlying research data
+ can be accessed. This must be placed in the section "Data availability"
+ at the end of the manuscript before the acknowledgements. If the data 
+are not publicly accessible, a detailed explanation of why this is the 
+case is required (e.g. applicable laws, university and research 
+institution policies, funder terms, privacy, intellectual property and 
+licensing agreements, and the ethical context of the research);</li>
+		<li>the provision of unrestricted access to all data and materials 
+underlying reported findings for which ethical or legal constraints do 
+not apply.</li>
+	</ul>
+</div>
+<div class="mt--3">
+	<h3 class="show-hide" data-toggle="#erc" data-duration="300">Interactive computing environment (e.g., Jupyter Notebooks)</h3><span class="show-hide toggle-arrow co-arrow-grey ml-2 h2-font-size" data-toggle="#erc" data-duration="300"></span>
+</div>
+<div class="answer" id="erc" style="display: none;">
+<p>An interactive computing environment (ICE) such as Jupyter Notebooks 
+is a way of enabling the reader to reproduce the scientific findings of 
+the authors by making parts of the paper interactive (e.g., figures, 
+graphs). Such environments combine data, code, equations, narrative 
+text, and visualizations, and can be adapted. In the context of preprint
+ or journal article assets, ICEs use web services to containerize the 
+runtime environment, including user interface controls, allowing readers
+ to directly <strong>execute</strong> the operations of the authors.</p>
+<p>Authors are encouraged to deposit ICEs in FAIR-aligned 
+repositories/archives whenever possible. ICEs are then cited in the 
+manuscript using a DOI and included in the reference list. The 
+manuscript must then include a section entitled "Interactive computing 
+environment" providing details on how an ICE can be accessed and 
+executed.</p>
+</div>
+<div class="mt--3">
+	<h3 class="show-hide" data-toggle="#sample" data-duration="300">Sample availability</h3><span class="show-hide toggle-arrow co-arrow-grey ml-2 h2-font-size" data-toggle="#sample" data-duration="300"></span>
+</div>
+<div class="answer" id="sample" style="display: none;">
+	<p>If geoscientific samples which are registered as International Geo Sample Number (<a href="http://www.igsn.org/" target="_blank">IGSN</a>)
+ have been used for the manuscript, authors are required to include the 
+IGSN in the reference list, cite it in the article, and provide a 
+statement on how to access the sample by adding a section "Sample 
+availability" to the manuscript.</p>
+</div>
+<div class="mt--3">
+	<h3 class="show-hide" data-toggle="#video" data-duration="300">Video supplements &amp; video abstracts</h3><span class="show-hide toggle-arrow co-arrow-grey ml-2 h2-font-size" data-toggle="#video" data-duration="300"></span>
+</div>
+<div class="answer" id="video" style="display: none;">
+	<p>In collaboration with the German National Library of Science and 
+Technology (TIB), Copernicus Publications provides authors with the 
+possibility of uploading video supplements and/or video abstracts 
+relating to their accepted article.</p>
+	<p>If you wish to upload a video associated with your article, please register the video in the <a target="_blank" href="https://av.tib.eu/">AV Portal of TIB Hannover</a>
+ and follow the instructions. Within about three days, the TIB will 
+issue a DOI for your video. This DOI has to be entered during your 
+production file upload at Copernicus after the acceptance of your 
+manuscript. The journal library will use the DOI to link your article 
+with the corresponding video.</p>
+	<p><strong>Registration and upload steps</strong></p>
+	<ol>
+		<li>Register via the respective tab on the AV Portal.</li>
+		<li>Log in by using your customer name and password.</li>
+		<li>Use the tab "Upload" and fill out the upload form.</li>
+		<li>A number of entries are specific to your video, but please make sure that the following specifications and selections are made:
+			<ul class="mt-2">
+				<li>Specify the publisher as Copernicus Publications (section: "Information on participants").</li>
+				<li>Fill in the field "Abstract" including the title of the paper and journal (section: "Optional information about the video").</li>
+				<li>Select the CC-Attribution licence (section: "License form and legal information").</li>
+				<li>If the DOI of the paper is known, please specify it under the 
+additional footage (section: "Would you like to include additional 
+footage with the video?").</li>
+			</ul>
+		</li>
+	</ol>
+	<p><strong>Technical specifications</strong></p>
+	<ul>
+		<li>Video format: MPG1, MPG2, MPG4, H264, FLV, DVCPro25/50</li>
+		<li>Aspect ratio: native image format without letterboxing (4:3, 16:9)</li>
+		<li>Resolution: 720 × 576 (16:9, anamorphic), 1024 × 576 (16:9, square
+ pixel), 720 × 576 (4:3, anamorphic), or 768 × 576 (4:3, square pixel)</li>
+		<li>Images per second: 25</li>
+		<li>Maximum size: 2GB</li>
+	</ul>
+</div>
+<div class="mt--3">
+	<h3 class="show-hide" data-toggle="#supplement" data-duration="300">Supplements</h3><span class="show-hide toggle-arrow co-arrow-grey ml-2 h2-font-size" data-toggle="#supplement" data-duration="300"></span>
+</div>
+<div class="answer" id="supplement" style="display: none;">
+	<p id="supplementary">Supplementary material is reserved for items that
+ cannot reasonably be included in the main text or as appendices. These 
+may include short videos, very large images, maps, CIF files, as well as
+ short computer codes such as matlab or python script. <strong>In no 
+case can supplementary material contain scientific interpretations or 
+findings that would go beyond the contents of the manuscript</strong>. 
+In general, supplementary material that can be hosted in alternative 
+sites such as FAIR-aligned data repositories should be placed there. 
+These include data sets, movies, animations, or computer programme 
+codes, for which a persistent identifier, ideally a DOI, should be 
+mentioned in the "data availability" section of the manuscript. Normal 
+size figures, tables, as well as technical or theoretical developments 
+that do not need to be included in the main text should be included as 
+appendices. Moderate-size data sets may be presented as supplements, but
+ this should be cleared with the editor. When supplements are justified,
+ the following will apply:</p>
+	<ol>
+		<li>Supplements will receive their own DOI (digital object identifier)
+ and will be published online along with the article as *.zip archive or
+ single *.pdf file.</li>
+		<li>Supplements will receive a title page added during the publication
+ process including title ("Supplement of"), authors, and the 
+correspondence email. Therefore, please avoid providing this information
+ in the supplement.</li>
+		<li>Equations, figures and tables in supplements should be numbered as
+ (S1), Fig. S5 or Table S6. Sections are numbered as S3, S3.1, and 
+S3.1.1.</li>
+		<li><strong>The overall file size of a supplement is limited to 50 MB</strong>.
+ Authors of larger supplements are kindly asked to submit their files to
+ a reliable FAIR-aligned data repository and to insert a persistent 
+identifier, ideally a DOI, in the manuscript.</li>
+	</ol>
+</div></div><div id="cmsbox_115888" class="cmsbox "><div class="row align-items-center">
+	<div class="col-8">
+		<h2 id="reviewfiles">Files for the review process &amp; preprint posting</h2>
+	</div>
+	<div class="col-4 text-right">
+		<a class="scrollto back-to-top" href="#top"><span class="hide-on-mobile">[Back to top]</span><span class="hide-on-desktop hide-on-tablet">top</span></a>
+	</div>
+</div>
+<p>After the manuscript registration, you are kindly asked to upload 
+those files which are necessary for the peer-review process. The 
+following files are required:</p>
+<ul>
+	<li>the <strong>abstract</strong> to be pasted into the upload form where requested;</li>
+	<li>the complete <strong>manuscript</strong> (title, authors, affiliations, abstract, text, tables, figures)&nbsp;as a *.pdf file <strong>with embedded fonts</strong> in portrait format following the standards for sectioning and structure as given below in the <a href="#manuscriptcomposition">manuscript composition</a> with full first names for all authors. <strong>Please
+ note that manuscript files must use the 1-column format as it is 
+preconfigured in our WORD template as well as in the LaTeX template when
+ applying the <i>manuscript</i> document class and that the file size is limited to 50 MB.</strong>
+ All pages must be numbered consecutively and line numbers must be 
+included. Figures and tables as well as their captions must be inserted 
+in the main text near the location of the first mention (not appended to
+ the end of the manuscript) and the figure composition must embed any 
+used fonts. Maps and aerials must include the copyright statements or 
+credits following the requirements of the provider. Should figures or 
+tables occupy entire manuscript pages, these must follow the portrait 
+format and page dimensions of the entire manuscript *.pdf file. <strong>URLs must be spelled out</strong> instead of hyperlinking parts of the text;</li>
+	<li>data sets, model code, video supplements, or other <a href="#assets">assets to your manuscript</a>
+ should be submitted to a reliable repository receiving a DOI, cited in 
+your manuscript, and included in your reference list. Reviewers can then
+ access these relevant sources;</li>
+	<li>a short summary as a 500-character (incl. spaces) non-technical 
+text that may be used to promote your work to a broader audience. The 
+summary must be written in English and in paragraph form without lists. 
+It should highlight your main conclusions and results, and what the 
+implications are. If possible, please also summarize briefly why you did
+ the research and how you did it. Please avoid using abbreviations and 
+spell out respective terms.</li>
+</ul>
+<p>Other possible review files include the following:</p>
+<ul>
+	<li>If you have <strong>supplementary material</strong> to your 
+manuscript which does not meet the above-mentioned asset criteria to be 
+hosted by a reliable repository, you can submit your <a href="#supplementary">supplement as a *.zip archive or single *.pdf file</a>.
+ The overall file size of such a supplement is limited to 50 MB. Larger 
+supplements have to be submitted to a reliable data repository in any 
+case receiving a DOI, cited in your manuscript, and included in your 
+reference list.</li>
+	<li>The <strong>author's response</strong> in case of revisions must be
+ submitted as one separate *.pdf file (indicating page and line 
+numbers), structured in a clear and easy-to-follow sequence: (1) 
+comments from referees/public, (2) author's response, and (3) author's 
+changes in the manuscript.</li>
+    <li>The <strong>marked-up manuscript version</strong> highlighting the changes (track changes in Word, <a target="_blank" href="https://www.ctan.org/pkg/latexdiff?lang=en">latexdiff</a> in LaTeX) must be submitted as one separate *.pdf file.</li>
+	
+</ul></div><div id="cmsbox_115887" class="cmsbox "><div class="row align-items-center">
+	<div class="col-8">
+		<h2 id="templates">Templates for your manuscript file</h2>
+	</div>
+	<div class="col-4 text-right">
+		<a class="scrollto back-to-top" href="#top"><span class="hide-on-mobile">[Back to top]</span><span class="hide-on-desktop hide-on-tablet">top</span></a>
+	</div>
+</div>
+<div class="mt--3">
+	<h3 class="show-hide" data-toggle="#latex" data-duration="300">Technical instructions for LaTeX</h3><span class="show-hide toggle-arrow co-arrow-grey ml-2 h2-font-size" data-toggle="#latex" data-duration="300"></span>
+</div>
+<div class="answer" id="latex" style="display: none;">
+	<p id="latexpackage">Please download the Copernicus Publications <a target="_blank" href="https://www.hydrology-and-earth-system-sciences.net/Copernicus_LaTeX_Package.zip">LaTeX Package</a>,
+ version 7.11, 9 April 2025 to prepare your manuscript. The package 
+contains the LaTeX2e class file, the configuration file, all needed 
+style files, as well as a template serving as the framework for your 
+manuscript.</p>
+	<p>Authors are kindly requested to make use of the template.tex file 
+embedded in the LaTeX Package since most of the definitions for the 
+structure of manuscript elements are described there. Since we convert 
+all typeset TeX files into XML, the expressions and markups have to be 
+highly  standardized. Therefore, please keep the following in mind:</p>
+	<ul>
+		<li>Please use the document class <i>manuscript</i> as this includes (a) the 1-column format and (b) line numbers.</li>
+		<li>Please provide only one figure file for figures with several panels, and please do not use \subfloat or similar commands.</li>
+		<li>Please use only commands in which words, numbers, etc. are within braces (e.g. \textrm{TEXT} instead of {\rm TEXT}).</li>
+		<li>For algorithms, please use the syntax given in template.tex. Your 
+algorithm will be included as structured text in the *.pdf file as well 
+as in the full-text *.html file of the final paper. If the usage of the 
+algorithm and algorithmics packages according to the template.tex is not
+ possible, you can provide your algorithm as a figure.</li>
+		<li>For listings, you may use your own packages to include it in your 
+*.tex file. As of now, we will crop the listing from your paper *.pdf 
+file and include it as figure. We are currently working on a text-based 
+representation of listings in *.pdf and *.html files.</li>
+		<li>Any source code excerpts included in the paper should be typeset using the verbatim environment or \texttt.</li>
+		<li>Please do not define new commands.</li>
+		<li>The most commonly used packages (\usepackage{}) are integrated in 
+the copernicus.cls. Some other packages often used by the community are 
+defined in template.tex. Please do not insert additional ones in your 
+*.tex file.</li>
+		<li>Spaces in labels (\label{}) are not allowed; please make sure that
+ no label name is assigned more than once. For references, please do not
+ use the DOI as label.</li>
+		<li>Please do not use \paragraph{}; only \subsubsection{} is allowed.</li>
+		<li>It is not possible to add tables in colour.</li>
+	</ul>
+	<p>If you are familiar with BibTeX, you can use copernicus.bst from the
+ package. It will sort your bibliography entries alphabetically and 
+produce the proper layout of the reference list.</p>
+</div>
+<div class="mt--3">
+	<h3 class="show-hide" data-toggle="#word" data-duration="300">Technical instructions for MS Word and compatible formats</h3><span class="show-hide toggle-arrow co-arrow-grey ml-2 h2-font-size" data-toggle="#word" data-duration="300"></span>
+</div>
+<div class="answer" id="word" style="display: none;">
+	<p id="wordtemplate">To prepare your manuscript in a format compatible 
+with MS Word (*.doc, *.docx, or *.rtf), please use the Copernicus 
+Publications <a target="_blank" href="https://www.hydrology-and-earth-system-sciences.net/Copernicus_Word_template.docx">WORD template</a> (docx). <strong>Please use the Microsoft equation editor and not the graphic mode when compiling your equations</strong>.</p>
+</div>
+<div class="mt--3">
+	<h3 class="show-hide" data-toggle="#rmarkdown" data-duration="300">Technical instructions for R Markdown</h3><span class="show-hide toggle-arrow co-arrow-grey ml-2 h2-font-size" data-toggle="#rmarkdown" data-duration="300"></span>
+</div>
+<div class="answer" id="rmarkdown" style="display: none;">
+	<p>To prepare your manuscript following the <a href="https://en.wikipedia.org/wiki/Literate_programming" target="_blank">literate programming</a> paradigm, you can use <a href="https://rmarkdown.rstudio.com/" target="_blank">R Markdown</a>.
+ This format allows you to interweave text and code in a single 
+plain-text file format. Your manuscript is then fully transparent and 
+reproducible – see this <a href="https://blogs.egu.eu/geolog/2019/02/01/reproducibility-and-transparency-in-research/" target="_blank">GeoLog blog post</a>
+ for some background and examples. R Markdown supports multiple 
+programming languages, including R, Python, and SQL. It is intentionally
+ kept simple and therefore very easy to learn. The Markdown document is 
+rendered into a PDF based on the Copernicus Publications LaTeX Package 
+(see above) in version 5.0. Thus R Markdown manuscripts support the full
+ features of LaTeX for chemical formulas and mathematical equations as 
+needed, as well as powerful citation management with BibTeX.</p>
+	<p>Please install the <a href="https://cran.r-project.org/package=rticles" target="_blank"><code>rticles</code></a>
+ package to use the Copernicus Publications template for R Markdown. You
+ can create a new document based on the template and render it to a PDF 
+with the following commands:</p>
+	<pre>library("rticles")<br>
+library("rmarkdown")<br>
+rmarkdown::draft(file = "MyArticle.Rmd",<br>
+                 template = "copernicus",<br>
+                 package = "rticles", edit = FALSE) rmarkdown::render(input = "MyArticle/MyArticle.Rmd") </pre>
+	<p>The created file <code>MyArticle.Rmd</code> includes a <a href="https://en.wikipedia.org/wiki/YAML" target="_blank">YAML</a>
+ file header with a number of configurations and required metadata, such
+ as authors and affiliations, running title, and special sections (e.g. 
+code/data availability, acknowledgements). These options are explained 
+within the document and can be deleted if not needed. The template also 
+includes examples of text formatting, figure addition, table insertion, 
+and citation/reference usage, etc.</p>
+	<p><a href="https://en.wikipedia.org/wiki/YAML" target="_blank">RStudio</a>
+ is a recommended editor for R Markdown documents and provides a 
+user-friendly interface for document creation and a plug-in for 
+comfortable reference management.</p>
+	<p><i>Please note that the Copernicus Publications template for R Markdown is not maintained by Copernicus but by community members <a href="https://nuest.staff.ifgi.de/" target="_blank">Daniel Nüst</a> and Sebastian Kreutzer.</i></p>
+</div></div><div id="cmsbox_115890" class="cmsbox "><div class="row align-items-center">
+	<div class="col-8">
+		<h2 id="articlefiles">Files for journal article production</h2>
+	</div>
+	<div class="col-4 text-right">
+		<a class="scrollto back-to-top" href="#top"><span class="hide-on-mobile">[Back to top]</span><span class="hide-on-desktop hide-on-tablet">top</span></a>
+	</div>
+</div>
+<p>After the final acceptance of your manuscript for publication in the 
+journal, you will be informed by email and are kindly asked to complete 
+the file upload for the publication production process. Then, please 
+submit the following files:</p>
+<ul>
+	<li>the actual <strong>text</strong> followed by the table(s) and figure caption(s) prepared in the way as outlined in the <a href="#manuscriptcomposition">manuscript preparation</a>
+ as one file in LaTeX (as a *.tex file) or MS Word format (as a 
+*.doc/*.docx file). Although initials are used in reference lists, 
+please use full first names on the title page;</li>
+	<li>all <strong>figures</strong> as individual files in one *.zip archive <strong>without any subfolders</strong>, numbered (e.g. f01, f02, ..., f11) and prepared as outlined in the <a href="#figurestables">figure guidelines</a>;</li>
+	<li>a <strong>key figure</strong> which best represents your work. If 
+your paper includes figures, you might select one of the figures used in
+ the text as the key figure. Alternatively, you can upload a new figure,
+ which is also the solution if your paper has no figures included. Your 
+key figure will be used to present your article in tables of contents, 
+recent papers, and other library presentations and will also appear on 
+your paper's HTML page. The key figure is also the preferred way of 
+posting a <strong>graphical abstract</strong>. However, if you aim to 
+have the graphical abstract included in the article PDF file, it has to 
+be unnumbered and must be placed directly after the text abstract. In 
+that case, please add your graphical abstract file to your figure *.zip 
+archive (see above).</li>
+</ul>
+<p>During this file upload you are asked to (a) define your <strong>assets</strong> (optional) and (b) include a <strong>short summary</strong>.
+ Assets are data sets, model code, or video supplements corresponding to
+ your manuscript and should be submitted to a reliable repository 
+including the receipt of a DOI and the citation in your manuscript. A 
+short summary is a 500-character (incl. spaces) non-technical text that 
+may be used to promote your work to a broader audience. The summary must
+ be written in English and in paragraph form without lists. It should 
+highlight your main conclusions and results, and what the implications 
+are. If possible, please also summarize briefly why you did the research
+ and how you did it. Please avoid using abbreviations and spell out 
+respective terms.</p></div><div id="cmsbox_115891" class="cmsbox cms"><div class="row align-items-center">
+	<div class="col-8">
+		<h2 id="manuscriptcomposition">Manuscript composition</h2>
+	</div>
+	<div class="col-4 text-right">
+		<a class="scrollto back-to-top" href="#top"><span class="hide-on-mobile">[Back to top]</span><span class="hide-on-desktop hide-on-tablet">top</span></a>
+	</div>
+</div>
+<ol>
+	<li><strong>Title page</strong>: the title page must include the title 
+(concise but informative), author first and last names, full 
+institutional addresses of all authors, and correspondence email for 
+proofs. Deceased co-authors should be marked accordingly.</li>
+	<li><strong>Abstract</strong>: the abstract should be intelligible to 
+the general reader without reference to the text. After a brief 
+introduction of the topic, the summary recapitulates the key points of 
+the article and mentions possible directions for prospective research. 
+Reference citations should not be included in this section, unless 
+urgently required, and abbreviations should not be included without 
+explanations. An abstract should be short, clear, concise, and written 
+in English with correct spelling and good sentence structure. The 
+inclusion of <strong>graphical abstracts</strong> depends on the format 
+of the publication. For journal articles, the preferred way is to use 
+the graphical abstract as key figure. It will then be used to visually 
+advertize the paper on the journal website but is not part of the paper 
+*.pdf file. If the graphical abstract should be part of the paper, it 
+has to be unnumbered and must be placed directly after the text 
+abstract. For preprints, since these have no key figure, graphical 
+abstracts must always be included in the paper as unnumbered graphic 
+placed directly after the text abstract.  </li>
+	
+	
+	<li><strong>Copyright statement</strong>: the copyright statement will be included by Copernicus, if applicable.</li>
+	<li><strong>Introduction</strong></li>
+	<li><strong>Sections</strong>: the headings of all sections, including 
+introduction, results, discussions or summary must be numbered. Three 
+levels of sectioning are allowed, e.g. 3, 3.1, and 3.1.1. The 
+abbreviation "Sect." should be used when it appears in running text and 
+should be followed by a number unless it comes at the beginning of a 
+sentence. Footnotes should be avoided in the text, as they tend to 
+disrupt the flow of the text. If absolutely necessary, they should be 
+numbered consecutively. Footnotes to tables should be marked by 
+lowercase letters.</li>
+	<li><strong>Conclusions</strong></li>
+	<li><strong>Appendices</strong>: all material required to understand 
+the essential aspects of the paper such as experimental methods, data, 
+and interpretation should preferably be included in the main text. 
+Additional figures, tables, as well as technical and theoretical 
+developments which are not critical to support the conclusion of the 
+paper, but which provide extra detail and/or support useful for experts 
+in the field and whose inclusion in the main text would disrupt the flow
+ of descriptions or demonstrations may be presented as appendices. These
+ should be labelled with capital letters: Appendix A, Appendix B etc. 
+Equations, figures and tables should be numbered as (A1), Fig. B5 or 
+Table C6, respectively. Please keep in mind that appendices are part of 
+the manuscript whereas supplements (see below) are published along with 
+the manuscript.</li>
+	<li><strong>Code availability</strong></li>
+	<li><strong>Data availability</strong></li>
+	<li><strong>Interactive computing environment</strong></li>
+	<li><strong>Sample availability</strong></li>
+	<li><strong>Video supplement</strong></li>
+	<li><strong>Supplement link</strong>: the link to the supplement will be included by Copernicus, if applicable.</li>
+	<li><strong>Team list</strong>: if your manuscript has been co-authored
+ by a team, please indicate the team name in the author list on the 
+title page of your manuscript and then add a section "Team list" 
+providing the names of the team members and, optionally, the 
+affiliations.</li>
+	<li><strong>Author contribution</strong>: authors are required to add a
+ section "Author contribution" before the acknowledgements in which the 
+contributions of all co-authors are briefly described. Example: "AA and 
+BB designed the experiments and CC carried them out. DD developed the 
+model code and performed the simulations. AA prepared the manuscript 
+with contributions from all co-authors." We recommend using the <a href="https://publications.copernicus.org/services/contributor_roles_taxonomy.html" target="_blank">CRediT contributor roles taxonomy</a>.
+ If some of the co-authors contributed equally to the work, we recommend
+ to include a corresponding mark in the author list on the title page 
+and a corresponding affiliation-type statement (<a href="https://acp.copernicus.org/articles/20/3683/2020/acp-20-3683-2020.html" target="_blank">example</a>).</li>
+	<li><strong>Competing interests</strong>: a declaration of all 
+potential conflicts of interest is required by Copernicus Publications 
+as this is an integral aspect of a transparent record of scientific 
+work. Please see our <a href="https://www.hydrology-and-earth-system-sciences.net/policies/competing_interests_policy.html">competing interests policy</a>.
+		<ol class="mt-2">
+			<li>If there are no competing interests in their submitted manuscripts, authors should state: "<strong>The authors declare that they have no conflict of interest.</strong>".</li>
+			<li>If there are possible conflicts of interest, authors must state what competing interests are relevant to the submitted work: "<strong>Author A has received research funding from Company Y. Author B is a member of committee Z.</strong>".</li>
+			<li>If some authors are members of the editorial board of the journal, a sentence should be included for the sake of transparency: "<strong>Some authors are members of the editorial board of journal X.</strong>".
+ This is sufficient during the review process, including preprints. 
+Later, during the production of final journal articles, Copernicus 
+Publications ensures to extend this sentence by the statement: "The 
+peer-review process was guided by an independent editor, and the authors
+ have also no other competing interests to declare.". Please do not 
+include this latter statement extension in your original manuscript.</li>
+		</ol>
+	</li>
+	
+	<li><strong>Disclaimer</strong></li>
+	<li><strong>Special issue statement</strong>: the statement on a corresponding special issue will be included by Copernicus, if applicable.</li>
+	<li><strong>Acknowledgements</strong>: besides the author's statement 
+of gratitude to and recognition of the people and institutions that 
+helped the author's research and writing, authors are also asked to 
+include relevant research infrastructure they have benefitted from 
+during their research, where research was conducted or data/resources 
+were used. Examples are Field Stations and Marine Laboratories (FSMLs).</li>
+	<li><strong>Financial support</strong>: support funds and grant 
+agreement numbers are listed as specified upon manuscript registration 
+and reported to FundRef upon publication.</li>
+	<li><strong>Review statement</strong>: the review statement will be included by Copernicus.</li>
+	<li><strong>References</strong></li>
+</ol></div><div id="cmsbox_115892" class="cmsbox "><div class="row align-items-center">
+    <div class="col-8">
+        <h2 id="figurestables">Figures &amp; tables</h2>
+    </div>
+    <div class="col-4 text-right">
+        <a class="scrollto back-to-top" href="#top"><span class="hide-on-mobile">[Back to top]</span><span class="hide-on-desktop hide-on-tablet">top</span></a>
+    </div>
+</div>
+<div class="co-notification"><p><strong>Information &amp; tools to improve the accessibility of colour figures</strong>:
+ we are striving to improve the accessibility of colour figures for 
+readers with colour vision deficiencies (CVD; this affects ~5% of the 
+global population). Besides the <a href="https://www.color-blindness.com/coblis-color-blindness-simulator/" target="_blank">Coblis – Color Blindness Simulator</a>
+ to check how your figures are perceived by those with CVD, there are 
+several tools available to help authors create CVD-friendly figures:</p>
+<ul>
+<li><a href="https://helpx.adobe.com/photoshop/using/proofing-colors.html" target="_blank">Adobe Photoshop Accessibility</a>: colour proofing your figures using Adobe Photoshop as an alternative approach to the Coblis simulator.</li>
+<li><a href="https://www.fabiocrameri.ch/colourmaps/" target="_blank">Scientific colour maps 7.0</a>:
+ freely available, citable, and validated colour schemes for your 
+scientific figures, which address known issues. Compatible with many 
+software tools frequently used to create graphics. Details are given in 
+the <a href="https://www.fabiocrameri.ch/colourmaps-userguide/" target="_blank">user guide</a> and the background of this tool is described in <a href="https://www.nature.com/articles/s41467-020-19160-7" target="_blank">Crameri et al. (2020)</a>. Please cite this source when using the package.</li>
+</ul>
+<p>For more information on the background and importance of addressing this issue, we refer to <a href="https://hess.copernicus.org/articles/25/4549/2021" target="_blank">Stoelzle &amp; Stein (2021)</a> and <a href="https://www.sciencedirect.com/science/article/pii/S1574954123000742?via%3Dihub" target="_blank">Rocchini et al. (2023)</a>.</p>
+</div>
+<ul>
+	<li><strong>Colour schemes</strong>: it is important that the colour 
+schemes used in your maps and charts allow readers with colour vision 
+deficiencies to correctly interpret your findings. Please check your 
+figures using the <a href="https://www.color-blindness.com/coblis-color-blindness-simulator/" target="_blank">Coblis – Color Blindness Simulator</a> and revise the colour schemes accordingly.</li>
+	<li><strong>Figure composition</strong>: it is important for the 
+production process that separate figures are submitted. Composite 
+figures containing multiple panels should be collected into one file 
+before submission. The figures should be labelled correctly with Arabic 
+numerals (e.g. f01, f02, ..., f11). They can be submitted in *.pdf, 
+*.ps, *.eps, *.jpg, *.png, or *.tif format and should have a resolution 
+of 300 dpi. The width should not be less than 8 cm. A legend should 
+clarify all symbols used and should appear in the figure itself, rather 
+than verbal explanations in the captions (e.g. "dashed line" or "open 
+green circles"). You are kindly asked to find the best balance between 
+quality of figures (and submitted material) and overall file size. 
+Individual figures should not exceed 5 MB, and the overall size of all 
+submitted files excluding supplements should not exceed 30 MB. The 
+produced paper file will contain all figures in *.jpg or *.png format. 
+However, if authors use vector graphics, readers can download such files
+ labelled "high-resolution" from the full-text HTML version online.
+		<span class="a-display__block">Tips for producing high-quality line graphics:</span>
+		<ol class="mt-2">
+			<li>The first choice should be vector graphics in *.eps or *.pdf 
+format. Fonts must be embedded. Please make sure that the *.pdf files do
+ not contain hidden objects. If you want to adjust fonts in your 
+original figure file before converting into *.pdf, please make sure that
+ you change the actual font of the original figure rather than adding 
+text boxes or other additional layers.</li>
+			<li>Please use only one font family in your figures (e.g. Arial or 
+Helvetica) and consider using sans-serif fonts. Keep in mind that the 
+usage of regular, italic, bold, and bold-italic of one font family 
+already leads to four different fonts that must be embedded or adjusted 
+by our image processors in case of text corrections within figures.</li>
+			<li>If the processing of your vector figures requires an exceptional 
+amount of time due to multiple fonts or hidden objects, we reserve the 
+right to convert your *.eps or *.pdf figures into *.png files for the 
+further production process.</li>
+			<li>If the usage of vector graphics is not possible, a bitmap image 
+should be saved in a "non-lossy" format (e.g. *.png). A high quality is 
+recommended. It is always possible to reduce the size of the figure 
+later.</li>
+			<li>The *.jpg format should only be used for photos. It is not 
+suitable for sharp edges. Note that it is not advisable to convert a 
+*.jpg file back to *.png. If *.jpg files must be used please save them 
+with high quality.</li>
+			<li>If you are not able to fulfil the above-mentioned criteria, it is
+ also possible to submit figures produced with Excel, PowerPoint, Word, 
+Photoshop, Illustrator, or InDesign in the original file format. Our 
+image processors will then produce the figures from these source files.</li>
+		</ol>
+	</li>
+	<li class="no-bullets">The abbreviation "Fig." should be used when it 
+appears in running text and should be followed by a number unless it 
+comes at the beginning of a sentence, e.g.: "The results are depicted in
+ Fig. 5. Figure 9 reveals that...".</li>
+	<li><strong>Figure content guidelines</strong>: in order to facilitate 
+consistency with our language and typesetting guidelines applied to the 
+text of the manuscript, please keep the following in mind when producing
+ your figures:
+		<ol class="mt-2">
+			<li>Labels of panels must be included with brackets around letters being lower case (e.g. (a), (b), etc.).</li>
+			<li>Ranges need an en dash and no spaces between start and end (e.g. 1–10, Jan–Feb).</li>
+			<li>Coordinates need a degree sign and a space when naming the direction (e.g. 30° N, 25° E).</li>
+			<li>Spaces must be included between number and unit (e.g. 1 %, 1 m).</li>
+			<li>Units must be written exponentially (e.g. W m<sup>–2</sup>).</li>
+			<li>Common abbreviations to be applied: hour as h (not hr), kilometre as km, metre as m.</li>
+			<li>Capitalization: only the first word is capitalized in headers (in
+ addition to proper nouns). More guidelines are provided in section 
+English guidelines and house standards.</li>
+		</ol>
+	</li>
+	<li><strong>Figure captions</strong>: each illustration should have a 
+concise but descriptive caption. The abbreviations used in the figure 
+must be defined, unless they are common abbreviations or have already 
+been defined in the text. Figure captions should be included in the text
+ file and not in the figure files.</li>
+	<li><strong>File size</strong>: authors are kindly asked to find the 
+best balance between the quality of figures and submitted material on 
+the one hand, and a manageable file size on the other hand. Individual 
+figures in the *.pdf format should not exceed 2 MB, file types other 
+than *.pdf should not exceed 5 MB per figure, and the overall size of 
+all submitted files, excluding supplements, should not exceed 30 MB.</li>
+	<li><strong>Plot data</strong>: authors are encouraged to publicize the
+ data needed to create the plots, which are included in the manuscript, 
+in order to enable reviewers and readers to reproduce the plots. 
+Ideally, such plot data is treated like any other research data and 
+should be deposited in FAIR-aligned data repositories that assign 
+persistent identifiers (see section data sets).</li>
+	<li><strong>Tables</strong>: they should be numbered sequentially with 
+Arabic numerals. For the production of the accepted manuscript, they 
+should be submitted as MS WORD or included in the LaTeX file. Tables 
+submitted as a PDF or an image file cannot be processed. Tables should 
+be self-explanatory and include a concise, yet sufficiently descriptive 
+caption. Coloured table cells should be avoided. Horizontal lines should
+ normally only appear above and below the table, and as a separator 
+between the head and the main body of the table. Please note that the 
+word "Table" is never abbreviated and should be capitalized when 
+followed by a number (e.g. Table 4).</li>
+	<li><strong>Reproduction and reuse of figures and tables</strong>: 
+authors must secure the right to reproduce any material that has already
+ been published or copyrighted elsewhere, and corresponding citations 
+must be included in the text as well as in the captions. If distribution
+ licences other than CC BY are applied, corresponding statements must be
+ included in the captions. If authors adapt figures from other authors 
+they must still cite the original authors and indicate that the figure 
+was adapted. There are three cases:
+		<ol class="mt-2">
+			<li><strong>Figures entirely compiled by the manuscript authors</strong>:
+ since such figures are part of the manuscript they will receive the 
+same distribution licence as the entire manuscript, namely a CC BY 
+License. No citation is needed and no reproduction rights must be 
+obtained.</li>
+			<li><strong>Figures entirely taken from another author</strong>: such
+ figures do not follow the distribution licence of the manuscript. A 
+citation must properly indicate the original source and reproduction 
+rights must be granted before submitting your manuscript.</li>
+			<li><strong>Figures adapted from another author</strong>: although 
+you adapted such a figure and included your own intellectual work, the 
+underlying figure is still taken from another source. The citation in 
+the figure caption must indicate the adaptation (e.g. "(adapted from 
+Smith et al., 2014)") and the reproduction rights must be granted before
+ submission.</li>
+		</ol>
+	</li>
+</ul></div><div id="cmsbox_115893" class="cmsbox "><div class="row align-items-center">
+	<div class="col-8">
+		<h2 id="mapsaerials">Maps &amp; aerials</h2>
+	</div>
+	<div class="col-4 text-right">
+		<a class="scrollto back-to-top" href="#top"><span class="hide-on-mobile">[Back to top]</span><span class="hide-on-desktop hide-on-tablet">top</span></a>
+	</div>
+</div>
+<ul>
+	<li>The above-listed regulations for figures and tables are also 
+applied to maps and aerials. The following items include additional 
+information specifically for maps and aerials.</li>
+	<li>Please adhere to United Nations naming conventions for maps used in
+ your manuscript. In order to depoliticize scientific articles, authors 
+should avoid the drawing of borders or use of contested topographical 
+names. The editors reserve the right to insert the label "under dispute"
+ if contested borders are presented. If disputed territories are 
+relevant for your map, please make sure that the figure caption stays 
+neutral as well as the legend and labelling within your map. Please also
+ see the <a href="https://www.hydrology-and-earth-system-sciences.net/policies/publication_policy.html#political-correctness" target="_self">political correctness</a> section in the publication policy.</li>
+	<li><strong>Reproduction and reuse of maps and aerials</strong>: 
+authors must secure the right to reproduce any material that has already
+ been published or copyrighted elsewhere, and corresponding citations 
+must be included in the text as well as in the captions. If distribution
+ licences other than CC BY are applied, corresponding statements must be
+ included in the captions. If applicable, maps from map providers such 
+as <a href="https://www.google.com/permissions/geoguidelines/attr-guide/" target="_blank">Google Maps</a>, <a href="https://www.google.com/permissions/geoguidelines/attr-guide/" target="_blank">Google Earth</a>, or <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>
+ used in manuscripts must include the required copyright and 
+distribution licence statements of the map provider. Authors must adhere
+ to the individual redistribution permissions. The copyright and 
+distribution licences of such maps must be visible in the maps 
+themselves.</li>
+	<li>The way a map must be shown in your manuscripts depends on the way 
+it was created. Sometimes a map does not need any specification in the 
+map itself or in the caption, sometimes a credit must be given, and 
+sometimes a full copyright statement is needed. If the map itself 
+already contains an explicit credit or copyright statement, nothing 
+additionally must be done in the caption. But if nothing is given in the
+ map itself, authors must decide whether they need to add a credit or 
+copyright statement to the caption or to the map itself. We 
+differentiate between 5 main models:
+		<ol class="mt-2">
+			<li><strong>Material created by the authors</strong>: no copyright 
+statement and no credit. Example: a digital elevation model (DEM) purely
+ based on measurement points collected by the authors and derived by 
+using a software product.</li>
+			<li><strong>Reuse of material from other authors</strong>: no copyright statement needed but a citation, like in most cases for figures and text paragraphs (e.g. <strong>(Smith, 2016)</strong>).</li>
+			<li><strong>Reuse of material from a map provider without requirement for a copyright statement</strong>: no copyright statement needed but a credit (e.g. <strong>ESRI</strong> or <strong>ESRI 2020</strong>).</li>
+			<li><strong>Reuse of material from a map provider with copyright needed</strong>: explicit copyright statement, no additional credit (e.g. <strong>© Google Maps 2019</strong> or <strong>© Google Earth 2019</strong>).</li>
+			<li><strong>Reuse of material from a map provider under public domain</strong>: no copyright (since copyright is waived) and credit desirable (e.g. <strong>NOAA 2020</strong>).</li>
+		</ol>
+	</li>
+	<li>Examples:
+		<ul class="mt-2">
+			<li>Global methane emissions: see figure 2 of paper <a href="https://doi.org/10.5194/acp-19-7859-2019#Ch1.F2" target="_blank">https://doi.org/10.5194/acp-19-7859-2019</a>.
+ The authors used trivial information, the borders of the countries 
+worldwide, to give their own information, the simulated methane emission
+ per square kilometre, a spatial reference. The gain of knowledge for 
+the reader is the amount of methane emissions and not the borders of 
+countries. Therefore, such a map can be cited as the authors' work and 
+needs no extra copyright statement. This is model 1.</li>
+			<li>Cited map: see figure 1 of paper <a href="https://doi.org/10.5194/acp-19-7859-2019#Ch1.F1" target="_blank">https://doi.org/10.5194/acp-19-7859-2019</a>.
+ The authors cited a map originally published by Parker et al., 2015. 
+The map itself contains trivial information, borders of the continents 
+as well as some larger rivers, and complex information generated by 
+Parker et al., the mean GOSAT methane. The original map does not need an
+ extra copyright statement, simply a citation. This is model 2.</li>
+			<li>Location of the research site: see figure 1 of paper <a href="https://doi.org/10.5194/acp-19-8021-2019#Ch1.F1" target="_blank">https://doi.org/10.5194/acp-19-8021-2019</a>.
+ In the left panel, the authors used trivial information, the borders of
+ counties around Beijing, to show the location of their 2 research 
+sites. This left panel would need no copyright statement. However, to 
+give a more detailed view on where in Beijing these sites are located, 
+they used a part of Google Maps in the right panel and added their 2 
+sites. The gain of knowledge for the reader is primarily still the 
+location of the sites. But by watching the right panel, readers can also
+ identify extra information and, even more important, the design and 
+content as provided by Google Maps. Due to the right panel, the figure 
+requires a copyright statement. This is model 4.</li>
+		</ul>
+	</li>
+</ul></div><div id="cmsbox_115894" class="cmsbox "><div class="row align-items-center">
+	<div class="col-8">
+		<h2 id="math">Mathematical notation and terminology</h2>
+	</div>
+	<div class="col-4 text-right">
+		<a class="scrollto back-to-top" href="#top"><span class="hide-on-mobile">[Back to top]</span><span class="hide-on-desktop hide-on-tablet">top</span></a>
+	</div>
+</div>
+<ul>
+	<li><strong>Mathematical symbols and formulae</strong>: in general, 
+mathematical symbols are typeset in italics. The most notable exceptions
+ are function names (e.g. sin, cos), chemical formulas, and physical 
+units, which are all typeset in roman (upright) font. Matrices are 
+printed in boldface, and vectors in boldface italics. Variables are 
+typeset in italics. Super- or subscripted variables should also be 
+italics. If super- or subscripts are abbreviations (<i>H</i><sub>m</sub> for molar enthalpy) or chemical elements (<i>μ</i><sub>AR</sub>)
+ it is typeset in roman. Further information on the use of italic and 
+roman fonts for symbols in scientific text can be found in the 
+corresponding <a href="https://iupac.org/wp-content/uploads/2016/01/ICTNS-On-the-use-of-italic-and-roman-fonts-for-symbols-in-scientific-text.pdf" target="_blank">IUPAC summary</a>.
+ A range of numbers should be specified as "a to b" or "a...b". The 
+expression "a–b" is only acceptable in cases where no confusion with "a 
+minus b" is possible.</li>
+	<li><strong>Equations</strong> should be numbered sequentially with 
+Arabic numerals in parentheses on the right-hand side, e.g. (1), (2). If
+ too long, split them accordingly. If there are chemical formulae 
+included, e.g. reactions, please number them (R1), (R2), etc. When using
+ Word, the equation editor and not the graphic mode should be used under
+ all circumstances. In the text, equations should be referred to by the 
+abbreviation "Eq." and the respective number in parentheses, e.g. "Eq. 
+(14)". However, when the reference comes at the beginning of a sentence,
+ the unabbreviated word "Equation" should be used, e.g.: "Equation (14) 
+is very important for the results; however, Eq. (15) makes it clear 
+that..."</li>
+	<li><strong>Units</strong>: for units of <strong>physical quantities</strong>, the metric system is mandatory and, wherever possible, SI units should be used. Hereby, we differentiate between <a href="https://www.bipm.org/documents/20126/41483022/SI-Brochure-9-EN.pdf/2d2b50bf-f2b4-9661-f402-5f9d66e4b507?version=1.9&amp;download=true" target="_blank">SI base units, SI-accepted units, and SI-derived units</a>. Regarding the <strong>abbreviation</strong> of such units, <strong>SI base units</strong> and <strong>SI-accepted units</strong> must be abbreviated in conjunction with numbers (e.g. the velocity is 10 km h<sup>-1</sup>) and must be written out without numbers (e.g. the velocity is given in kilometres per hour). <strong>SI-derived</strong>
+ units must also be written out when they do not contain a number. If 
+they contain numbers, the abbreviation is preferred where possible (e.g.
+ the average atmospheric pressure is 1013 hPa), but authors can decide 
+not to abbreviate them if no abbreviation is commonly used (e.g. the 
+distance is 237 nautical miles). Regarding the <strong>notation</strong>,
+ if units of physical quantities are in the denominator, contain 
+numbers, and are abbreviated, they must be formatted with negative 
+exponents (e.g. 10 km h<sup>-1</sup> instead of 10 km/h). Commonly used 
+examples for units without abbreviation are week, month, or decade. 
+These should be written out and not be formatted with negative exponent 
+if placed in the denominator (e.g. 10 kg per week). Units of <strong>non-physical quantities</strong>
+ must not be abbreviated and if they are in a denominator, they must 
+also not be exponentially notated (e.g. two cars per household).</li>
+	<li><strong>Date and time</strong>: 25 July 2007 (dd month yyyy), 
+15:17:02 (hh:mm:ss). Often it is necessary to specify the time if 
+referring to local time or universal time coordinated. This can be done 
+by adding "LT" or "UTC", respectively. If needed when referring to 
+years, CE (common era) and BCE (before the common era) should be used 
+instead of AD and BC since CE and BCE are more appropriate in interfaith
+ dialogue and science.</li>
+	<li>In addition, the <strong>SI and IUPAC recommendations</strong> should be followed:
+		<ol class="mt-2">
+			<li><a href="https://www.bipm.org/en/publications/si-brochure/" target="_blank">SI brochure</a></li>
+			<li><a href="http://media.iupac.org/publications/books/gbook/IUPAC-GB3-2ndPrinting-Online-22apr2011.pdf" target="_blank">IUPAC Green Book</a>, 3rd edition</li>
+			<li><a href="https://goldbook.iupac.org/" target="_blank">IUPAC Gold Book</a></li>
+		</ol>
+	</li>
+</ul></div><div id="cmsbox_115895" class="cmsbox "><div class="row align-items-center">
+	<div class="col-8">
+		<h2 id="english">English guidelines and house standards</h2>
+	</div>
+	<div class="col-4 text-right">
+		<a class="scrollto back-to-top" href="#top"><span class="hide-on-mobile">[Back to top]</span><span class="hide-on-desktop hide-on-tablet">top</span></a>
+	</div>
+</div>
+<p>After typesetting and before we send your manuscript galley proof, we
+ apply English language copy-editing "lite". It is our priority to 
+preserve the author's voice while ensuring grammatically correct and 
+consistent language. The following aims to provide guidelines for 
+authors on how to compose their manuscript with regards to conventions 
+of English. Please note that the copy editor is responsible for applying
+ these guidelines in addition to checking the grammar and punctuation of
+ each manuscript (see <a href="https://publications.copernicus.org/services/copy_editing_for_english.html" target="blank">English copy-editing services</a> for more information). However, assistance from the author will expedite the production process.</p>
+<ul>
+	<li><strong>Variety of English</strong>: we accept all standard 
+varieties of English in order to retain the author’s voice. However, the
+ variety should be consistent within each article. For an international 
+readership, <strong>Oxford spelling</strong> using -z- variants instead 
+of -s- (e.g. characterize) is often utilized. When using Oxford 
+spellings, please do so consistently. For example, if "characterize" is 
+spelled as such, then the -z- variant should be used for all such words 
+throughout the article. The use (or lack thereof) of the <strong>Oxford (serial) comma</strong> should also be consistent. For more information, please see the Wikipedia pages about <a href="https://en.wikipedia.org/wiki/Oxford_spelling" target="_blank">Oxford spelling</a> and <a href="https://en.wikipedia.org/wiki/Serial_comma" target="_blank">Oxford (serial) commas</a>.
+ Authors will be prompted to select an English variety when they upload 
+the final revised version of the manuscript. The copy editor will then 
+ensure that the variety is consistent.</li>
+	<li><strong>Scientific jargon</strong>: as is commonplace in scientific writing, the word "data" is considered a countable noun (e.g. data <i>are</i>, data <i>were</i>, data <i>include</i>).</li>
+	<li><strong>Tenses</strong>: we choose to remain flexible in the use of
+ tense but expect consistency and readability. In some contexts it might
+ be applicable to switch tenses within a sentence. For example, "Doe 
+found that large pitch oscillations result in a significant drop in 
+power output" would be acceptable.</li>
+	<li><strong>Spelling</strong>: we recommend consulting one of the following dictionaries: <a href="http://dictionary.cambridge.org/" target="blank">Cambridge</a>, <a href="http://www.merriam-webster.com/" target="blank">Merriam-Webster</a>, or <a href="http://www.collinsdictionary.com/" target="blank">Collins</a>.
+ Where appropriate, use the anglicized version of place names (e.g. 
+Zurich, Rome, Munich). Names that have been transliterated into English 
+often have numerous spelling variants. For geographical locations, we 
+consult <em>The Times Atlas of the World</em> for the most commonly used
+ spelling. Please ensure that foreign names have the appropriate 
+diacritics (e.g. accents, umlauts). In accordance with IUPAC, it is our 
+house standard to use the -f- spelling for sulfur (instead of sulphur) 
+and related words for all varieties of English.</li>
+	<li><strong>Abbreviations</strong>
+		<ul class="mt-2">
+			<li>Abbreviations should be avoided in the title, depending on the length and familiarity of abbreviation.</li>
+			<li>They need to be defined in the abstract and then again at the 
+first instance in the rest of the text. In order to avoid ambiguity, 
+abbreviations that could have numerous meanings must be defined (e.g. 
+"GCM" could stand for "global climate model" or "general circulation 
+model"). This generally does not apply to abbreviations that are better 
+known than their written-out form (e.g. NASA, GPS, GIS, MODIS).</li>
+			<li>Units do not need to be defined.</li>
+			<li>Please note that most abbreviations in the plural are followed by
+ the suffix –s (e.g. GCMs, RMSEs), although there are some exceptions 
+(e.g. CCN, ECMWF).</li>
+			<li>Ma and Myr (also Ga, ka; Gyr, kyr): "Ma" stands for "mega-annum" 
+and literally means millions of years ago, thus referring to a specific 
+time/date in the past as measured from now. In contrast, "Myr" stands 
+for millions of years and is used in reference to duration (CSE, p. 398;
+ North American commission on stratigraphic nomenclature).</li>
+			<li>CE (common era) and BCE (before the common era) should be used 
+instead of AD and BC since CE and BCE are more appropriate in interfaith
+ dialogue and science.</li>
+		</ul>
+	</li>
+	<li><strong>Capitalization</strong>
+		<ul class="mt-2">
+			<li>Titles and headings follow sentence-style capitalization (i.e. 
+first word and proper nouns only). This applies to table and figure 
+headings as well.</li>
+			<li>Proper nouns should be capitalized. A proper noun refers to a 
+unique entity. If there is more than one of the item in question, it is 
+probably not a proper noun and should not be capitalized. A capitalized 
+abbreviation does not necessarily warrant the capitalization of the 
+written-out form. For example "LAI" is capitalized, but "leaf area 
+index" is not. Non-standard usage of capitalization is only acceptable 
+for proper nouns (e.g. "SCanning Imaging Absorption spectroMeter for 
+Atmospheric CHartographY" as the written-out form of "SCIAMACHY").</li>
+			<li>The capitalization of the term "earth" is disputed and based on 
+subjective criteria. Please simply ensure that the capitalization (or 
+lack thereof) is consistent.</li>
+			<li>Cardinal directions should only be capitalized when part of a 
+proper noun (e.g. South Dakota, Northern Ireland, North America, but 
+eastern France). If you are unsure, consult an atlas.</li>
+			<li>Capitalize generic geographic terms, such as "river", when they 
+are part of a place name, but do not capitalize the generic term when it
+ appears on its own, when it follows a capitalized generic term, or when
+ it is in the plural (e.g. Mississippi River, Mississippi River basin, 
+Mississippi and Missouri rivers).</li>
+			<li>Capitalize taxonomic ranks genus and higher.</li>
+			<li>"Early"/"upper", "middle", and "late"/"lower" are capitalized 
+only when part of the formal name but lower-cased when used as modifiers
+ of formal names (e.g. Early Jurassic, early Eocene, late Quaternary). 
+For more information, we recommend consulting the <a target="blank" href="https://stratigraphy.org/chart">International Commission on Stratigraphy</a> and <a target="blank" href="https://www.geosociety.org/GSA/Education_Careers/Geologic_Time_Scale/GSA/timescale/home.aspx">Geological Society of America</a>.</li>
+		</ul>
+	</li>
+	<li><strong>Italicization</strong>
+		<ul class="mt-2">
+			<li>Italic font may be used for emphasis, although this should be used sparingly (e.g. data were <em>almost</em> consistent).</li>
+			<li>Foreign words, phrases, and abbreviations that cannot be found in
+ any English dictionary (this does not apply to proper nouns) are 
+italicized. Common Latin phrases are not italicized (for example, et 
+al., cf., e.g., a priori, in situ, bremsstrahlung, and eigenvalue).</li>
+			<li>Ship names are italic, but their prefixes are roman (e.g. RV <em>Polarstern</em>).</li>
+			<li>Genus and species names are italic; high-order taxonomic ranks are roman.</li>
+			<li>When mentioned in running text, the names of books, journals, pamphlets, magazines, and newspapers are italicized.</li>
+		</ul>
+	</li>
+	<li><strong>Numbers</strong>
+		<ul class="mt-2">
+			<li>For items other than units of time or measure, use words for 
+cardinal numbers less than 10; use numerals for 10 and above (e.g. three
+ flasks, seven trees, 6 m, 9 d, 10 desks).</li>
+			<li>Spell out ordinals "first" to "ninth".</li>
+			<li>Use numerals with units and expressions when used in a scientific
+ or mathematical sense (e.g. increased 2-fold, 1 standard deviation, 3 
+orders of magnitude, 2 times the height (but the beaker was rinsed two 
+times), a factor of 3).</li>
+			<li>Spell out numbers when they begin a sentence or when the sentence cannot be reformulated.</li>
+			<li>For very large numbers, use a combination of numerals and words (e.g. 1 billion people).</li>
+			<li>Use all numerals in a series or range containing numbers 10 or 
+greater (e.g. 5, 7, and 13 experiments) or in a parallel construction.</li>
+			<li>Use words for instances such as "tens of millennia" and "non-zero".</li>
+			<li>Spell out and hyphenate fractions in which the numerator and denominator are both less than 10 (e.g. two-thirds).</li>
+		</ul>
+	</li>
+	<li><strong>Hyphens</strong>
+		<ul class="mt-2">
+			<li>Do not use hyphens between an adverb ending in –ly and the word 
+it is modifying (e.g. "statistically based results", not 
+"statistically-based results").</li>
+			<li>Latin phrases should not be hyphenated (e.g. "in situ", not "in-situ").</li>
+			<li>It is our house standard not to hyphenate modifiers containing 
+abbreviated units (e.g. "3-m stick" should be "3 m stick"). This also 
+applies to the other side of the hyphenated term (e.g. "3 m long rope", 
+not "3-m-long rope").</li>
+		</ul>
+	</li>
+	<li><strong>En dashes (–)</strong> are longer than hyphens (-) and 
+serve numerous purposes. Please note that we use spaced en dashes for 
+syntactic constructions, not em dashes (—). En dashes are used to 
+indicate, among other things, relationships (e.g. ocean–atmosphere 
+exchange), ranges (e.g. 12–20 months), and components of a mixture (e.g.
+ dissolved in 5:1 glycerin–water). They are also used to link the names 
+of two or more persons used as a modifier (e.g. Stefan–Boltzmann 
+constant).</li>
+	<li><strong>Quotes</strong>
+		<ul class="mt-2">
+			<li>Use double quotation marks in all instances, unless quotation 
+marks are also required within material surrounded by double quotation 
+marks.</li>
+			<li>In these intra-quotation-mark instances, single quotation marks 
+are used. Please note that quoted material should be punctuated with 
+quotation marks but not italicized.</li>
+			<li>In quotations from printed sources, the spelling, capitalization, and punctuation should normally follow the original.</li>
+			<li>Quotations can also be used to denote an unfamiliar or newly 
+coined term or phrase. They may also be used to introduce a term but 
+only once at the first instance.</li>
+			<li>It is our house standard to position commas and periods outside the end quotation marks.</li>
+			<li>The following titles should be surrounded by quotation marks in 
+running text: journal articles, book chapters, and series titles 
+(special issues).</li>
+		</ul>
+	</li>
+</ul></div><div id="cmsbox_115896" class="cmsbox "><div class="row align-items-center">
+	<div class="col-8">
+		<h2 id="references">References</h2>
+	</div>
+	<div class="col-4 text-right">
+		<a class="scrollto back-to-top" href="#top"><span class="hide-on-mobile">[Back to top]</span><span class="hide-on-desktop hide-on-tablet">top</span></a>
+	</div>
+</div>
+<p>Papers should make proper and sufficient reference to the relevant 
+formal literature. Informal or so-called "grey" literature may only be 
+referred to if there is no alternative from the formal literature. Works
+ cited in a published manuscript should be published already, accepted 
+for publication, or available as a preprint with a DOI. In addition to 
+literature, data and software used should be referenced (citations 
+should appear in the body of the article with a corresponding reference 
+in the reference list). These references have to be listed <strong>alphabetically</strong> at the end of the manuscript under the <strong>first author's name</strong>.
+ Works "submitted to", "in preparation", or "in review" can be cited 
+upon submission with entry in the reference list, as long as these works
+ are available to the reviewers (either on an external server or as <a href="#assets">review asset</a>).
+ Such works should not be cited in the final, accepted manuscript, 
+unless published, accepted for publication, or available as preprint 
+with a DOI. Please do not use bold or italic writing for in-text 
+citations or in the reference list. </p>
+<p>Please supply the full author list with last name followed by 
+initials. After the list of authors, the complete reference title needs 
+to be named. Journal names are abbreviated according to the <a href="http://library.caltech.edu/reference/abbreviations/" target="_blank">Journal Title Abbreviations by Caltech Library</a>,
+ followed by the volume number, the complete page numbers (first and 
+last page), the digital object identifier (DOI), and the publication 
+year. If the abbreviation of a journal name is not known, please use the
+ full title. In addition to journal articles, all reference types are 
+summarized together with examples below.</p>
+<p>If there is more than one work by the <strong>same first author</strong>,
+ their papers are listed in the following order: (1) single author 
+papers (first author), followed by (2) co-author papers (first author 
+and second author), and finally (3) team papers (first author et al.). 
+Within these three categories the respective papers are then listed as 
+follows:</p>
+<ul>
+	<li><strong>Single author papers</strong>: chronologically, beginning 
+with the oldest. If there is more than one paper in the same year, a 
+letter (a, b, c) is added to the year, both in the in-text citation as 
+well as in the reference list.</li>
+	<li><strong>Co-author papers</strong>: first alphabetically according 
+to the second author's last name, and then chronologically within each 
+set of co-authors. If there is more than one paper in the same year per 
+set of co-authors, a letter (a, b, c) is added to the year both in the 
+in-text citation as well as in the reference list.</li>
+	<li><strong>Team papers</strong>: first chronologically (beginning with
+ the oldest), independent of the team author names, then alphabetically 
+within each year according to the second (third, etc.) author. If there 
+is more than one paper in the same year for a first author (independent 
+of the team), a letter (a, b, c) is added to the year both in the 
+in-text citation as well as in the reference list.</li>
+</ul>
+<h3>In-text citations</h3>
+<p>In terms of in-text citations, the order can be based on relevance, 
+as well as chronological or alphabetical listing, depending on the 
+author's preference. In-text citations can be displayed as "[…] Smith 
+(2009) […]", or "[…] (Smith, 2009) […]". If the author's name is part of
+ the sentence structure only the year is put in parentheses ("As we can 
+see in the work of Smith (2009) the precipitation has increased"). If 
+the author's name is not part of the sentence, name and year are put in 
+parentheses ("Precipitation increase was observed (Smith, 2009)"). If 
+you refer to multiple references at the same position all references are
+ put in parentheses separated by semicolons ("Precipitation increase was
+ observed (Smith, 2009; Mueller et al., 2010)").</p>
+<h3>Copernicus style files</h3>
+<ul>
+	<li><a href="https://www.hydrology-and-earth-system-sciences.net/Copernicus_Publications.ens" target="_blank">EndNote® Output Style File</a> and <a href="https://www.hydrology-and-earth-system-sciences.net/Endnote_example_library.enl" target="_blank">example library</a></li>
+	<li><a href="https://www.zotero.org/styles?q=id%3Acopernicus-publications" target="_blank">CSL style</a> (for Zotero, Mendeley, Papers, etc.) and <a href="https://www.hydrology-and-earth-system-sciences.net/CSL_example_library.rdf" target="_blank">example library</a></li>
+	<li><a href="https://www.hydrology-and-earth-system-sciences.net/Copernicus.bst" target="_blank">Bibtex Bibliographic Style File</a></li>
+</ul>
+<h3>Examples for reference sorting</h3>
+<table width="100%" cellspacing="0" cellpadding="2" border="0" class="borderLine text-left">
+	<thead>
+	<tr class="subbox_background">
+		<td width="65%" valign="top">Reference list</td>
+		<td width="35%" valign="top">Short citation</td>
+	</tr>
+	</thead>
+	<tbody>
+	<tr>
+		<td valign="top" colspan="2"><strong>Single author: chronologically</strong></td>
+	</tr>
+	<tr>
+		<td valign="top">Smith, P.: …, 2009.</td>
+		<td valign="top">Smith, 2009</td>
+	</tr>
+	<tr>
+		<td valign="top">Smith, P.: …, 2010a.</td>
+		<td valign="top">Smith, 2010a</td>
+	</tr>
+	<tr>
+		<td valign="top">Smith, P.: …, 2010b.</td>
+		<td valign="top">Smith, 2010b</td>
+	</tr>
+	<tr>
+		<td valign="top" colspan="2"><strong>Co-authors: alphabetically before chronologically</strong></td>
+	</tr>
+	<tr>
+		<td valign="top">Smith, P. and Brown, P.: …, 2010.</td>
+		<td valign="top">Smith and Brown, 2010</td>
+	</tr>
+	<tr>
+		<td valign="top">Smith, P. and Carter, T.: …, 2007.</td>
+		<td valign="top">Smith and Carter, 2007</td>
+	</tr>
+	<tr>
+		<td valign="top">Smith, P. and Carter, T.: …, 2010a.</td>
+		<td valign="top">Smith and Carter, 2010a</td>
+	</tr>
+	<tr valign="top">
+		<td valign="top">Smith, P. and Carter, T.: …, 2010b.</td>
+		<td valign="top">Smith and Carter, 2010b</td>
+	</tr>
+	<tr valign="top">
+		<td valign="top">Smith, P. and Thomson, A.: …, 2005.</td>
+		<td valign="top">Smith and Thomson, 2005</td>
+	</tr>
+	<tr valign="top">
+		<td valign="top" colspan="2"><strong>Team: chronologically before alphabetically</strong></td>
+	</tr>
+	<tr valign="top">
+		<td valign="top">Smith, P., Thomson, A., and Carter, T.: …, 2006.</td>
+		<td valign="top">Smith et al., 2006</td>
+	</tr>
+	<tr valign="top">
+		<td valign="top">Smith, P., Carter, T., and Hanson, M. B.: …, 2008a.</td>
+		<td valign="top">Smith et al., 2008a</td>
+	</tr>
+	<tr valign="top">
+		<td valign="top">Smith, P., Carter, T., and Walter, N.: …, 2008b.</td>
+		<td valign="top">Smith et al., 2008b</td>
+	</tr>
+	<tr valign="top">
+		<td valign="top">Smith, P., Carter, T., and Hanson, M. B.: …, 2009.</td>
+		<td valign="top">Smith et al., 2009</td>
+	</tr>
+	<tr valign="top">
+		<td valign="top">Smith, P., Brown, P., and Walter, N.: …, 2010.</td>
+		<td valign="top">Smith et al., 2010</td>
+	</tr>
+	</tbody>
+</table>
+<h3>Examples for reference types</h3>
+<ul>
+	<li><strong>Journal article</strong>
+		<ul class="mt-2">
+			<li>Author(s) (initials always after last name)</li>
+			<li>Article title</li>
+			<li>Journal title abbreviation</li>
+			<li>Volume</li>
+			<li>Page numbers or article number</li>
+			<li>DOI</li>
+			<li>Year</li>
+		</ul>
+	</li>
+	<li class="no-bullets">Porter, J. G., De Bruyn, W., and Saltzman, E. 
+S.: Eddy flux measurements of sulfur dioxide deposition to the sea 
+surface, Atmos. Chem. Phys., 18, 15291–15305, <span class="word-break-all">https://doi.org/10.5194/acp-18-15291-2018</span>, 2018.</li>
+</ul>
+<ul>
+	<li><strong>Preprint</strong>
+		<ul class="mt-2">
+			<li>Author(s) (initials always after last name)</li>
+			<li>Preprint title</li>
+			<li>Preprint server name [preprint]</li>
+			<li>Persistent identifier as link</li>
+			<li>Published date</li>
+		</ul>
+	</li>
+	<li class="no-bullets">Jung, M., Koirala, S., Weber, U., Ichii, K., 
+Gans, F., Gustau-Camps-Valls, Papale, D., Schwalm, C., Tramontana, G., 
+and Reichstein, M.: The FLUXCOM ensemble of global land-atmosphere 
+energy fluxes, arXiv [preprint], <a href="https://arxiv.org/abs/1812.04951" target="_blank">arXiv:1812.04951</a>, 11 December 2018.</li>
+</ul>
+<ul>
+	<li><strong>Book</strong>
+		<ul class="mt-2">
+			<li>Author(s), editor(s) (initials always after last name)</li>
+			<li>Book title</li>
+			<li>Edition</li>
+			<li>Series title and volume (if any)</li>
+			<li>Editors (if not authors)</li>
+			<li>Publisher</li>
+			<li>Location (optional)</li>
+			<li>Total pages (optional) pp.</li>
+			<li>Persistent identifier (e.g., DOI [preferred], ISBN)</li>
+			<li>Year</li>
+		</ul>
+	</li>
+	<li class="no-bullets">Singh, O. N. and Fabian, P. (Eds.): Atmospheric 
+Ozone: a Millennium Issue, Copernicus Publications, Katlenburg-Lindau, 
+Germany, 147 pp., ISBN 393658608X, 2003.</li>
+</ul>
+<ul>
+	<li><strong>Book chapter</strong>
+		<ul class="mt-2">
+			<li>Author(s) (initials always after last name)</li>
+			<li>Article title</li>
+			<li>Book title</li>
+			<li>Edition (if any)</li>
+			<li>Editors (if any)</li>
+			<li>Publisher</li>
+			<li>Location (optional)</li>
+			<li>Page numbers of article in book</li>
+			<li>Persistent identifier (e.g., DOI [preferred], ISBN)</li>
+			<li>Year</li>
+		</ul>
+	</li>
+	<li class="no-bullets">van Edig, X., Schwarze, S., and Zeller, M.: The 
+robustness of indicator based poverty assessment tools in changing 
+environments – empirical evidence from Indonesia, in: Tropical 
+Rainforests and Agroforests under Global Change, Environmental Science 
+and Engineering (Environmental Engineering), edited by: Tscharntke, T., 
+Leuschner, C., Veldkamp, E., Faust, H., Guhardja, E., and Bidin, A., 
+Springer, Berlin, Heidelberg, Germany, 191–211, <span class="word-break-all">https://doi.org/10.1007/978-3-642-00493-3_9</span>, 2010.</li>
+</ul>
+<ul>
+	<li><strong>Presented paper</strong>
+		<ul class="mt-2">
+			<li>Author(s) (initials always after last name)</li>
+			<li>Paper title</li>
+			<li>Name of meeting/conference</li>
+			<li>Location of meeting/conference</li>
+			<li>Date of meeting/conference</li>
+			<li>Abstract number</li>
+			<li>Persistent identifier (DOI preferred)</li>
+			<li>Year</li>
+		</ul>
+	</li>
+	<li class="no-bullets">Buiter, S.: How syn-rift sedimentation promotes 
+the formation of hyper-extended margins, EGU General Assembly 2020, 
+Online, 4–8 May 2020, EGU2020-18622, 
+https://doi.org/10.5194/egusphere-egu2020-18622, 2020.</li>
+</ul>
+<ul>
+	<li><strong>Presented paper published in conference proceedings</strong>
+		<ul class="mt-2">
+			<li>Author(s) (initials always after last name)</li>
+			<li>Paper title</li>
+			<li>Proceedings title</li>
+			<li>Name of meeting/conference</li>
+			<li>Location of meeting/conference</li>
+			<li>Date of meeting/conference</li>
+			<li>Abstract number or page numbers</li>
+			<li>Persistent identifier (DOI preferred)</li>
+			<li>Year</li>
+		</ul>
+	</li>
+	<li class="no-bullets">Iwata, M., Matsumoto, H., and Kojima, H.: 
+Computer experiments on the plasma wave generation in the vicinity of 
+Earths bow shock, in: Proceedings of the 6th International School, 
+Symposium on Space Plasma Simulation Overview, Garching, Germany, 3–8 
+September 2001, 4–6, 2001.</li>
+</ul>
+<ul>
+	<li><strong>Software and model code, interactive computing environments (e.g., Jupyter Notebooks)</strong>
+		<ul class="mt-2">
+			<li>Creator(s)</li>
+			<li>Title</li>
+			<li>Publisher/repository [code]</li>
+			<li>Persistent identifier (DOI preferred)</li>
+			<li>Publication year</li>
+		</ul>
+	</li>
+	<li class="no-bullets"><strong>Software/model code</strong>: Randall, D., Dazlich, D., Heikes, R., and Konor, C.: CSU model for DCMIP 2016, Zenodo [code], <span class="word-break-all">https://doi.org/10.5281/zenodo.5800992018</span>, 2017.</li>
+	<li class="no-bullets"><strong>Interactive computing environment</strong>:
+ Cheng, K.-Y., Harris, L. M., Zhou, L., Lin, S.-J., Mouallem, J., 
+Benson, R., Clark, S., Gao, K., Chen, X., Chen, J.-H., Sun, Y. Q., Tong,
+ M., Xiang, B., Chilutti, L., Morin, M., Bender, M., Elbert, O. D., 
+Kaltenbaugh, A., Marchok, T., Huff, J. J., and Stern, W.: SHiELD v2021b 
+in a container, Docker Hub [code], <span class="word-break-all">https://hub.docker.com/r/gfdlfv3/shield</span>, 2021.</li>
+</ul>
+<ul>
+	<li><strong>Data set</strong>
+		<ul class="mt-2">
+			<li>Creator(s)</li>
+			<li>Title</li>
+			<li>Publisher/repository [data set]</li>
+			<li>Persistent identifier (DOI preferred)</li>
+			<li>Publication year</li>
+		</ul>
+	</li>
+	<li class="no-bullets">Loew, A., Bennartz, R., Fell, F., Lattanzio, A.,
+ Doutriaux-Boucher, M., and Schulz, J.: Surface Albedo Validation Sites,
+ EUMETSAT [data set], <span class="word-break-all">https://doi.org/10.15770/EUM_SEC_CLM_1001</span>, 2015.</li>
+</ul>
+<ul>
+	<li><strong>Sample</strong>
+		<ul class="mt-2">
+			<li>Creator(s)</li>
+			<li>Title</li>
+			<li>Publisher/repository [sample]</li>
+			<li>Persistent identifier (DOI preferred) or URL</li>
+			<li>Publication year</li>
+		</ul>
+	</li>
+	<li class="no-bullets">Anderson, R., Kalk, P., Froelich, F., Flleisher,
+ M., Bouchard, G., and Schwartz, R.: PA9802-04-01, Lamont-Doherty Core 
+Repository at Columbia University (LDCR) [sample], <span class="word-break-all">http://igsn.org/DSR0003YW</span>, 1998.</li>
+</ul>
+<ul>
+	<li><strong>Report, map, thesis, and dissertation</strong>
+		<ul class="mt-2">
+			<li>Author(s) (Initials always after last name!)</li>
+			<li>Title</li>
+			<li>Report designator (M.S., Ph.D., etc.)</li>
+			<li>Issuing organization/university</li>
+			<li>Location (optional)</li>
+			<li>Total pages (optional) pp.</li>
+			<li>Persistent identifier (DOI preferred)</li>
+			<li>Year</li>
+		</ul>
+	</li>
+	<li class="no-bullets">Monger, J. W. H. and Journeay, J. M.: Guide to 
+the geology and tectonic evolution of the southern Coast Mountains, 
+Geol. Surv. of Can., Ottawa, Ont., Open File Rep. 2490, 77 pp., 1994.</li>
+	<li class="no-bullets">Brown, R. J. E.: Permafrost in Canada, Geol. Surv. of Can., Ottawa, Ont., Map 1246A, 1967.</li>
+	<li class="no-bullets">Kronberg, E. A.: Dynamics of the Jovian 
+Magnetotail, Ph.D. thesis, International Max Planck Research School, 
+Universities of Braunschweig and Göttingen, Germany, 133 pp., 2006.</li>
+</ul>
+<ul>
+	<li><strong>Standards</strong>
+		<ul class="mt-2">
+			<li>Standard organization</li>
+			<li>Title of standard</li>
+			<li>Standard number</li>
+			<li>Persistent identifier (DOI preferred) or URL</li>
+			<li>Access date</li>
+			<li>Year (if not the same as access date)</li>
+		</ul>
+	</li>
+	<li class="no-bullets">International Electrotechnical Commission: Wind 
+energy generation systems, Part 3-1: Design requirements for fixed 
+offshore wind turbines, IEC 61400-3-1:2019, <span class="word-break-all">https://webstore.iec.ch/en/publication/29360</span> (last access: 18 October 2024), 2019.</li>
+</ul>
+<ul>
+	<li><strong>Webpages</strong>
+		<ul class="mt-2">
+			<li>Author(s), if applicable</li>
+			<li>Title, if applicable</li>
+			<li>URL</li>
+			<li>Access date</li>
+			<li>Year (if not the same as access date)</li>
+		</ul>
+	</li>
+	<li class="no-bullets">Copernicus Publications: <span class="word-break-all">https://publications.copernicus.org/</span>, last access: 25 October 2018.</li>
+</ul>
+<ul>
+	<li><strong>Videos</strong>
+		<ul class="mt-2">
+			<li>Author(s)</li>
+			<li>Title</li>
+			<li>Video platform</li>
+			<li>URL</li>
+			<li>Access date</li>
+			<li>Year (if not the same as access date)</li>
+		</ul>
+	</li>
+	<li class="no-bullets">Imperial Tech Foresight: Multus Media: 
+Increasing yield and efficiency of lab-grown meat, YouTube, 
+https://www.youtube.com/watch?v=qu1gS-pzRyY (last access: 25 November 
+2024), 2020.</li>
+</ul>
+<ul>
+	<li><strong>Blog post</strong>
+		<ul class="mt-2">
+			<li>Author(s)</li>
+			<li>Title</li>
+			<li>Blog name</li>
+			<li>URL</li>
+			<li>Access date</li>
+			<li>Post date</li>
+		</ul>
+	</li>
+	<li class="no-bullets">Khare, D.: Dive into the depths: 90 Years of Loch Ness monster lore, GeoLog, <span class="word-break-all">https://blogs.egu.eu/geolog/2023/11/10/dive-into-the-depths-90-years-of-loch-ness-monster-lore/</span> (last access: 5 December 2024), 10 November 2023.</li>
+</ul>
+<ul>
+	<li><strong>Tweet</strong>
+		<ul class="mt-2">
+			<li>Author(s) [author Twitter handle]</li>
+			<li>Tweet</li>
+			<li>Twitter</li>
+			<li>URL</li>
+			<li>Access date</li>
+			<li>Post date</li>
+		</ul>
+	</li>
+	<li class="no-bullets">Copernicus.org [Copernicus_org]: "We are proud 
+to announce the new #impactfactors and #CiteScore values of our 
+#openaccess journals. Many thanks to our authors, referees, and editors 
+for all their support! Check out all updated #metrics at <span class="word-break-all">https://publications.copernicus.org/services/journal_metrics.html</span>", Twitter, <span class="word-break-all">https://twitter.com/copernicus_org/status/1410943659084767235</span> (last access: 20 July 2021), 2 July 2021.</li>
+</ul></div></div>
+
+    </div>
+
+</main>
+
+<!--=== End Content ===-->
+
+<!-- START_SNIPPET:part9 -->
+
+<footer class="d-print-none version-2023">
+
+    <div class="footer">
+
+        <div class="container">
+
+            <div class="row align-items-center mb-3">
+
+                <div class="col-12 col-lg-auto text-center text-md-left title-wrapper">
+
+                    <div id="j-header-footer" class="text-center text-md-left">
+
+                        <div class="h1 text-center text-md-left">
+
+                            Hydrology and Earth System Sciences
+
+                        </div>
+
+                        <p>An interactive open-access journal of the European Geosciences Union</p>
+
+                    </div>
+
+                </div>
+
+                <div class="col-12 col-lg-auto text-center text-md-left pt-lg-2">
+
+                    <div class="row align-items-center">
+
+                        <div class="col-12 col-sm col-md-auto text-center text-md-left mb-3 mb-sm-0">
+    <span class="egu-logo"><a href="http://www.egu.eu/" target="_blank"><img src="HESS%20-%20Submission_files/graphic_egu_logo_white.png" alt="" style="width: 410px; height: 325px;"></a></span>
+</div>
+
+                        <div class="col-12 col-sm text-center text-md-left">
+    <span class="copernicus-logo"><a href="https://publications.copernicus.org/" target="_blank"><img src="HESS%20-%20Submission_files/template_logo_copernicus_publications_177x22_white.png" alt="" style="width: 1784px; height: 330px;"></a></span>
+</div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="links pb-4 pt-4">
+
+        <div class="container">
+
+            <div class="row align-items-center">
+
+                <div class="col-12 col-xl-auto mt-3">
+
+                    <div class="row align-items-start align-items-lg-center">
+
+                        <div class="col-12 mb-3 mb-md-0 pl-md-0 text-center text-md-left"><a href="https://creativecommons.org/licenses/by/4.0/" target="_blank"><i class="fab fa-creative-commons fa-lg mr-1"></i><i class="fab fa-creative-commons-by fa-lg"></i></a> All site content, except where otherwise noted, is licensed under the <a href="https://creativecommons.org/licenses/by/4.0/" target="_blank">Creative Commons Attribution 4.0 License</a>.</div>
+
+                    </div>
+
+                </div>
+
+                <div class="col-12 text-center text-md-left col-lg-auto mt-3">
+
+                    <div class="row align-items-center">
+
+                        <div class="col d-md-none px-0"></div>
+
+                        <div class="col-auto pr-1"><a href="https://www.hydrology-and-earth-system-sciences.net/about/contact.html">Contact</a></div>
+
+                        <div class="col-auto px-1">|</div>
+
+                        <div class="col-auto px-1"><a href="https://www.hydrology-and-earth-system-sciences.net/imprint.html">Imprint</a></div>
+
+                        <div class="col-auto px-1">|</div>
+
+                        <div class="col-auto px-1"><a href="https://www.copernicus.org/data_protection.html" target="_blank">Data protection</a></div>
+
+                        <div class="col-auto pl-2"></div>
+
+                        <div class="col d-md-none px-0"></div>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+        </div>
+
+    </div>
+
+</footer>
+
+<!-- END_SNIPPET:part9 -->
+
+<!-- -->
+<script>mendeleyWebImporter = {
+  downloadPdfs(e,t) { return this._call('downloadPdfs', [e,t]); },
+  open() { return this._call('open', []); },
+  setLoginToken(e) { return this._call('setLoginToken', [e]); },
+  _call(methodName, methodArgs) {
+    const id = Math.random();
+    window.postMessage({ id, token: '0.5481542947026619', methodName, methodArgs }, 'https://www.hydrology-and-earth-system-sciences.net');
+    return new Promise(resolve => {
+      const listener = window.addEventListener('message', event => {
+        const data = event.data;
+        if (typeof data !== 'object' || !('result' in data) || data.id !== id) return;
+        window.removeEventListener('message', listener);
+        resolve(data.result);
+      });
+    });
+  }
+};</script></body></html>
