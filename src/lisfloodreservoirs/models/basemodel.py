@@ -8,7 +8,6 @@ from ..utils.metrics import KGEmod
 from ..utils.plots import reservoir_analysis
 
 
-
 class Reservoir:
     """Parent class to model reservoirs"""
     
@@ -41,7 +40,10 @@ class Reservoir:
 
     def timestep(self, 
                  I: float, 
-                 V: float
+                 V: float,
+                 P: Optional[float] = None,
+                 E: Optional[float] = None,
+                 D: Optional[float] = None
                 ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
         
@@ -51,6 +53,12 @@ class Reservoir:
             Inflow (m3/s)
         V: float
             Volume stored in the reservoir (m3)
+        P: float (optional)
+            Precipitaion on the reservoir (mm)
+        E: float (optional)
+            Open water evaporation (mm)
+        D: float
+            Water demand (m3)
             
         Returns:
         --------
@@ -63,18 +71,23 @@ class Reservoir:
     def simulate(self,
                  inflow: pd.Series,
                  Vo: Optional[float ] = None,
+                 precipitation: Optional[pd.Series] = None,
+                 evaporation: Optional[pd.Series] = None,
                  demand: Optional[pd.Series] = None,
                 ) -> pd.DataFrame:
         """Given an inflow time series (m3/s) and an initial storage (m3), it computes the time series of outflow (m3/s) and storage (m3)
         
         Parameters:
         -----------
-        inflow: pd.Series
+        inflow: pandas.Series
             Time series of flow coming into the reservoir (m3/s)
         Vo: float (optional)
             Initial value of reservoir storage (m3). If not provided, it is assumed that the normal storage is the initial condition
+        precipitation: pandas.Series (optional)
+            Time series of precipitation on the reservoir (mm)
+        evaporation: pandas.Series (optional)
         demand: pandas.Series (optional)
-            Time series of total water demand
+            Time series of total water demand (m3)
             
         Returns:
         --------
@@ -85,8 +98,12 @@ class Reservoir:
         if Vo is None:
             Vo = self.Vtot * .5
             
+        if precipitation is not None and not isinstance(precipitation, pd.Series):
+            raise ValueError('"precipitation" must be a pandas.Series representing a time series of precipitation (mm) on the reservoir.')
+        if evaporation is not None and not isinstance(evaporation, pd.Series):
+            raise ValueError('"evaporation" must be a pandas.Series representing a time series of open water evaporation (mm) from the reservoir.')
         if demand is not None and not isinstance(demand, pd.Series):
-            raise ValueError('"demand" must be a pandas Series representing a time series of water demand.')
+            raise ValueError('"demand" must be a pandas.Series representing a time series of water demand (m3/s).')
         
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
