@@ -4,18 +4,22 @@ import pandas as pd
 
 from .linear import Linear
 from .lisflood import Lisflood
-from .hanazaki import Hanazaki
+from .camaflood import Camaflood
 from .mhm import mHM
 from ..utils.utils import return_period
 
 model_classes = {
     'linear': Linear,
     'lisflood': Lisflood,
-    'hanazaki': Hanazaki,
+    'camaflood': Camaflood,
     'mhm': mHM,
 }
 
-def get_model(model_name: Literal['linear', 'lisflood', 'hanazaki', 'mhm'], *args, **kwargs):
+def get_model(
+    model_name: Literal['linear', 'lisflood', 'camaflood', 'mhm'], 
+    *args, 
+    **kwargs
+):
     """
     Creates an instance of the specified model class.
     
@@ -45,33 +49,35 @@ def get_model(model_name: Literal['linear', 'lisflood', 'hanazaki', 'mhm'], *arg
         
         
         
-def default_attributes(model_name: Literal['linear', 'lisflood', 'hanazaki', 'mhm'],
-                       inflow: pd.Series,
-                       Vtot: float,
-                       Vmin: Optional[float] = 0,
-                       Qmin: Optional[float] = 0,
-                       A: Optional[float] = None,
-                       storage: Optional[pd.Series] = None,
-                       demand: Optional[pd.Series] = None,
-                      ) -> Dict:
+def default_attributes(
+    model_name: Literal['linear', 'lisflood', 'camaflood', 'mhm'],
+    inflow: pd.Series,
+    Vtot: float,
+    Vmin: Optional[float] = 0,
+    Qmin: Optional[float] = 0,
+    A: Optional[float] = None,
+    Atot: Optional[float] = None,
+    storage: Optional[pd.Series] = None,
+    demand: Optional[pd.Series] = None,
+) -> Dict:
     """It creates a dictionary with the model-specific attributes required to declare the reservoir class
     
     Parameters:
     -----------
     model_name: string
-        Name of the reservoir model to be used: 'linear', 'lisflood', 'hanazaki' or 'mhm'
+        Name of the reservoir model to be used: 'linear', 'lisflood', 'camaflood' or 'mhm'
     inflow: pandas.Series
         Time series of reservoir inflow (m3/s)
     Vtot: float (optional)
-        Reservoir storage capacity (m3). Required by the 'linear', 'lisflood' and 'hanazaki' models
+        Reservoir storage capacity (m3). Required by the 'linear', 'lisflood' and 'camaflood' models
     Vmin: float (optional)
         Minimum reservoir storage (m3). Required by the 'lisflood' model. If not provided, a value of 0 is used
     Qmin: float(optional)
-        Minimum outflow (m3/s). Required by the 'lionear', 'lisflood' and 'hanazaki' models. If not provided, a value of 0  is used
+        Minimum outflow (m3/s). Required by the 'lionear', 'lisflood' and 'camaflood' models. If not provided, a value of 0  is used
     A: float (optional)
-        Reservoir catchment area (m2). Required by the 'hanazaki' model
+        Reservoir catchment area (m2). Required by the 'camaflood' model
     storage: pandas.Series (optional)
-        Time series of reservoir storage (m3). Required by the 'hanazaki' routine
+        Time series of reservoir storage (m3). Required by the 'camaflood' routine
     demand: pandas.Series (optional)
         Time series of water demand (m3/s). Required by the 'mhm' routine
         
@@ -85,7 +91,8 @@ def default_attributes(model_name: Literal['linear', 'lisflood', 'hanazaki', 'mh
     attributes = {
         'Vtot': Vtot,
         'Vmin': Vmin,
-        'Qmin': Qmin
+        'Qmin': Qmin,
+        'Atot': Atot if Atot is not None else None
     }
     
     # define model-specific reservoir attributes
@@ -107,7 +114,7 @@ def default_attributes(model_name: Literal['linear', 'lisflood', 'hanazaki', 'mh
             'Qf': Qf,
             'k': 1.2
         })
-    elif model_name.lower() == 'hanazaki':
+    elif model_name.lower() == 'camaflood':
         if A is None:
             raise ValueError(f"Model '{model_name}' requires the attribute 'A' reporting the reservoir catchment area (m2)")
         if storage is None:
@@ -135,7 +142,7 @@ def default_attributes(model_name: Literal['linear', 'lisflood', 'hanazaki', 'mh
             'avg_demand': demand.mean()
         })
     else:
-        raise ValueError('The model name must be one of the following: "linear", "lisflood", "hanazaki", "mhm"')
+        raise ValueError('The model name must be one of the following: "linear", "lisflood", "camaflood", "mhm"')
         
     return attributes
     
