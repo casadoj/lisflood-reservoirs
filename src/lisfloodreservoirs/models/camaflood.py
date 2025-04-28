@@ -42,12 +42,12 @@ class Camaflood(Reservoir):
         A: integer
             Area (m2) of the reservoir catchment
         Atot: integer (optional)
-            Reservoir area (m2) at full capacity
+            Reservoir area (m2) at maximum capacity
         At: int
             Simulation time step in seconds.
         """
         
-        super().__init__(Vmin, Vtot, None, Qf, Atot, At)
+        super().__init__(Vmin, Vtot, Qmin=None, Qf=Qf, Atot=Atot, At=At)
         
         # storage limits
         self.Vf = Vf
@@ -95,14 +95,17 @@ class Camaflood(Reservoir):
         """
         
         # estimate reservoir area at the beginning of the time step
-        if self.Atot and (P or E):
-            Ao = self.estimate_area(V)      
+        if P or E:
+            if self.Atot:
+                Ao = self.estimate_area(V)
+            else:
+                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
             
-        # update reservoir storage with the inflow volume, precipitation and evaporation
+        # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
-        if P and self.Atot:
+        if P:
             V += P * 1e-3 * Ao
-        if E and self.Atot:
+        if E:
             V -= E * 1e-3 * Ao
         if D:
             V -= D
@@ -274,13 +277,15 @@ class Camaflood(Reservoir):
     def get_params(self):
         """It generates a dictionary with the reservoir paramenters in the Hanazaki model."""
 
-        params = {'Vmin': self.Vmin,
-                  'Vf': self.Vf,
-                  'Ve': self.Ve,
-                  'Vtot': self.Vtot,
-                  'Qn': self.Qn,
-                  'Qf': self.Qf,
-                  'k': self.k}
+        params = {
+            'Vmin': self.Vmin,
+            'Vf': self.Vf,
+            'Ve': self.Ve,
+            'Vtot': self.Vtot,
+            'Qn': self.Qn,
+            'Qf': self.Qf,
+            'k': self.k
+        }
         params = {key: float(value) for key, value in params.items()}
 
         return params
