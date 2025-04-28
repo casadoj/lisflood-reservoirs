@@ -70,10 +70,12 @@ def main():
 
     # === read time series ===
     try:
-        timeseries = read_timeseries(cfg.PATH_DATA / 'time_series' / 'csv',
-                                     attributes.index,
-                                     periods,
-                                     variables=['inflow', 'outflow', 'storage'])
+        timeseries = read_timeseries(
+            path=cfg.PATH_DATA / 'time_series' / 'csv',
+            reservoirs=attributes.index,
+            periods=periods,
+            variables=['inflow', 'outflow', 'storage', 'evaporation', 'precipitation']
+        )
         logger.info(f'{len(timeseries)} reservoirs with timeseries')
     except IOError:
         logger.exception('Failed to read time series from {0}: {1}'.format(cfg.PATH_DATA / 'time_series' / 'csv'))
@@ -94,14 +96,15 @@ def main():
         try:
             path_obs = cfg.PATH_DEF.parent.parent / 'observed'
             path_obs.mkdir(exist_ok=True)
-            plot_resops(ts.storage,
-                        ts.elevation if 'elevation' in ts.columns else None,
-                        ts.inflow,
-                        ts.outflow,
-                        attributes.loc[grand_id, 'CAP_MCM'] * 1e6,
-                        title=grand_id,
-                        save=path_obs / f'{grand_id}_line.jpg'
-                       )
+            plot_resops(
+                storage=ts.storage,
+                elevation=ts.elevation if 'elevation' in ts.columns else None,
+                inflow=ts.inflow,
+                outflow=ts.outflow,
+                capacity=attributes.loc[grand_id, 'CAP_MCM'] * 1e6,
+                title=grand_id,
+                save=path_obs / f'{grand_id}_line.jpg'
+            )
             logger.info(f'Line plot of observations from reservoir {grand_id}')
         except IOError:
             logger.exception(f'The line plot of observed records could not be generated')
@@ -115,9 +118,11 @@ def main():
             # time series of water demand
             if cfg.MODEL == 'mhm':
                 bias = ts.outflow.mean() / ts.inflow.mean()
-                demand = create_demand(ts.outflow,
-                                       water_stress=min(1, bias),
-                                       window=28)
+                demand = create_demand(
+                    ts.outflow,
+                    water_stress=min(1, bias),
+                    window=28
+                )
             else:
                 demand = None
                 
@@ -129,6 +134,7 @@ def main():
                 Vmin,
                 Qmin=max(0, ts.outflow.min()),
                 A=int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6),
+                Atot=int(attributes.loc[grand_id, 'AREA_SKM'] * 1e6),
                 storage=ts.storage,
                 demand=demand
             ) 
@@ -150,9 +156,13 @@ def main():
             sim_cfg = copy.deepcopy(cfg.SIMULATION_CFG)
             if cfg.MODEL == 'mhm':
                 sim_cfg.update({'demand': demand})
-            sim_def = res.simulate(inflow=ts.inflow,
-                                   Vo=ts.storage.iloc[0],
-                                   **sim_cfg)
+            sim_def = res.simulate(
+                inflow=ts.inflow,
+                Vo=ts.storage.iloc[0],
+                precipitation=ts.precipitation if 'precipitation' in ts.columns else None,
+                evaporation=ts.evaporation if 'evaporation' in ts.columns else None,
+                **sim_cfg
+            )
             sim_def.to_csv(cfg.PATH_DEF / f'{grand_id}_simulation.csv', float_format='%.3f')
 
             logger.info(f'Reservoir {grand_id} correctly simulated')
@@ -173,24 +183,26 @@ def main():
         
         # scatter plot simulation vs observation
         try:
-            res.scatter(sim_def,
-                        ts,
-                        norm=False,
-                        title=f'grand_id: {grand_id}',
-                        save=cfg.PATH_DEF / f'{grand_id}_scatter_obs_sim.jpg',
-                       )
+            res.scatter(
+                sim_def,
+                ts,
+                norm=False,
+                title=f'grand_id: {grand_id}',
+                save=cfg.PATH_DEF / f'{grand_id}_scatter_obs_sim.jpg'
+            )
             logger.info(f'Scatter plot of simulation from reservoir {grand_id}')
         except IOError:
             logger.exception(f'The scatter plot of reservoir {grand_id} could not be generated')
         
         # line plot simulation vs observation
         try:
-            res.lineplot({#'GloFAS': glofas,
-                          'sim': sim_def},
-                         ts,
-                         figsize=(12, 6),
-                         save=cfg.PATH_DEF / f'{grand_id}_line_obs_sim.jpg',
-                       )
+            res.lineplot(
+                {#'GloFAS': glofas,
+                    'sim': sim_def},
+                ts,
+                figsize=(12, 6),
+                save=cfg.PATH_DEF / f'{grand_id}_line_obs_sim.jpg'
+            )
             logger.info(f'Line plot of simulation from reservoir {grand_id}')
         except IOError:
             logger.exception(f'The line plot of reservoir {grand_id} could not be generated')
