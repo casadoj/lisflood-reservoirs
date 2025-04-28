@@ -11,12 +11,15 @@ from ..utils.plots import reservoir_analysis
 class Reservoir:
     """Parent class to model reservoirs"""
     
-    def __init__(self,
-                 Vmin: float,
-                 Vtot: float,
-                 Qmin: Optional[float] = None,
-                 Qf: Optional[float] = None,
-                 At: int = 86400):
+    def __init__(
+        self,
+        Vmin: float,
+        Vtot: float,
+        Qmin: Optional[float] = None,
+        Qf: Optional[float] = None,
+        Atot: Optional[float] = None,
+        At: int = 86400
+    ):
         """
         Parameters:
         -----------
@@ -28,6 +31,8 @@ class Reservoir:
             Minimum outflow (m3/s)
         Qf: float, optional
             Non-damaging outflow (m3/s)
+        Atot: float (optional)
+            Reservoir area (m2) at maximum capacity
         At: int
             Simulation time step in seconds.
         """
@@ -36,15 +41,17 @@ class Reservoir:
         self.Vtot = Vtot
         self.Qmin = Qmin
         self.Qf = Qf
+        self.Atot = Atot
         self.At = At
 
-    def timestep(self, 
-                 I: float, 
-                 V: float,
-                 P: Optional[float] = None,
-                 E: Optional[float] = None,
-                 D: Optional[float] = None
-                ) -> List[float]:
+    def timestep(
+        self, 
+        I: float, 
+        V: float,
+        P: Optional[float] = None,
+        E: Optional[float] = None,
+        D: Optional[float] = None
+    ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
         
         Parameters:
@@ -62,19 +69,20 @@ class Reservoir:
             
         Returns:
         --------
-        Q, V: List[float]
-            Outflow (m3/s) and updated storage (m3)
+        Q, V, A: List[float]
+            Outflow (m3/s), updated storage (m3) and area (m2)
         """
         
         pass
     
-    def simulate(self,
-                 inflow: pd.Series,
-                 Vo: Optional[float ] = None,
-                 precipitation: Optional[pd.Series] = None,
-                 evaporation: Optional[pd.Series] = None,
-                 demand: Optional[pd.Series] = None,
-                ) -> pd.DataFrame:
+    def simulate(
+        self,
+        inflow: pd.Series,
+        Vo: Optional[float ] = None,
+        precipitation: Optional[pd.Series] = None,
+        evaporation: Optional[pd.Series] = None,
+        demand: Optional[pd.Series] = None,
+    ) -> pd.DataFrame:
         """Given an inflow time series (m3/s) and an initial storage (m3), it computes the time series of outflow (m3/s) and storage (m3)
         
         Parameters:
@@ -92,7 +100,7 @@ class Reservoir:
         Returns:
         --------
         pd.DataFrame
-            A table that concatenates the storage, inflow and outflow time series.
+            A table that concatenates the storage (m3), inflow (m3/s), outflow (m3/s) and area (m2) time series.
         """
         
         if Vo is None:
@@ -107,20 +115,30 @@ class Reservoir:
         
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
+        area = pd.Series(index=inflow.index, dtype=float, name='area')
         for ts in tqdm(inflow.index):
-            # compute outflow and new storage
-            if demand is None:
-                Q, V = self.timestep(inflow[ts], Vo)
-            else:
-                Q, V = self.timestep(inflow[ts], Vo, demand[ts])
+            # compute outflow, storage and area
+            Q, V, A = self.timestep(
+                inflow[ts], 
+                Vo, 
+                P=precipitation[ts] if precipitation is not None else None, 
+                E=evaporation[ts] if evaporation is not None else None,
+                D=demand[ts] if demand is not None else None
+            )
             storage[ts] = V
             outflow[ts] = Q
+            area[ts] = A
             # update current storage
             Vo = V
 
-        return pd.concat((storage, inflow, outflow), axis=1)
+        return pd.concat((storage, inflow, outflow, area), axis=1).dropna(axis=1, how='all')
     
-    def estimate_level(self, volume: pd.Series, elev_masl: float, dam_hgt_m: float, ) -> pd.Series:
+    def estimate_level(
+        self, 
+        volume: pd.Series, 
+        elev_masl: float, 
+        dam_hgt_m: float
+    ) -> pd.Series:
         """Estimates the reservoir level assuming a triangular pyramid shape
         
             level_masl = elev_masl - {dam_hgt_m * [1 - (volume / Vtot)**(1/3)]}
@@ -145,7 +163,10 @@ class Reservoir:
         
         return level_masl
     
-    def estimate_area(self, volume: pd.Series, Atot: float, ) -> pd.Series:
+    def estimate_area(
+        self, 
+        volume: pd.Series, 
+    ) -> pd.Series:
         """Estimates the reservoir level assuming a triangular pyramid shape
         
             area = Atot * (volume / Vtot)**(2/3)
@@ -154,8 +175,7 @@ class Reservoir:
         -----------
         volume: pandas.Series
             Time series of reservoir storage
-        Atot: float
-            Reservoir area at maximum capacity. The units of the result will be the same as those provided here
+        . The units of the result will be the same as those provided here
             
         Returns:
         --------
@@ -163,7 +183,7 @@ class Reservoir:
             Time series of reservoir area
         """
         
-        area = Atot * (volume / self.Vtot)**(2/3)
+        area = self.Atot * (volume / self.Vtot)**(2/3)
         
         return area
     
@@ -178,9 +198,10 @@ class Reservoir:
 
         pass
 
-    def normalize_timeseries(self,
-                             timeseries: pd.DataFrame
-                            ) -> pd.DataFrame:
+    def normalize_timeseries(
+        self,
+        timeseries: pd.DataFrame
+    ) -> pd.DataFrame:
         """It normalizes the timeseries using the total reservoir capacity and the non-damaging outflow. In this way, the storage time series ranges between 0 and 1, and the inflow and outflow time series are in the order of units.
         
         Parameters:
@@ -201,15 +222,16 @@ class Reservoir:
 
         return ts_norm
     
-    def scatter(self, 
-                series1: pd.DataFrame, 
-                series2: Optional[pd.DataFrame] = None, 
-                norm: bool = True, 
-                Vlims: Optional[List[float]] = None,
-                Qlims: Optional[List[float]] = None,
-                save: Optional[Union[Path, str]] = None,  # Optional added here
-                **kwargs
-               ):
+    def scatter(
+        self, 
+        series1: pd.DataFrame, 
+        series2: Optional[pd.DataFrame] = None, 
+        norm: bool = True, 
+        Vlims: Optional[List[float]] = None,
+        Qlims: Optional[List[float]] = None,
+        save: Optional[Union[Path, str]] = None,  # Optional added here
+        **kwargs
+    ):
         """It compares two reservoir timeseries (inflow, outflow and storage) using the function 'reservoir_analysis'. If only 1 time series is given, the plot will simply show the reservoir behaviour of that set of time series.
         
         Parameters:
@@ -258,13 +280,15 @@ class Reservoir:
                            x1lim=x1lim,
                            save=save)
         
-    def lineplot(self,
-                 sim: Dict[str, pd.DataFrame],
-                 obs: Optional[pd.DataFrame] = None,
-                 Vlims: Optional[List[float]] = None,
-                 Qlims: Optional[List[float]] = None,
-                 save: Optional[Union[Path, str]] = None,
-                 **kwargs):
+    def lineplot(
+        self,
+        sim: Dict[str, pd.DataFrame],
+        obs: Optional[pd.DataFrame] = None,
+        Vlims: Optional[List[float]] = None,
+        Qlims: Optional[List[float]] = None,
+        save: Optional[Union[Path, str]] = None,
+        **kwargs
+    ):
         """It plots the simulated time series of outflow and storage. If the observed time series is provided, it is plotted and the modified KGE shown.
 
         Parameters:
