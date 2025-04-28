@@ -84,11 +84,13 @@ def plot_reservoir_map(
         plt.savefig(save, dpi=300, bbox_inches='tight')
         
         
-def plot_attributes(df: pd.DataFrame,
-                    x: pd.Series,
-                    y: pd.Series,
-                    save: Optional[Union[Path, str]] = None,
-                    **kwargs):
+def plot_attributes(
+    df: pd.DataFrame,
+    x: pd.Series,
+    y: pd.Series,
+    save: Optional[Union[Path, str]] = None,
+    **kwargs
+):
     """
     It creates maps (scatter plots) of the static attributes associated to specific points.
 
@@ -150,12 +152,14 @@ def plot_attributes(df: pd.DataFrame,
         plt.savefig(save, dpi=300, bbox_inches='tight')
         
         
-def compare_flows(storage: pd.Series,
-                  outflow: pd.Series,
-                  inflow1: pd.Series,
-                  inflow2: pd.Series,
-                  save: Union[str, Path] = None,
-                  **kwargs):
+def compare_flows(
+    storage: pd.Series,
+    outflow: pd.Series,
+    inflow1: pd.Series,
+    inflow2: pd.Series,
+    save: Union[str, Path] = None,
+    **kwargs
+):
     """
     It creates a figure with four plots. Three of them are scatter plots comparing pair-wisely the time series of outflow and inflows. The fourth plot shows the empirical cumulative of the three flow time series. Storage is only used in the colour scale.
     
@@ -243,10 +247,12 @@ def compare_flows(storage: pd.Series,
         plt.close(fig)
         
         
-def create_cmap(cmap: str,
-                bounds: List,
-                name: str = '',
-                specify_color: Tuple = None):
+def create_cmap(
+    cmap: str,
+    bounds: List,
+    name: str = '',
+    specify_color: Tuple = None
+):
     """Given the name of a colour map and the boundaries, it creates a discrete colour ramp for future plots
     
     Inputs:
@@ -271,14 +277,16 @@ def create_cmap(cmap: str,
     
     return cmap, norm
 
-
-def plot_resops(storage: pd.Series = None,
-                elevation: pd.Series = None,
-                inflow: pd.Series = None,
-                outflow: pd.Series = None,
-                capacity: Union[List[float], float] = None,
-                level: Union[List[float], float] = None,
-                save: Union[str, Path] = None, **kwargs):
+def plot_resops(
+    storage: pd.Series = None,
+    elevation: pd.Series = None,
+    inflow: pd.Series = None,
+    outflow: pd.Series = None,
+    capacity: Union[List[float], float] = None,
+    level: Union[List[float], float] = None,
+    save: Union[str, Path] = None,
+    **kwargs
+):
     """It creates a plot with two graphs that shows the reservoir time series. The first graph is the storage-elevation curve of the reservoir (if both storage and elevation time series are available). The second graph is the time series of storage, inflow and outflow.
     
     Parameters:
@@ -425,7 +433,13 @@ def plot_resops(storage: pd.Series = None,
 #         plt.savefig(save, dpi=300, bbox_inches='tight');
 
 
-def plot_decomposition(sim: pd.DataFrame, obs: pd.DataFrame = None, lims: List[float] = None, save: Union[str, Path] = None, **kwargs):
+def plot_decomposition(
+    sim: pd.DataFrame,
+    obs: pd.DataFrame = None,
+    lims: List[float] = None,
+    save: Union[str, Path] = None,
+    **kwargs
+):
     """It creates a figure that compares the decomposition of the observed and simulated time series. The figure is composed of 4 plots: original time series, trend, seasonality and residuals. Each plot includes the performance in terms of modified KGE and its components.
     
     Parameters:
@@ -623,7 +637,17 @@ def plot_decomposition(sim: pd.DataFrame, obs: pd.DataFrame = None, lims: List[f
 #         plt.savefig(save, dpi=300, bbox_inches='tight')
         
         
-def reservoir_scatter(sim: pd.DataFrame, x: str, y: str, obs: pd.DataFrame = None, x_thr: List = None, y_thr: List = None, legend: bool = True, ax: Axes = None, **kwargs):
+def reservoir_scatter(
+    sim: pd.DataFrame, 
+    x: str, 
+    y: str, 
+    obs: pd.DataFrame = None, 
+    x_thr: List = None, 
+    y_thr: List = None, 
+    legend: bool = True, 
+    ax: Axes = None, 
+    **kwargs
+):
     """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
     
     Parameters:
@@ -716,7 +740,15 @@ def reservoir_scatter(sim: pd.DataFrame, x: str, y: str, obs: pd.DataFrame = Non
         ax.legend(frameon=False, loc=2)
  
         
-def reservoir_kde(sim: pd.DataFrame, obs: pd.DataFrame = None, x: str = None, y: str = None, thr: List = None, ax: Axes = None, **kwargs):
+def reservoir_kde(
+    sim: pd.DataFrame, 
+    obs: pd.DataFrame = None, 
+    x: str = None, 
+    y: str = None, 
+    thr: List = None, 
+    ax: Axes = None, 
+    **kwargs
+):
     """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
     
     Parameters:
@@ -807,7 +839,17 @@ def reservoir_kde(sim: pd.DataFrame, obs: pd.DataFrame = None, x: str = None, y:
             ax.set_yticklabels([])
 
             
-def reservoir_analysis(sim: pd.DataFrame, obs: pd.DataFrame = None, x1: str = 'storage', x2: str = 'inflow', y: str = 'outflow', x_thr: List = None, y_thr: List = None, save: Union[Path, str] = None, **kwargs):
+def reservoir_analysis(
+    sim: pd.DataFrame,
+    obs: pd.DataFrame = None,
+    x1: str = 'storage',
+    x2: str = 'inflow',
+    y: str = 'outflow',
+    x_thr: List = None,
+    y_thr: List = None,
+    save: Union[Path, str] = None,
+    **kwargs
+):
     """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line
     represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
     
@@ -878,8 +920,7 @@ def reservoir_analysis(sim: pd.DataFrame, obs: pd.DataFrame = None, x1: str = 's
     
     # density distribution: x1
     ax00 = plt.subplot(gs[0, 0])
-    reservoir_kde(sim, obs, x=x1, thr=x_thr, ax=ax00, xlim=ax10.get_xlim(), xticklabels=False,
-                  color=c)
+    reservoir_kde(sim, obs, x=x1, thr=x_thr, ax=ax00, xlim=ax10.get_xlim(), xticklabels=False,                   color=c)
     
     # density distribution: x2
     ax01 = plt.subplot(gs[0, 1])
@@ -888,7 +929,7 @@ def reservoir_analysis(sim: pd.DataFrame, obs: pd.DataFrame = None, x1: str = 's
 
     # density distribution: y
     ax12 = plt.subplot(gs[1, 2])
-    reservoir_kde(sim, obs, y=y, thr=y_thr, ax=ax12, ylim=ax10.get_ylim(), yticklabels=False)
+    reservoir_kde(sim, obs, y=y, thr=y_thr, ax=ax12, ylim=ax10.get_ylim(), yticklabels=False, color=c)
     
     fig.legend(*ax10.get_legend_handles_labels(), frameon=False, ncol=3, loc=8, bbox_to_anchor=[.25, -.04, .5, .05])
     
@@ -900,7 +941,15 @@ def reservoir_analysis(sim: pd.DataFrame, obs: pd.DataFrame = None, x1: str = 's
         plt.close(fig)
         
         
-def maps_performance(x: pd.Series, y: pd.Series, performance: pd.DataFrame, s: Union[pd.Series, int] = None, polygons: gpd.GeoDataFrame = None, save: Union[Path, str] = None, **kwargs):
+def maps_performance(
+    x: pd.Series, 
+    y: pd.Series, 
+    performance: pd.DataFrame, 
+    s: Union[pd.Series, int] = None, 
+    polygons: gpd.GeoDataFrame = None, 
+    save: Union[Path, str] = None, 
+    **kwargs
+):
     """It creates a figure that contains 4 maps with the KGE and its 3 components.
     
     Inputs:
@@ -970,7 +1019,14 @@ def maps_performance(x: pd.Series, y: pd.Series, performance: pd.DataFrame, s: U
         plt.savefig(save, dpi=300, bbox_inches='tight')
         
         
-def plot_iterations(iters: pd.DataFrame, pareto: pd.DataFrame, best_iter: int, cols: List = ['like1', 'like2'], save: Union[str, Path] = None, **kwargs):
+def plot_iterations(
+    iters: pd.DataFrame, 
+    pareto: pd.DataFrame, 
+    best_iter: int, 
+    cols: List = ['like1', 'like2'], 
+    save: Union[str, Path] = None, 
+    **kwargs
+):
     """It creates a scatter plot that shows the performance of the iterations in the calibration. On top of the scatter plot a line depicts the Pareto front, from which the best iteration is taken.
     
     Inputs:
@@ -1178,14 +1234,14 @@ def boxplot_comparison(
     Returns
     -------
     None
-        Displays the plot and optionally saves it to file.
+        Displays the plot and optionally saves it to a file.
     """
 
     w = kwargs.get('width', .15)
     figsize = kwargs.get('figsize', (6, 3))
     alpha = kwargs.get('alpha', .7)
     
-    colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivegreen']
+    colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivedrab']
     colors = {str(key): color for key, color in zip(performance[col_dim].data, colors)}
     
     n = len(performance[ax_dim])
@@ -1196,8 +1252,8 @@ def boxplot_comparison(
         perf = performance.sel({ax_dim: title, 'metric': metric})
         perf = perf.dropna(col_dim, how='all')
         
-        perf_dct = {var: perf[var].to_pandas().transpose() for var in ['storage', 'outflow']}
-        perf_dct['storage &\noutflow'] = 1 - ((1 - perf_dct['storage'])**2 + (1 - perf_dct['outflow'])**2)**.5
+        perf_dct = {var: perf[var].to_pandas().transpose() for var in ['outflow', 'storage']}
+        perf_dct['outflow &\nstorage'] = 1 - ((1 - perf_dct['outflow'])**2 + (1 - perf_dct['storage'])**2)**.5
     
         ticks_labels = {x: var for x, var in enumerate(perf_dct, start=1)}
         for x, var in ticks_labels.items():
