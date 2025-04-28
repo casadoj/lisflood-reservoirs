@@ -1,18 +1,22 @@
 import numpy as np
 import pandas as pd
-from typing import Union, List, Tuple, Dict
+from typing import Union, List, Tuple, Dict, Optional
 
 from .basemodel import Reservoir
+
 
 class Linear(Reservoir):
     """Representation of a linear reservoir"""
     
-    def __init__(self,
-                 Vmin: float,
-                 Vtot: float,
-                 Qmin: float,
-                 T: int,
-                 At: int = 86400):
+    def __init__(
+        self,
+        Vmin: float,
+        Vtot: float,
+        Qmin: float,
+        T: int,
+        Atot: Optional[int] = None,
+        At: int = 86400
+    ):
         """        
         Parameters:
         -----------
@@ -24,11 +28,13 @@ class Linear(Reservoir):
             Minimum outflow (m3/s)
         T: int
             Residence time in days. The coefficient of the linear reservoir is the inverse of T (1/T)
+        Atot: float (optional)
+            Reservoir area (m2) at maximum capacity
         At: int
             Simulation time step in seconds.
         """
         
-        super().__init__(Vmin, Vtot, Qmin, Qf=None, At=At)
+        super().__init__(Vmin, Vtot, Qmin, Qf=None, Atot=Atot, At=At)
         
         # storage limits
         self.Vmin = Vmin
@@ -39,10 +45,17 @@ class Linear(Reservoir):
         # release coefficient
         self.k = 1 / (T * self.At)
         
-    def timestep(self, 
-                 I: float, 
-                 V: float
-                ) -> List[float]:
+        # reservoir area
+        self.Atot = Atot
+        
+    def timestep(
+        self, 
+        I: float, 
+        V: float,
+        P: Optional[float] = None,
+        E: Optional[float] = None,
+        D: Optional[float] = None,
+    ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
         
         Parameters:
@@ -51,17 +64,36 @@ class Linear(Reservoir):
             Inflow (m3/s)
         V: float
             Volume stored in the reservoir (m3)
+        P: float (optional)
+            Precipitaion on the reservoir (mm)
+        E: float (optional)
+            Open water evaporation (mm)
+        D: float (optional)
+            Consumptive demand (m3)
             
         Returns:
         --------
-        Q, V: List[float]
-            Outflow (m3/s) and updated storage (m3)
+        Q, V, A: List[float]
+            Outflow (m3/s), updated storage (m3) and area (m2)
         """
         
         eps = 1e-1
         
-        # update reservoir storage with the inflow volume
+        # estimate reservoir area at the beginning of the time step
+        if P or E:
+            if self.Atot:
+                Ao = self.estimate_area(V)
+            else:
+                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
+            
+        # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
+        if P:
+            V += P * 1e-3 * Ao
+        if E:
+            V -= E * 1e-3 * Ao
+        if D:
+            V -= D
         
         # ouflow depending on the inflow and storage level
         Q = V * self.k
@@ -76,15 +108,23 @@ class Linear(Reservoir):
         assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
         assert 0 <= Q, 'The simulated outflow is negative'
         
-        return Q, V
+        # estimate reservoir area at the end of the time step
+        if self.Atot:
+            A = self.estimate_area(V)
+        else:
+            A = np.nan
+            
+        return Q, V, A
     
     def get_params(self):
         """It generates a dictionary with the reservoir paramenters in the model."""
 
-        params = {'Vmin': self.Vmin,
-                  'Vtot': self.Vtot,
-                  'Qmin': self.Qmin,
-                  'T': 1 / (self.k * self.At)}
+        params = {
+            'Vmin': self.Vmin,
+            'Vtot': self.Vtot,
+            'Qmin': self.Qmin,
+            'T': 1 / (self.k * self.At)
+        }
         params = {key: float(value) for key, value in params.items()}
 
         return params
