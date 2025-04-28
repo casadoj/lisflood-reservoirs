@@ -16,21 +16,20 @@ class Config:
         self.PATH_DATA = Path(self.cfg['data']['path'])
         self.RESERVOIRS_FILE = self.cfg['data']['reservoirs']
         self.PERIODS_FILE = self.cfg['data']['periods']
+        path_results = Path(self.cfg['data'].get('results', './'))
         
         # model configuration
         self.MODEL = self.cfg['simulation']['model'].lower()
         self.SIMULATION_CFG = self.cfg['simulation'].get('config', {})
-        path_sim = Path(self.cfg['simulation'].get('path', './'))
-        self.PATH_DEF = path_sim / f'{self.MODEL}' / 'default'
+        self.PATH_DEF = path_results / f'{self.MODEL}' / 'default'
         self.PATH_DEF.mkdir(parents=True, exist_ok=True)
         
         # calibration
-        self.INPUT = self.cfg['calibration']['input'][0]
+        self.INPUT = self.cfg['calibration']['input']#[0]
         self.TARGET = self.cfg['calibration']['target']
         self.MAX_ITER = self.cfg['calibration'].get('max_iter', 1000)
         self.COMPLEXES = self.cfg['calibration'].get('COMPLEXES', 4)
-        path_calib = Path(self.cfg['calibration'].get('path', './'))
-        path_calib = path_calib / self.MODEL / 'calibration'
+        path_calib = path_results / self.MODEL / 'calibration'
         if len(self.TARGET) == 1:
             self.PATH_CALIB = path_calib / 'univariate' / self.TARGET[0]
         elif len(self.TARGET) == 2:
@@ -40,10 +39,11 @@ class Config:
         self.PATH_CALIB.mkdir(parents=True, exist_ok=True)
         
         
-def read_attributes(path: Union[str, Path],
-                    reservoirs: Optional[List] = None,
-                    index_col: Optional[str] = 'GRAND_ID'
-                   ) -> pd.DataFrame:
+def read_attributes(
+    path: Union[str, Path],
+    reservoirs: Optional[List] = None,
+    index_col: Optional[str] = 'GRAND_ID'
+) -> pd.DataFrame:
     """It reads all the attribute tables from the specified dataset and, if provided, filters the selected reservoirs.
     
     Parameters:
