@@ -22,7 +22,7 @@ from .utils.logging import setup_logger
 
 def main():
 
-    # read argument specifying the configuration file
+    # read arguments
     parser = argparse.ArgumentParser(
         description="""
         Run the reservoir routine with default parameters.
@@ -98,7 +98,14 @@ def main():
         precipitation = ts[cfg.PRECIPITATION] if cfg.PRECIPITATION in ts.columns else None
         evaporation = ts[cfg.EVAPORATION] if cfg.EVAPORATION in ts.columns else None
         demand = ts[cfg.DEMAND] if cfg.DEMAND in ts.columns else None
-
+        if cfg.MODEL == 'mhm':
+            bias = ts.outflow.mean() / inflow.mean()
+            demand = create_demand(
+                ts.outflow,
+                water_stress=min(1, bias),
+                window=28
+            )
+            
         # plot observed time series
         try:
             path_obs = cfg.PATH_DEF.parent.parent / 'observed'
@@ -118,34 +125,19 @@ def main():
         
         # estimate default parameters
         try:
-            # storage limits (m3)
-            Vtot = ts.storage.max()
-            Vmin = max(0, min(0.1 * Vtot, ts.storage.min()))
-            
-            # time series of water demand
-            if cfg.MODEL == 'mhm':
-                bias = ts.outflow.mean() / ts[cfg.INFLOW].mean()
-                demand = create_demand(
-                    ts.outflow,
-                    water_stress=min(1, bias),
-                    window=28
-                )
-            else:
-                demand = None
-                
-            # default reservoir attributes
+            Vtot = ts.storage.max(),
+            Vmin = 
             reservoir_attrs = default_attributes(
                 cfg.MODEL,
-                ts[cfg.INFLOW],
+                inflow,
                 Vtot,
-                Vmin,
+                Vmin=max(0, min(0.1 * Vtot, ts.storage.min())),
                 Qmin=max(0, ts.outflow.min()),
                 A=int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6),
                 Atot=int(attributes.loc[grand_id, 'AREA_SKM'] * 1e6),
                 storage=ts.storage,
                 demand=demand
             ) 
-            
         except RuntimeError:
             logger.exception(f'Default parameters for reservoir {grand_id} could not be estimated')
             continue
@@ -160,16 +152,12 @@ def main():
                 yaml.dump(res.get_params(), file)
 
             # simulate the reservoir
-            sim_cfg = copy.deepcopy(cfg.SIMULATION_CFG)
-            if cfg.MODEL == 'mhm':
-                sim_cfg.update({'demand': demand})
             sim_def = res.simulate(
                 inflow=inflow,
                 Vo=ts.storage.iloc[0],
                 precipitation=precipitation,
                 evaporation=evaporation,
                 demand=demand,
-                **sim_cfg
             )
             sim_def.to_csv(cfg.PATH_DEF / f'{grand_id}_simulation.csv', float_format='%.3f')
 
@@ -215,7 +203,7 @@ def main():
         except IOError:
             logger.exception(f'The line plot of reservoir {grand_id} could not be generated')
 
-        del res, sim_def, sim_cfg, reservoir_attrs, performance_def
+        del res, sim_def, reservoir_attrs, performance_def
 
 if __name__ == "__main__":
     main()
