@@ -59,9 +59,6 @@ class Camaflood(Reservoir):
         # release coefficient
         self.k = max(1 - 5 * (Vtot - Vf) / A, 0)
         
-        # reservoir area
-        self.Atot = Atot
-        
     def timestep(
         self,
         I: float,

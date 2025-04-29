@@ -1,26 +1,28 @@
 import numpy as np
 import pandas as pd
-from typing import Union, List, Tuple, Dict
+from typing import Union, List, Tuple, Dict, Optional
 
 from .basemodel import Reservoir
-
 
 
 class mHM(Reservoir):
     """Representation of reservoir routing in the Mesoscale Hydrological Model (mHM) as explained in Shrestha et al (2024)"""
     
-    def __init__(self,
-                 Vmin: float,
-                 Vtot: float,
-                 Qmin: float,
-                 avg_inflow: float,
-                 avg_demand: float,
-                 w: float = 0.1, # Shin et al. (2019)
-                 alpha: float = 0.5, # called c*  in Shrestha et al. (2024). Default value from Hanasaki et al. (2006)
-                 beta: float = 1, # Shin et al. (2019)
-                 gamma: float = 0.85, # Shin et al. (2019)
-                 lambda_: float = 1,
-                 At: int = 86400):
+    def __init__(
+        self,
+        Vmin: float,
+        Vtot: float,
+        Qmin: float,
+        avg_inflow: float,
+        avg_demand: float,
+        w: float = 0.1, # Shin et al. (2019)
+        alpha: float = 0.5, # called c*  in Shrestha et al. (2024). Default value from Hanasaki et al. (2006)
+        beta: float = 1, # Shin et al. (2019)
+        gamma: float = 0.85, # Shin et al. (2019)
+        lambda_: float = 1,
+        Atot: Optional[int] = None,
+        At: int = 86400
+    ):
         """        
         Parameters:
         -----------
@@ -44,6 +46,8 @@ class mHM(Reservoir):
             Dimensionless parameter that defines the normal storage: Vn = gamma * Vtot
         lambda_: float
             Dimensionless parameter that further controls the hedging in relation to the current reservoir filling
+        Atot: integer (optional)
+            Reservoir area (m2) at maximum capacity
         At: int
             Simulation time step in seconds.
         """
@@ -55,7 +59,7 @@ class mHM(Reservoir):
         # make sure that Vmin is not smaller than Vn
         Vmin = min(Vmin, gamma * Vtot)
             
-        super().__init__(Vmin, Vtot, Qmin, Qf=None, At=At)
+        super().__init__(Vmin, Vtot, Qmin, Qf=None, Atot=Atot, At=At)
         
         # demand and degree of regulation
         self.avg_inflow = avg_inflow
@@ -74,11 +78,14 @@ class mHM(Reservoir):
         # partition coefficient betweee demand-controlled (rho == 1) and non-demand-controlled reservoirs
         self.rho = min(1, (self.dor / alpha)**beta)
     
-    def timestep(self,
-                 I: float,
-                 V: float,
-                 D: float = 0.0
-                ) -> List[float]:
+    def timestep(
+        self,
+        I: float,
+        V: float,
+        P: Optional[float] = None,
+        E: Optional[float] = None,
+        D: float = 0.0
+    ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
         
         Parameters:
@@ -87,13 +94,17 @@ class mHM(Reservoir):
             Inflow (m3/s)
         V: float
             Volume stored in the reservoir (m3)
+        P: float (optional)
+            Precipitaion on the reservoir (mm)
+        E: float (optional)
+            Open water evaporation (mm)
         D: float
             Water demand (m3). It defaults to zero
             
         Returns:
         --------
-        Q, V: List[float]
-            Outflow (m3/s) and updated storage (m3)
+        Q, V, A: List[float]
+            Outflow (m3/s), updated storage (m3) and area (m2)
         """
         
         eps = 1e-3
@@ -108,9 +119,22 @@ class mHM(Reservoir):
         # outflow
         kappa = (V / self.Vn)**self.lambda_
         Q = self.rho * kappa * hedged_demand + (1 - self.rho) * I
+        
+        # estimate reservoir area at the beginning of the time step
+        if P or E:
+            if self.Atot:
+                Ao = self.estimate_area(V)
+            else:
+                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
             
-        # update reservoir storage with the inflow volume
+        # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
+        if P:
+            V += P * 1e-3 * Ao
+        if E:
+            V -= E * 1e-3 * Ao
+        if D:
+            V -= D
         
         # ouflow depending on the minimum outflow and storage level
         Q = max(self.Qmin, Q)
@@ -119,10 +143,6 @@ class mHM(Reservoir):
         elif V - Q * self.At < self.Vmin:
             Q = (V - self.Vmin) / self.At - eps
         Q = max(0, Q)
-                
-        # # ouflow depending on the inflow and storage level
-        # Qmin = min(self.Qmin, (V - self.Vmin) / self.At - eps)
-        # Qmax = max(Q, (V - self.Vtot) / self.At + eps)
             
         # update reservoir storage with the inflow volume
         V -= Q * self.At
@@ -131,21 +151,29 @@ class mHM(Reservoir):
         assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
         assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
         
-        return Q, V
+        # estimate reservoir area at the end of the time step
+        if self.Atot:
+            A = self.estimate_area(V)
+        else:
+            A = np.nan
+            
+        return Q, V, A
     
     def get_params(self):
         """It generates a dictionary with the reservoir paramenters in the model."""
 
-        params = {'Vmin': self.Vmin,
-                  'Vn': self.Vn,
-                  'Vtot': self.Vtot,
-                  'Qmin': self.Qmin,
-                  'w': self.w,
-                  'alpha': self.alpha,
-                  'beta': self.beta,
-                  'gamma': self.gamma,
-                  'lambda': self.lambda_,
-                  'rho': self.rho}
+        params = {
+            'Vmin': self.Vmin,
+            'Vn': self.Vn,
+            'Vtot': self.Vtot,
+            'Qmin': self.Qmin,
+            'w': self.w,
+            'alpha': self.alpha,
+            'beta': self.beta,
+            'gamma': self.gamma,
+            'lambda': self.lambda_,
+            'rho': self.rho
+        }
         params = {key: float(value) for key, value in params.items()}
 
         return params

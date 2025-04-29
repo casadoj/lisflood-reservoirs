@@ -45,9 +45,6 @@ class Linear(Reservoir):
         # release coefficient
         self.k = 1 / (T * self.At)
         
-        # reservoir area
-        self.Atot = Atot
-        
     def timestep(
         self, 
         I: float, 

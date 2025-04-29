@@ -64,9 +64,6 @@ class Lisflood(Reservoir):
         # outflow limits
         self.Qn = Qn
         self.k = k
-        
-        # reservoir area
-        self.Atot = Atot
     
     def timestep(
         self,
