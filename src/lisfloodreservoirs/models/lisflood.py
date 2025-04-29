@@ -7,26 +7,28 @@ import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from tqdm.auto import tqdm
-from typing import Union, List, Tuple, Dict
+from typing import Union, List, Tuple, Dict, Optional
 
 from .basemodel import Reservoir
-        
 
         
 class Lisflood(Reservoir):
     """Representation of a reservoir in the LISFLOOD-OS hydrological model."""
     
-    def __init__(self,
-                 Vmin: float,
-                 Vn: float,
-                 Vn_adj: float,
-                 Vf: float,
-                 Vtot: float,
-                 Qmin: float,
-                 Qn: float,
-                 Qf: float,
-                 k: float = 1.2,
-                 At: int = 86400):
+    def __init__(
+        self,
+        Vmin: float,
+        Vn: float,
+        Vn_adj: float,
+        Vf: float,
+        Vtot: float,
+        Qmin: float,
+        Qn: float,
+        Qf: float,
+        k: float = 1.2,
+        Atot: Optional[int] = None,
+        At: int = 86400
+    ):
         """
         Parameters:
         -----------
@@ -46,11 +48,13 @@ class Lisflood(Reservoir):
             Normal outflow (m3/s)
         Qf: float
             Non-damaging outflow (m3/s)
+        Atot: integer (optional)
+            Reservoir area (m2) at maximum capacity
         At: int
             Simulation time step in seconds.
         """
         
-        super().__init__(Vmin, Vtot, Qmin, Qf, At)
+        super().__init__(Vmin, Vtot, Qmin, Qf, Atot, At)
         
         # storage limits
         self.Vn = Vn
@@ -60,13 +64,19 @@ class Lisflood(Reservoir):
         # outflow limits
         self.Qn = Qn
         self.k = k
+        
+        # reservoir area
+        self.Atot = Atot
     
-    def timestep(self,
-                 I: float,
-                 V: float,
-                 limit_Q: bool = True,
-                 # k: float  = 1.2
-                ) -> List[float]:
+    def timestep(
+        self,
+        I: float,
+        V: float,
+        P: Optional[float] = None,
+        E: Optional[float] = None,
+        D: Optional[float] = None,
+        limit_Q: bool = True,
+    ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
         
         Parameters:
@@ -75,19 +85,36 @@ class Lisflood(Reservoir):
             Inflow (m3/s)
         V: float
             Volume stored in the reservoir (m3)
+        P: float (optional)
+            Precipitaion on the reservoir (mm)
+        E: float (optional)
+            Open water evaporation (mm)
+        D: float (optional)
+            Consumptive demand (m3)
         limit_Q: bool
             Whether to limit the outflow in the flood zone when it exceeds inflow by more than 'k' times
-        k: float
-            Release coefficient. If the reservoir is in the flood zone, the outflow is limited to k times the inflow
             
         Returns:
         --------
-        Q, V: List[float]
-            Outflow (m3/s) and updated storage (m3)
+        Q, V, A: List[float]
+            Outflow (m3/s), updated storage (m3) and area (m2)
         """
         
-        # update reservoir storage with the inflow volume
+        # estimate reservoir area at the beginning of the time step
+        if P or E:
+            if self.Atot:
+                Ao = self.estimate_area(V)
+            else:
+                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
+                
+        # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
+        if P:
+            V += P * 1e-3 * Ao
+        if E:
+            V -= E * 1e-3 * Ao
+        if D:
+            V -= D
         
         # ouflow depending on the storage level
         if V < 2 * self.Vmin:
@@ -101,7 +128,7 @@ class Lisflood(Reservoir):
             if limit_Q:
                 if Q > self.k * I:
                     Q = np.max([self.k * I, self.Qn])
-                    # # Q <= Qf at this storage zone, so this second approach (from the documentation) makes no sense
+                    # # Q <= Qf at this storage zone, so the definition in the documentation makes no sense
                     # Q = np.min([self.Qf, np.max([self.k * I, self.Qn])])
         elif V > self.Vf:
             Q = np.max([(V - self.Vf) / self.At, np.min([self.Qf, np.max([self.k * I, self.Qn])])])
@@ -115,14 +142,26 @@ class Lisflood(Reservoir):
         assert 0 <= V, 'The volume at the end of the timestep is negative.'
         assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
         
-        return Q, V
+        # estimate reservoir area at the end of the time step
+        if self.Atot:
+            A = self.estimate_area(V)
+        else:
+            A = np.nan
+            
+        return Q, V, A
     
-    def timestep2(self,
-                  I: float,
-                  V: float,
-                  # k: float = 1
-                 ) -> List[float]:
-        """Given an inflow and an initial storage values, it computes the corresponding outflow
+    def timestep2(
+        self,
+        I: float,
+        V: float,
+        P: Optional[float] = None,
+        E: Optional[float] = None,
+        D: Optional[float] = None
+    ) -> List[float]:
+        """Given an inflow and an initial storage values, it computes the corresponding outflow.
+        
+        This routine does not implement the limitation in outflow when the filling is between the normal adjusted and the flood zone.
+        It's equivalent to running the method `timestep()` with `limit_Q=False`
         
         Parameters:
         -----------
@@ -130,21 +169,34 @@ class Lisflood(Reservoir):
             Inflow (m3/s)
         V: float
             Volume stored in the reservoir (m3)
-        limit_Q: bool
-            Whether to limit the outflow in the flood zone when it exceeds inflow by more than 1.2 times
-        k: float
-            Release coefficient. If the reservoir is in the flood zone, the outflow is limited to k times the inflow
-        verbose: bool
-            Whether to show on screen the evolution
+        P: float (optional)
+            Precipitaion on the reservoir (mm)
+        E: float (optional)
+            Open water evaporation (mm)
+        D: float (optional)
+            Consumptive demand (m3)
             
         Returns:
         --------
-        Q, V: List[float]
-            Outflow (m3/s) and updated storage (m3)
+        Q, V, A: List[float]
+            Outflow (m3/s), updated storage (m3) and area (m2)
         """
         
-        # update reservoir storage with the inflow volume
+        # estimate reservoir area at the beginning of the time step
+        if P or E:
+            if self.Atot:
+                Ao = self.estimate_area(V)
+            else:
+                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
+                
+        # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
+        if P:
+            V += P * 1e-3 * Ao
+        if E:
+            V -= E * 1e-3 * Ao
+        if D:
+            V -= D
         
         # ouflow depending on the storage level
         if V < 2 * self.Vmin:
@@ -167,15 +219,26 @@ class Lisflood(Reservoir):
         assert 0 <= V, 'The volume at the end of the timestep is negative.'
         assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
         
-        return Q, V
+        # estimate reservoir area at the end of the time step
+        if self.Atot:
+            A = self.estimate_area(V)
+        else:
+            A = np.nan
+            
+        return Q, V, A
     
-    def timestep3(self,
-                  I: float,
-                  V: float,
-                  limit_Q: bool = True,
-                  # k: float  = 1.2
-                 ) -> List[float]:
-        """Given an inflow and an initial storage values, it computes the corresponding outflow
+    def timestep3(
+        self,
+        I: float,
+        V: float,
+        P: Optional[float] = None,
+        E: Optional[float] = None,
+        D: Optional[float] = None,
+        limit_Q: bool = True,
+    ) -> List[float]:
+        """Given an inflow and an initial storage values, it computes the corresponding outflow.
+        
+        This routine limits the outflow in the freeboard zone to the minimum between 𝑄𝑛𝑑 and 𝑘⋅𝐼.
         
         Parameters:
         -----------
@@ -183,19 +246,36 @@ class Lisflood(Reservoir):
             Inflow (m3/s)
         V: float
             Volume stored in the reservoir (m3)
+        P: float (optional)
+            Precipitaion on the reservoir (mm)
+        E: float (optional)
+            Open water evaporation (mm)
+        D: float (optional)
+            Consumptive demand (m3)
         limit_Q: bool
             Whether to limit the outflow in the flood zone when it exceeds inflow by more than 'k' times
-        k: float
-            Release coefficient. If the reservoir is in the flood zone, the outflow is limited to k times the inflow
             
         Returns:
         --------
-        Q, V: List[float]
-            Outflow (m3/s) and updated storage (m3)
+        Q, V, A: List[float]
+            Outflow (m3/s), updated storage (m3) and area (m2)
         """
         
-        # update reservoir storage with the inflow volume
+        # estimate reservoir area at the beginning of the time step
+        if P or E:
+            if self.Atot:
+                Ao = self.estimate_area(V)
+            else:
+                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
+                
+        # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
+        if P:
+            V += P * 1e-3 * Ao
+        if E:
+            V -= E * 1e-3 * Ao
+        if D:
+            V -= D
         
         # ouflow depending on the storage level
         if V < 2 * self.Vmin:
@@ -209,10 +289,8 @@ class Lisflood(Reservoir):
             if limit_Q:
                 if Q > self.k * I:
                     Q = np.max([self.k * I, self.Qn])
-                    # # Q <= Qf at this storage zone, so this second approach (from the documentation) makes no sense
-                    # Q = np.min([self.Qf, np.max([self.k * I, self.Qn])])
         elif V > self.Vf:
-            Q = np.min([self.Qf, np.max([self.k * I, self.Qn])])
+            Q = np.min([self.Qf, np.max([self.k * I, self.Qn])]) # DIFFERENCE COMPARED WITH ROUTINE 1
         
         # limit outflow so the final storage is between 0 and 1
         Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), (V - self.Vtot) / self.At])
@@ -223,16 +301,27 @@ class Lisflood(Reservoir):
         assert 0 <= V, 'The volume at the end of the timestep is negative.'
         assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
         
-        return Q, V
+        # estimate reservoir area at the end of the time step
+        if self.Atot:
+            A = self.estimate_area(V)
+        else:
+            A = np.nan
+            
+        return Q, V, A
     
-    def timestep4(self,
-                  I: float,
-                  V: float,
-                  limit_Q: bool = True,
-                  # k: float  = 1.2,
-                  p: float = 3.333
-                 ) -> List[float]:
-        """Given an inflow and an initial storage values, it computes the corresponding outflow
+    def timestep4(
+        self,
+        I: float,
+        V: float,
+        P: Optional[float] = None,
+        E: Optional[float] = None,
+        D: Optional[float] = None,
+        limit_Q: bool = True,
+        p: float = 3.333
+    ) -> List[float]:
+        """Given an inflow and an initial storage values, it computes the corresponding outflow.
+        
+        This routine limits the maximum outflow to a factor "p" of "Qnd".
         
         Parameters:
         -----------
@@ -240,21 +329,38 @@ class Lisflood(Reservoir):
             Inflow (m3/s)
         V: float
             Volume stored in the reservoir (m3)
+        P: float (optional)
+            Precipitaion on the reservoir (mm)
+        E: float (optional)
+            Open water evaporation (mm)
+        D: float (optional)
+            Consumptive demand (m3)
         limit_Q: bool
             Whether to limit the outflow in the flood zone when it exceeds inflow by more than 'k' times
-        k: float
-            Release coefficient. If the reservoir is in the flood zone, the outflow is limited to k times the inflow
         p: float
             Factor of Qf that limits the maximum allowed release in case of flooding
         
         Returns:
         --------
-        Q, V: List[float]
-            Outflow (m3/s) and updated storage (m3)
+        Q, V, A: List[float]
+            Outflow (m3/s), updated storage (m3) and area (m2)
         """
         
-        # update reservoir storage with the inflow volume
+        # estimate reservoir area at the beginning of the time step
+        if P or E:
+            if self.Atot:
+                Ao = self.estimate_area(V)
+            else:
+                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
+                
+        # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
+        if P:
+            V += P * 1e-3 * Ao
+        if E:
+            V -= E * 1e-3 * Ao
+        if D:
+            V -= D
         
         # ouflow depending on the storage level
         if V < 2 * self.Vmin:
@@ -268,10 +374,8 @@ class Lisflood(Reservoir):
             if limit_Q:
                 if Q > self.k * I:
                     Q = np.max([self.k * I, self.Qn])
-                    # # Q <= Qf at this storage zone, so this second approach (from the documentation) makes no sense
-                    # Q = np.min([self.Qf, np.max([self.k * I, self.Qn])])
         elif V > self.Vf:
-            Q = np.max([np.min([(V - self.Vf) / self.At, p * self.Qf]), np.min([self.Qf, np.max([self.k * I, self.Qn])])])
+            Q = np.max([np.min([(V - self.Vf) / self.At, p * self.Qf]), np.min([self.Qf, np.max([self.k * I, self.Qn])])]) # DIFFERENCE COMPARED WITH ROUTINE 1
         
         # limit outflow so the final storage is between 0 and 1
         Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), (V - self.Vtot) / self.At])
@@ -282,16 +386,27 @@ class Lisflood(Reservoir):
         assert 0 <= V, 'The volume at the end of the timestep is negative.'
         assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
         
-        return Q, V
+        # estimate reservoir area at the end of the time step
+        if self.Atot:
+            A = self.estimate_area(V)
+        else:
+            A = np.nan
+            
+        return Q, V, A
     
-    def timestep5(self,
-                  I: float,
-                  V: float,
-                  limit_Q: bool = True,
-                  # k: float = 1.2,
-                  tol: float = 1e-6
-                 ) -> List[float]:
-        """Given an inflow and an initial storage values, it computes the corresponding outflow
+    def timestep5(
+        self,
+        I: float,
+        V: float,
+        P: Optional[float] = None,
+        E: Optional[float] = None,
+        D: Optional[float] = None,
+        limit_Q: bool = True,
+        tol: float = 1e-6
+    ) -> List[float]:
+        """Given an inflow and an initial storage values, it computes the corresponding outflow.
+        
+        This routine is the simplest. The outflow above "Vf" is the maximum between "Qnd" and the inflow.
         
         Parameters:
         -----------
@@ -299,21 +414,37 @@ class Lisflood(Reservoir):
             Inflow (m3/s)
         V: float
             Volume stored in the reservoir (m3)
+        P: float (optional)
+            Precipitaion on the reservoir (mm)
+        E: float (optional)
+            Open water evaporation (mm)
+        D: float (optional)
+            Consumptive demand (m3)
         limit_Q: bool
             Whether to limit the outflow in the flood zone when it exceeds inflow by more than 1.2 times
-        k: float
-            Release coefficient. If the reservoir is in the flood zone, the outflow is limited to k times the inflow
         tol: float
-            
             
         Returns:
         --------
-        Q, V: List[float]
-            Outflow (m3/s) and updated storage (m3)
+        Q, V, A: List[float]
+            Outflow (m3/s), updated storage (m3) and area (m2)
         """
         
-        # update reservoir storage with the inflow volume
+        # estimate reservoir area at the beginning of the time step
+        if P or E:
+            if self.Atot:
+                Ao = self.estimate_area(V)
+            else:
+                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
+                
+        # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
+        if P:
+            V += P * 1e-3 * Ao
+        if E:
+            V -= E * 1e-3 * Ao
+        if D:
+            V -= D
         
         # ouflow depending on the storage level
         if V < 2 * self.Vmin:
@@ -328,31 +459,40 @@ class Lisflood(Reservoir):
                 if Q > self.k * I:
                     Q = np.max([self.k * I, self.Qn])
         elif V > self.Vf:
-            # Q = np.max([(V - self.Vf - tol * self.Vtot) / self.At, np.min([self.Qf, np.max([1.2 * I, self.Qn])])])
-            Q = np.max([self.Qf, I])
+            Q = np.max([self.Qf, I]) # DIFFERENCE COMPARED WITH ROUTINE 1
             
         # limit outflow so the final storage is between 0 and 1
         Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), (V - self.Vtot) / self.At])
-        # Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), I])
 
         # update reservoir storage with the outflow volume
-        # AV = np.min([Q * self.At, V])
-        # AV = np.max([AV, V - self.Vtot])
         V -= Q * self.At
         
         assert 0 <= V, 'The volume at the end of the timestep is negative.'
         assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
         
-        return Q, V
+        # estimate reservoir area at the end of the time step
+        if self.Atot:
+            A = self.estimate_area(V)
+        else:
+            A = np.nan
+            
+        return Q, V, A
     
-    def timestep6(self,
-                  I: float,
-                  Io: float,
-                  V: float,
-                  limit_Q: bool = True,
-                  # k: float = 1.2
-                 ) -> List[float]:
-        """Given an inflow and an initial storage values, it computes the corresponding outflow
+    def timestep6(
+        self,
+        I: float,
+        Io: float,
+        V: float,
+        P: Optional[float] = None,
+        E: Optional[float] = None,
+        D: Optional[float] = None,
+        limit_Q: bool = True,
+    ) -> List[float]:
+        """Given an inflow and an initial storage values, it computes the corresponding outflow.
+        
+        This routine defines the outflow in the freeboard zone depending on whether it is the rising or falling limb of the hydrograph. 
+            * In the rising limb, the outflow is forced to be lower than the inflow (so it buffers the flood peak). 
+            * In the falling limb, it allows for outflows larger than the inflow (to return into normal storage conditions).
         
         Parameters:
         -----------
@@ -364,19 +504,36 @@ class Lisflood(Reservoir):
                 - If I <= Io, the flood release is the maximum value between Qf and I * k
         V: float
             Volume stored in the reservoir (m3)
+        P: float (optional)
+            Precipitaion on the reservoir (mm)
+        E: float (optional)
+            Open water evaporation (mm)
+        D: float (optional)
+            Consumptive demand (m3)
         limit_Q: bool
             Whether to limit the outflow in the flood zone when it exceeds inflow by more than 1.2 times
-        k: float
-            Release coefficient. If the reservoir is in the flood zone, the outflow is limited to k times the inflow
             
         Returns:
         --------
-        Q, V: List[float]
-            Outflow (m3/s) and updated storage (m3)
+        Q, V, A: List[float]
+            Outflow (m3/s), updated storage (m3) and area (m2)
         """
         
-        # update reservoir storage with the inflow volume
+        # estimate reservoir area at the beginning of the time step
+        if P or E:
+            if self.Atot:
+                Ao = self.estimate_area(V)
+            else:
+                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
+                
+        # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
+        if P:
+            V += P * 1e-3 * Ao
+        if E:
+            V -= E * 1e-3 * Ao
+        if D:
+            V -= D
         
         # ouflow depending on the storage level
         if V < 2 * self.Vmin:
@@ -405,15 +562,24 @@ class Lisflood(Reservoir):
         assert 0 <= V, 'The volume at the end of the timestep is negative.'
         assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
         
-        return Q, V
+        # estimate reservoir area at the end of the time step
+        if self.Atot:
+            A = self.estimate_area(V)
+        else:
+            A = np.nan
+            
+        return Q, V, A
     
-    def simulate(self,
-                 inflow: pd.Series,
-                 Vo: float = None,
-                 limit_Q: bool = True,
-                 routine: int = 1,
-                 # k: float = 1
-                ) -> pd.DataFrame:
+    def simulate(
+        self,
+        inflow: pd.Series,
+        Vo: float = None,
+        precipitation: Optional[pd.Series] = None,
+        evaporation: Optional[pd.Series] = None,
+        demand: Optional[pd.Series] = None,
+        limit_Q: bool = True,
+        routine: int = 1,
+    ) -> pd.DataFrame:
         """Given a inflow time series (m3/s) and an initial storage (m3), it computes the time series of outflow (m3/s) and storage (m3)
         
         Parameters:
@@ -422,12 +588,15 @@ class Lisflood(Reservoir):
             Time series of flow coming into the reservoir (m3/s)
         Vo: float
             Initial value of reservoir storage (m3). If not provided, it is assumed that the normal storage is the initial condition
+        precipitation: pandas.Series (optional)
+            Time series of precipitation on the reservoir (mm)
+        evaporation: pandas.Series (optional)
+        demand: pandas.Series (optional)
+            Time series of total water demand (m3)
         limit_Q: bool
             Whether to limit the outflow in the flood zone when it exceeds inflow by more than 1.2 times
         routine: integer
             Value from 1 to 6 that defines the version of the LISFLOOD reservoir routine to be used
-        k: float
-            Release coefficient. If the reservoir is in the flood zone, the outflow is limited to k times the inflow
             
         Returns:
         --------
@@ -438,43 +607,50 @@ class Lisflood(Reservoir):
         if Vo is None:
             Vo = self.Qn
             
-        routines = {1: self.timestep,
-                    2: self.timestep2,
-                    3: self.timestep3,
-                    4: self.timestep4,
-                    5: self.timestep5,
-                    6: self.timestep6}
+        routines = {
+            1: self.timestep,
+            2: self.timestep2,
+            3: self.timestep3,
+            4: self.timestep4,
+            5: self.timestep5,
+            6: self.timestep6
+        }
         
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
-        # for ts in tqdm(inflow.index):
-        for ts in inflow.index:
+        area = pd.Series(index=inflow.index, dtype=float, name='area')
+        for ts in tqdm(inflow.index):
             try:
+                P = precipitation[ts] if precipitation is not None else None
+                E = evaporation[ts] if evaporation is not None else None
+                D = demand[ts] if demand is not None else None 
                 # compute outflow and new storage
                 if routine == 2:
-                    Q, V = routines[routine](inflow[ts], Vo)#, k=k)
+                    Q, V, A = routines[routine](inflow[ts], Vo, P, E, D)
                 elif routine == 6:
                     try:
-                        Q, V = routines[routine](inflow[ts], inflow[ts - timedelta(seconds=self.At)], Vo, limit_Q=limit_Q)#, k=k)
+                        Q, V, A = routines[routine](inflow[ts], inflow[ts - timedelta(seconds=self.At)], Vo, P, E, D, limit_Q=limit_Q)
                     except:
-                        Q, V = routines[routine](inflow[ts], inflow[ts], Vo, limit_Q=limit_Q)#, k=k)
+                        Q, V, A = routines[routine](inflow[ts], inflow[ts], Vo, P, E, D, limit_Q=limit_Q)
                 else:
-                    Q, V = routines[routine](inflow[ts], Vo, limit_Q=limit_Q)#, k=k)
+                    Q, V, A = routines[routine](inflow[ts], Vo, limit_Q=limit_Q)
             except Exception as e:
                 print(ts)
                 print(e)
-                return pd.concat((storage, inflow, outflow), axis=1)
+                return pd.concat((storage, inflow, outflow, area), axis=1).dropna(axis=1, how='all')
             storage[ts] = V
             outflow[ts] = Q
+            area[ts] = A
             # update current storage
             Vo = V
 
-        return pd.concat((storage, inflow, outflow), axis=1)
+        return pd.concat((storage, inflow, outflow, area), axis=1).dropna(axis=1, how='all')
         
-    def routine(self,
-                V: pd.Series,
-                I: Union[float, pd.Series]
-               ) -> pd.Series:
+    def routine(
+        self,
+        V: pd.Series,
+        I: Union[float, pd.Series]
+    ) -> pd.Series:
         """Given a time series of reservoir storage (m3) and a value or a time series of inflow (m3/s), it computes the ouflow (m3/s). This function is only meant for explanatory purposes; since the volume time series is given, the computed outflow does not update the reservoir storage. If the intention is to simulate the behaviour of the reservoir, refer to the function "simulate"
         
         Parameters:
@@ -529,7 +705,11 @@ class Lisflood(Reservoir):
         
         return O
        
-    def plot_routine(self, ax: Axes = None, **kwargs):
+    def plot_routine(
+        self, 
+        ax: Axes = None, 
+        **kwargs
+    ):
         """It creates a plot that explains the reservoir routine.
         
         Parameters:
@@ -580,15 +760,17 @@ class Lisflood(Reservoir):
             A dictionary with the name and value of the reservoir parameters
         """
 
-        params = {'Vmin': self.Vmin,
-                  'Vn': self.Vn,
-                  'Vn_adj': self.Vn_adj,
-                  'Vf': self.Vf,
-                  'Vtot': self.Vtot,
-                  'Qmin': self.Qmin,
-                  'Qn': self.Qn,
-                  'Qf': self.Qf,
-                  'k': self.k}
+        params = {
+            'Vmin': self.Vmin,
+            'Vn': self.Vn,
+            'Vn_adj': self.Vn_adj,
+            'Vf': self.Vf,
+            'Vtot': self.Vtot,
+            'Qmin': self.Qmin,
+            'Qn': self.Qn,
+            'Qf': self.Qf,
+            'k': self.k
+        }
         params = {key: float(value) for key, value in params.items()}
 
         return params
