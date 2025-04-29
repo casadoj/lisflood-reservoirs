@@ -9,14 +9,16 @@ data:
     
 simulation:
     model: mhm
-    # only needed for the Lisflood routine
-    # config:
+    inputs: # names of the time series
+        inflow: inflow # compulsory (m3/s). By default, 'inflow'
+        precipitation:  # optional (mm). By default, None
+        evaporation: # optional (mm). By default, None
+        demand: # optional (m3). By default, None
+    # config: # only needed for the Lisflood routine
         # routine: 1
         # limit_Q: True
 
 calibration:
-    input:
-        - inflow
     target:
         - storage
     SCEUA:

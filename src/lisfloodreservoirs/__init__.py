@@ -23,9 +23,12 @@ class Config:
         self.SIMULATION_CFG = self.cfg['simulation'].get('config', {})
         self.PATH_DEF = path_results / f'{self.MODEL}' / 'default'
         self.PATH_DEF.mkdir(parents=True, exist_ok=True)
+        self.INFLOW = self.cfg['simulation']['inputs'].get('inflow', 'inflow')
+        self.PRECIPITATION = self.cfg['simulation']['inputs'].get('precipitation', None)
+        self.EVAPORATION = self.cfg['simulation']['inputs'].get('evaporation', None)
+        self.DEMAND = self.cfg['simulation']['inputs'].get('demand', None)
         
         # calibration
-        self.INPUT = self.cfg['calibration']['input']#[0]
         self.TARGET = self.cfg['calibration']['target']
         self.MAX_ITER = self.cfg['calibration'].get('max_iter', 1000)
         self.COMPLEXES = self.cfg['calibration'].get('COMPLEXES', 4)
