@@ -90,7 +90,8 @@ class Linear(Reservoir):
         if E:
             V -= E * 1e-3 * A
         if D:
-            V -= D
+            # demand can't withdraw water below the minimum storage
+            V = max(self.Vmin, V - D)
         
         # ouflow depending on the inflow and storage level
         Q = V * self.k

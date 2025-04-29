@@ -94,6 +94,7 @@ class Reservoir:
         precipitation: pandas.Series (optional)
             Time series of precipitation on the reservoir (mm)
         evaporation: pandas.Series (optional)
+            Time series of open water evaporation from the reservoir (mm)
         demand: pandas.Series (optional)
             Time series of total water demand (m3)
             
@@ -117,7 +118,8 @@ class Reservoir:
         inflow.name = 'inflow'
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
-        for ts, I in tqdm(inflow.items()):
+        timesteps = tqdm(inflow.items(), total=len(inflow), desc='timesteps')
+        for ts, I in timesteps:
             storage[ts] = Vo
             Q, V = self.timestep(
                 I, 

@@ -133,8 +133,7 @@ class mHM(Reservoir):
             V += P * 1e-3 * A
         if E:
             V -= E * 1e-3 * A
-        if D:
-            V -= D
+        # demand is not withdrawn here in this model, but later as a component of outflow
         
         # ouflow depending on the minimum outflow and storage level
         Q = max(self.Qmin, Q)
