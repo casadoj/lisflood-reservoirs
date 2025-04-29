@@ -22,7 +22,7 @@ from .utils.logging import setup_logger
 
 def main():
 
-    # read arguments
+    # parse arguments
     parser = argparse.ArgumentParser(
         description="""
         Run the reservoir routine with default parameters.
@@ -43,7 +43,6 @@ def main():
     )
 
     logger.info(f'Default simulation results will be saved in: {cfg.PATH_DEF}')
-    
     
     # === Load reservoir list ===
     try:
@@ -88,10 +87,10 @@ def main():
 
         out_file = cfg.PATH_DEF / f'{grand_id}_simulation.csv'
         if out_file.exists() and not args.overwrite:
-            logger.info(f'Simulation already exists for {grand_id}, skipping (use --overwrite to force)')
+            logger.info(f'Simulation already exists for reservoir {grand_id}, skipping (use --overwrite to force)')
             continue
             
-        logger.info(f'Simulating reservoir {grand_id:>4}')
+        logger.info(f'Simulating reservoir {grand_id}')
         
         # define input time series
         inflow = ts[cfg.INFLOW]
@@ -125,8 +124,7 @@ def main():
         
         # estimate default parameters
         try:
-            Vtot = ts.storage.max(),
-            Vmin = 
+            Vtot = ts.storage.max()
             reservoir_attrs = default_attributes(
                 cfg.MODEL,
                 inflow,
