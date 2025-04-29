@@ -130,7 +130,7 @@ class Reservoir:
             # update current storage
             Vo = V
         
-        return pd.concat((storage, inflow, outflow), axis=1).dropna(axis=1, how='all')
+        return pd.concat((storage, inflow, outflow), axis=1)
     
     def estimate_level(
         self, 

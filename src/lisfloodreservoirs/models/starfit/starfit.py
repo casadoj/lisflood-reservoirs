@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
 from typing import List, Optional, Literal
+from tqdm.auto import tqdm
 
 from .storage import create_storage_harmonic
 from .release import create_release_harmonic
@@ -30,6 +31,8 @@ class Starfit(Reservoir):
         The minimum allowable release from the reservoir [MCM/day].
     Qmax: float 
         The maximum allowable release from the reservoir [MCM/day].
+    Atot: integer (optional)
+        Reservoir area (m2) at maximum capacity
 
     Attributes:
     -----------
@@ -56,17 +59,20 @@ class Starfit(Reservoir):
     the input parameters.
     """
     
-    def __init__(self,
-                 Vtot: float,
-                 avg_inflow: float,
-                 pars_Vf: List,
-                 pars_Vc: List,
-                 pars_Qharm: List,
-                 pars_Qresid: List,
-                 Qmin: float,
-                 Qmax: float):
+    def __init__(
+        self,
+        Vtot: float,
+        avg_inflow: float,
+        pars_Vf: List,
+        pars_Vc: List,
+        pars_Qharm: List,
+        pars_Qresid: List,
+        Qmin: float,
+        Qmax: float,
+        Atot: Optional[int] = None,
+    ):
         
-        super().__init__(None, Vtot, Qmin, None, 86400)
+        super().__init__(Vmin=None, Vtot=Vtot, Qmin=Qmin, Qf=None, Atot=Atot, At=86400)
         
         # self.Vtot = Vtot
         self.avg_inflow = avg_inflow
@@ -78,11 +84,15 @@ class Starfit(Reservoir):
         # self.Qmin = Qmin
         self.Qmax = Qmax
         
-    def timestep(self, 
-                 I: float,
-                 V: float,
-                 doy: int
-                ) -> List[float]:
+    def timestep(
+        self, 
+        I: float,
+        V: float,
+        doy: int,
+        P: Optional[float] = None,
+        E: Optional[float] = None,
+        D: Optional[float] = None,
+    ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow and storage at the end of the timestep
         
         Parameters:
@@ -93,6 +103,12 @@ class Starfit(Reservoir):
             Volume stored in the reservoir (m3)
         doy: integer
             Doy of the year. It must be a value between 1 and 365
+        P: float (optional)
+            Precipitaion on the reservoir (mm)
+        E: float (optional)
+            Open water evaporation (mm)
+        D: float (optional)
+            Consumptive demand (m3)
             
         Returns:
         --------
@@ -100,8 +116,21 @@ class Starfit(Reservoir):
             Outflow (m3/s) and updated storage (m3)
         """
         
-        # update storage
+        # estimate reservoir area at the beginning of the time step
+        if P or E:
+            if self.Atot:
+                A = self.estimate_area(V)
+            else:
+                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
+            
+        # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
+        if P:
+            V += P * 1e-3 * A
+        if E:
+            V -= E * 1e-3 * A
+        if D:
+            V -= D
         
         # standardised inputs
         I_st = I / self.avg_inflow - 1
@@ -135,16 +164,22 @@ class Starfit(Reservoir):
         Q = max(min(Q, V / self.At), (V - self.Vtot) / self.At)
         
         # update storage
-        # V += (I - Q) * self.At
         V -= Q * self.At
         
+        assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
+        assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
+        assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
+            
         return Q, V
     
-    def simulate(self,
-                 inflow: pd.Series,
-                 Vo: Optional[float ] = None,
-                 demand: Optional[pd.Series] = None,
-                ) -> pd.DataFrame:
+    def simulate(
+        self,
+        inflow: pd.Series,
+        Vo: Optional[float ] = None,
+        precipitation: Optional[pd.Series] = None,
+        evaporation: Optional[pd.Series] = None,
+        demand: Optional[pd.Series] = None,
+    ) -> pd.DataFrame:
         """Given an inflow time series (m3/s) and an initial storage (m3), it computes the time series of outflow (m3/s) and storage (m3)
         
         Parameters:
@@ -159,24 +194,35 @@ class Starfit(Reservoir):
         Returns:
         --------
         pd.DataFrame
-            A table that concatenates the storage, inflow and outflow time series.
+            A table that concatenates the storage (m3), inflow (m3/s) and outflow (m3/s) time series.
         """
         
         if Vo is None:
             Vo = .5 * self.Vtot
         
+        if precipitation is not None and not isinstance(precipitation, pd.Series):
+            raise ValueError('"precipitation" must be a pandas.Series representing a time series of precipitation (mm) on the reservoir.')
+        if evaporation is not None and not isinstance(evaporation, pd.Series):
+            raise ValueError('"evaporation" must be a pandas.Series representing a time series of open water evaporation (mm) from the reservoir.')
         if demand is not None and not isinstance(demand, pd.Series):
-            raise ValueError('"demand" must be a pandas Series representing a time series of water demand.')
+            raise ValueError('"demand" must be a pandas.Series representing a time series of water demand (m3/s).')
             
+        # compute outflow, storage and area
         inflow.name = 'inflow'
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
-        for date, I in inflow.items():
+        for date, I in tqdm(inflow.items()):
             storage[date] = Vo
-            # compute outflow and new storage
-            Q, V = self.timestep(I, Vo, date.dayofyear)
+            Q, V = self.timestep(
+                I, 
+                Vo, 
+                date.dayofyear,
+                P=precipitation[date] if precipitation is not None else None, 
+                E=evaporation[date] if evaporation is not None else None,
+                D=demand[date] if demand is not None else None
+            )
             outflow[date] = Q
             # update current storage
-            Vo = V
+            Vo = V     
                 
         return pd.concat((storage, inflow, outflow), axis=1)
