@@ -70,17 +70,18 @@ def main():
 
     # === read time series ===
     try:
+        inputs = [var for var in [cfg.INFLOW, cfg.PRECIPITATION, cfg.EVAPORATION, cfg.DEMAND] if var]
+        outputs = ['storage', 'outflow']
         timeseries = read_timeseries(
             path=cfg.PATH_DATA / 'time_series' / 'csv',
             reservoirs=attributes.index,
             periods=periods,
-            variables=['inflow', 'outflow', 'storage', 'evaporation', 'precipitation']
+            variables=inputs + outputs
         )
         logger.info(f'{len(timeseries)} reservoirs with timeseries')
     except IOError:
         logger.exception('Failed to read time series from {0}: {1}'.format(cfg.PATH_DATA / 'time_series' / 'csv'))
         raise
-
 
     # === Simulate reservoir routine ===
     for grand_id, ts in tqdm(timeseries.items(), desc='simulating reservoir'):
@@ -91,6 +92,12 @@ def main():
             continue
             
         logger.info(f'Simulating reservoir {grand_id:>4}')
+        
+        # define input time series
+        inflow = ts[cfg.INFLOW]
+        precipitation = ts[cfg.PRECIPITATION] if cfg.PRECIPITATION in ts.columns else None
+        evaporation = ts[cfg.EVAPORATION] if cfg.EVAPORATION in ts.columns else None
+        demand = ts[cfg.DEMAND] if cfg.DEMAND in ts.columns else None
 
         # plot observed time series
         try:
@@ -99,7 +106,7 @@ def main():
             plot_resops(
                 storage=ts.storage,
                 elevation=ts.elevation if 'elevation' in ts.columns else None,
-                inflow=ts.inflow,
+                inflow=inflow,
                 outflow=ts.outflow,
                 capacity=attributes.loc[grand_id, 'CAP_MCM'] * 1e6,
                 title=grand_id,
@@ -117,7 +124,7 @@ def main():
             
             # time series of water demand
             if cfg.MODEL == 'mhm':
-                bias = ts.outflow.mean() / ts.inflow.mean()
+                bias = ts.outflow.mean() / ts[cfg.INFLOW].mean()
                 demand = create_demand(
                     ts.outflow,
                     water_stress=min(1, bias),
@@ -129,7 +136,7 @@ def main():
             # default reservoir attributes
             reservoir_attrs = default_attributes(
                 cfg.MODEL,
-                ts.inflow,
+                ts[cfg.INFLOW],
                 Vtot,
                 Vmin,
                 Qmin=max(0, ts.outflow.min()),
@@ -157,10 +164,11 @@ def main():
             if cfg.MODEL == 'mhm':
                 sim_cfg.update({'demand': demand})
             sim_def = res.simulate(
-                inflow=ts.inflow,
+                inflow=inflow,
                 Vo=ts.storage.iloc[0],
-                precipitation=ts.precipitation if 'precipitation' in ts.columns else None,
-                evaporation=ts.evaporation if 'evaporation' in ts.columns else None,
+                precipitation=precipitation,
+                evaporation=evaporation,
+                demand=demand,
                 **sim_cfg
             )
             sim_def.to_csv(cfg.PATH_DEF / f'{grand_id}_simulation.csv', float_format='%.3f')
