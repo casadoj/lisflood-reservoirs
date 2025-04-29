@@ -100,7 +100,7 @@ class Reservoir:
         Returns:
         --------
         pd.DataFrame
-            A table that concatenates the storage (m3), inflow (m3/s), outflow (m3/s) and area (m2) time series.
+            A table that concatenates the storage (m3), inflow (m3/s) and outflow (m3/s) time series.
         """
         
         if Vo is None:
@@ -113,25 +113,24 @@ class Reservoir:
         if demand is not None and not isinstance(demand, pd.Series):
             raise ValueError('"demand" must be a pandas.Series representing a time series of water demand (m3/s).')
         
+        # compute outflow and storage
+        inflow.name = 'inflow'
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
-        area = pd.Series(index=inflow.index, dtype=float, name='area')
-        for ts in tqdm(inflow.index):
-            # compute outflow, storage and area
-            Q, V, A = self.timestep(
-                inflow[ts], 
+        for ts, I in tqdm(inflow.items()):
+            storage[ts] = Vo
+            Q, V = self.timestep(
+                I, 
                 Vo, 
                 P=precipitation[ts] if precipitation is not None else None, 
                 E=evaporation[ts] if evaporation is not None else None,
                 D=demand[ts] if demand is not None else None
             )
-            storage[ts] = V
             outflow[ts] = Q
-            area[ts] = A
             # update current storage
             Vo = V
-
-        return pd.concat((storage, inflow, outflow, area), axis=1).dropna(axis=1, how='all')
+        
+        return pd.concat((storage, inflow, outflow), axis=1).dropna(axis=1, how='all')
     
     def estimate_level(
         self, 

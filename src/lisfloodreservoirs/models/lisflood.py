@@ -93,23 +93,23 @@ class Lisflood(Reservoir):
             
         Returns:
         --------
-        Q, V, A: List[float]
-            Outflow (m3/s), updated storage (m3) and area (m2)
+        Q, V: List[float]
+            Outflow (m3/s) and updated storage (m3)
         """
         
         # estimate reservoir area at the beginning of the time step
         if P or E:
             if self.Atot:
-                Ao = self.estimate_area(V)
+                A = self.estimate_area(V)
             else:
                 raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
                 
         # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
         if P:
-            V += P * 1e-3 * Ao
+            V += P * 1e-3 * A
         if E:
-            V -= E * 1e-3 * Ao
+            V -= E * 1e-3 * A
         if D:
             V -= D
         
@@ -136,16 +136,11 @@ class Lisflood(Reservoir):
         # update reservoir storage with the outflow volume
         V -= Q * self.At
         
-        assert 0 <= V, 'The volume at the end of the timestep is negative.'
-        assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
-        
-        # estimate reservoir area at the end of the time step
-        if self.Atot:
-            A = self.estimate_area(V)
-        else:
-            A = np.nan
+        assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
+        assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
+        assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
             
-        return Q, V, A
+        return Q, V
     
     def timestep2(
         self,
@@ -175,23 +170,23 @@ class Lisflood(Reservoir):
             
         Returns:
         --------
-        Q, V, A: List[float]
-            Outflow (m3/s), updated storage (m3) and area (m2)
+        Q, V: List[float]
+            Outflow (m3/s) and updated storage (m3)
         """
         
         # estimate reservoir area at the beginning of the time step
         if P or E:
             if self.Atot:
-                Ao = self.estimate_area(V)
+                A = self.estimate_area(V)
             else:
                 raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
                 
         # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
         if P:
-            V += P * 1e-3 * Ao
+            V += P * 1e-3 * A
         if E:
-            V -= E * 1e-3 * Ao
+            V -= E * 1e-3 * A
         if D:
             V -= D
         
@@ -213,16 +208,11 @@ class Lisflood(Reservoir):
         # update reservoir storage with the outflow volume
         V -= Q * self.At
         
-        assert 0 <= V, 'The volume at the end of the timestep is negative.'
-        assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
-        
-        # estimate reservoir area at the end of the time step
-        if self.Atot:
-            A = self.estimate_area(V)
-        else:
-            A = np.nan
+        assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
+        assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
+        assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
             
-        return Q, V, A
+        return Q, V
     
     def timestep3(
         self,
@@ -254,23 +244,23 @@ class Lisflood(Reservoir):
             
         Returns:
         --------
-        Q, V, A: List[float]
-            Outflow (m3/s), updated storage (m3) and area (m2)
+        Q, V: List[float]
+            Outflow (m3/s) and updated storage (m3)
         """
         
         # estimate reservoir area at the beginning of the time step
         if P or E:
             if self.Atot:
-                Ao = self.estimate_area(V)
+                A = self.estimate_area(V)
             else:
                 raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
                 
         # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
         if P:
-            V += P * 1e-3 * Ao
+            V += P * 1e-3 * A
         if E:
-            V -= E * 1e-3 * Ao
+            V -= E * 1e-3 * A
         if D:
             V -= D
         
@@ -295,16 +285,11 @@ class Lisflood(Reservoir):
         # update reservoir storage with the outflow volume
         V -= Q * self.At
         
-        assert 0 <= V, 'The volume at the end of the timestep is negative.'
-        assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
-        
-        # estimate reservoir area at the end of the time step
-        if self.Atot:
-            A = self.estimate_area(V)
-        else:
-            A = np.nan
+        assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
+        assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
+        assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
             
-        return Q, V, A
+        return Q, V
     
     def timestep4(
         self,
@@ -339,23 +324,23 @@ class Lisflood(Reservoir):
         
         Returns:
         --------
-        Q, V, A: List[float]
-            Outflow (m3/s), updated storage (m3) and area (m2)
+        Q, V: List[float]
+            Outflow (m3/s) and updated storage (m3)
         """
         
         # estimate reservoir area at the beginning of the time step
         if P or E:
             if self.Atot:
-                Ao = self.estimate_area(V)
+                A = self.estimate_area(V)
             else:
                 raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
                 
         # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
         if P:
-            V += P * 1e-3 * Ao
+            V += P * 1e-3 * A
         if E:
-            V -= E * 1e-3 * Ao
+            V -= E * 1e-3 * A
         if D:
             V -= D
         
@@ -380,16 +365,11 @@ class Lisflood(Reservoir):
         # update reservoir storage with the outflow volume
         V -= Q * self.At
         
-        assert 0 <= V, 'The volume at the end of the timestep is negative.'
-        assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
-        
-        # estimate reservoir area at the end of the time step
-        if self.Atot:
-            A = self.estimate_area(V)
-        else:
-            A = np.nan
+        assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
+        assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
+        assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
             
-        return Q, V, A
+        return Q, V
     
     def timestep5(
         self,
@@ -423,23 +403,23 @@ class Lisflood(Reservoir):
             
         Returns:
         --------
-        Q, V, A: List[float]
-            Outflow (m3/s), updated storage (m3) and area (m2)
+        Q, V: List[float]
+            Outflow (m3/s) and updated storage (m3)
         """
         
         # estimate reservoir area at the beginning of the time step
         if P or E:
             if self.Atot:
-                Ao = self.estimate_area(V)
+                A = self.estimate_area(V)
             else:
                 raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
                 
         # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
         if P:
-            V += P * 1e-3 * Ao
+            V += P * 1e-3 * A
         if E:
-            V -= E * 1e-3 * Ao
+            V -= E * 1e-3 * A
         if D:
             V -= D
         
@@ -464,16 +444,11 @@ class Lisflood(Reservoir):
         # update reservoir storage with the outflow volume
         V -= Q * self.At
         
-        assert 0 <= V, 'The volume at the end of the timestep is negative.'
-        assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
-        
-        # estimate reservoir area at the end of the time step
-        if self.Atot:
-            A = self.estimate_area(V)
-        else:
-            A = np.nan
+        assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
+        assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
+        assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
             
-        return Q, V, A
+        return Q, V
     
     def timestep6(
         self,
@@ -519,16 +494,16 @@ class Lisflood(Reservoir):
         # estimate reservoir area at the beginning of the time step
         if P or E:
             if self.Atot:
-                Ao = self.estimate_area(V)
+                A = self.estimate_area(V)
             else:
                 raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
                 
         # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
         if P:
-            V += P * 1e-3 * Ao
+            V += P * 1e-3 * A
         if E:
-            V -= E * 1e-3 * Ao
+            V -= E * 1e-3 * A
         if D:
             V -= D
         
@@ -556,16 +531,11 @@ class Lisflood(Reservoir):
         # update reservoir storage with the outflow volume
         V -= Q * self.At
         
-        assert 0 <= V, 'The volume at the end of the timestep is negative.'
-        assert V <= self.Vtot, 'The volume at the end of the timestep is larger than the total reservoir capacity.'
-        
-        # estimate reservoir area at the end of the time step
-        if self.Atot:
-            A = self.estimate_area(V)
-        else:
-            A = np.nan
+        assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
+        assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
+        assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
             
-        return Q, V, A
+        return Q, V
     
     def simulate(
         self,
@@ -598,11 +568,18 @@ class Lisflood(Reservoir):
         Returns:
         --------
         pd.DataFrame
-            A table that concatenates the storage, inflow and outflow time series.
+            A table that concatenates the storage (m3), inflow (m3/s) and outflow (m3/s) time series.
         """
         
         if Vo is None:
-            Vo = self.Qn
+            Vo = self.Vn
+            
+        if precipitation is not None and not isinstance(precipitation, pd.Series):
+            raise ValueError('"precipitation" must be a pandas.Series representing a time series of precipitation (mm) on the reservoir.')
+        if evaporation is not None and not isinstance(evaporation, pd.Series):
+            raise ValueError('"evaporation" must be a pandas.Series representing a time series of open water evaporation (mm) from the reservoir.')
+        if demand is not None and not isinstance(demand, pd.Series):
+            raise ValueError('"demand" must be a pandas.Series representing a time series of water demand (m3/s).')
             
         routines = {
             1: self.timestep,
@@ -613,35 +590,34 @@ class Lisflood(Reservoir):
             6: self.timestep6
         }
         
+        # compute outflow and storage
+        inflow.name = 'inflow'
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
-        area = pd.Series(index=inflow.index, dtype=float, name='area')
-        for ts in tqdm(inflow.index):
+        for ts, I in tqdm(inflow.items()):
+            storage[ts] = V
             try:
                 P = precipitation[ts] if precipitation is not None else None
                 E = evaporation[ts] if evaporation is not None else None
                 D = demand[ts] if demand is not None else None 
-                # compute outflow and new storage
                 if routine == 2:
-                    Q, V, A = routines[routine](inflow[ts], Vo, P, E, D)
+                    Q, V = routines[routine](I, Vo, P, E, D)
                 elif routine == 6:
                     try:
-                        Q, V, A = routines[routine](inflow[ts], inflow[ts - timedelta(seconds=self.At)], Vo, P, E, D, limit_Q=limit_Q)
+                        Q, V = routines[routine](I, inflow[ts - timedelta(seconds=self.At)], Vo, P, E, D, limit_Q=limit_Q)
                     except:
-                        Q, V, A = routines[routine](inflow[ts], inflow[ts], Vo, P, E, D, limit_Q=limit_Q)
+                        Q, V = routines[routine](I, I, Vo, P, E, D, limit_Q=limit_Q)
                 else:
-                    Q, V, A = routines[routine](inflow[ts], Vo, limit_Q=limit_Q)
+                    Q, V = routines[routine](I, Vo, limit_Q=limit_Q)
             except Exception as e:
                 print(ts)
                 print(e)
-                return pd.concat((storage, inflow, outflow, area), axis=1).dropna(axis=1, how='all')
-            storage[ts] = V
+                return pd.concat((storage, inflow, outflow), axis=1).dropna(axis=1, how='all')
             outflow[ts] = Q
-            area[ts] = A
             # update current storage
             Vo = V
-
-        return pd.concat((storage, inflow, outflow, area), axis=1).dropna(axis=1, how='all')
+        
+        return pd.concat((storage, inflow, outflow), axis=1)
         
     def routine(
         self,

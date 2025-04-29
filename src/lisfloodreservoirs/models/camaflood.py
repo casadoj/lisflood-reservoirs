@@ -65,7 +65,7 @@ class Camaflood(Reservoir):
         V: float,
         P: Optional[float] = None,
         E: Optional[float] = None,
-        D: Optional[float] = None, # TO DO. Add consumptive demand as a reservoir loss
+        D: Optional[float] = None,
         verbose: bool = False
     ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
@@ -87,23 +87,23 @@ class Camaflood(Reservoir):
             
         Returns:
         --------
-        Q, V, A: List[float]
-            Outflow (m3/s), updated storage (m3) and area (m2)
+        Q, V: List[float]
+            Outflow (m3/s) and updated storage (m3)
         """
         
         # estimate reservoir area at the beginning of the time step
         if P or E:
             if self.Atot:
-                Ao = self.estimate_area(V)
+                A = self.estimate_area(V)
             else:
                 raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
             
         # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
         if P:
-            V += P * 1e-3 * Ao
+            V += P * 1e-3 * A
         if E:
-            V -= E * 1e-3 * Ao
+            V -= E * 1e-3 * A
         if D:
             V -= D
         
@@ -136,15 +136,9 @@ class Camaflood(Reservoir):
 
         assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
         assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
-        assert 0 <= Q, 'The simulated outflow is negative'
-
-        # estimate reservoir area at the end of the time step
-        if self.Atot:
-            A = self.estimate_area(V)
-        else:
-            A = np.nan
+        assert 0 <= Q, f'The simulated outflow is negative: {Q:.3f} m3/s'
             
-        return Q, V, A
+        return Q, V
     
     def routine(
         self, 
@@ -327,9 +321,13 @@ class Camaflood(Reservoir):
             series2_norm = self.normalize_timeseries(series2)
         else:
             series2_norm = series2
-        reservoir_analysis(series1_norm, series2_norm,
-                           x_thr=Vlims, y_thr=Qlims,
-                           title=kwargs.get('title', None),
-                           labels=kwargs.get('labels', ['sim', 'obs']),
-                           alpha=kwargs.get('alpha', .05),
-                           save=save)
+        reservoir_analysis(
+            series1_norm,
+            series2_norm,
+            x_thr=Vlims, 
+            y_thr=Qlims,
+            title=kwargs.get('title', None),
+            labels=kwargs.get('labels', ['sim', 'obs']),
+            alpha=kwargs.get('alpha', .05),
+            save=save
+        )

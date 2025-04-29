@@ -103,8 +103,8 @@ class mHM(Reservoir):
             
         Returns:
         --------
-        Q, V, A: List[float]
-            Outflow (m3/s), updated storage (m3) and area (m2)
+        Q, V: List[float]
+            Outflow (m3/s) and updated storage (m3)
         """
         
         eps = 1e-3
@@ -123,16 +123,16 @@ class mHM(Reservoir):
         # estimate reservoir area at the beginning of the time step
         if P or E:
             if self.Atot:
-                Ao = self.estimate_area(V)
+                A = self.estimate_area(V)
             else:
                 raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
             
         # update reservoir storage with the inflow volume, precipitation, evaporation and demand
         V += I * self.At
         if P:
-            V += P * 1e-3 * Ao
+            V += P * 1e-3 * A
         if E:
-            V -= E * 1e-3 * Ao
+            V -= E * 1e-3 * A
         if D:
             V -= D
         
@@ -150,14 +150,8 @@ class mHM(Reservoir):
         assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
         assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
         assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
-        
-        # estimate reservoir area at the end of the time step
-        if self.Atot:
-            A = self.estimate_area(V)
-        else:
-            A = np.nan
             
-        return Q, V, A
+        return Q, V
     
     def get_params(self):
         """It generates a dictionary with the reservoir paramenters in the model."""
