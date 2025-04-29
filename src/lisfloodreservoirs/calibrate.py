@@ -77,10 +77,14 @@ def main():
 
     # === read time series ===
     try:
-        timeseries = read_timeseries(cfg.PATH_DATA / 'time_series' / 'csv',
-                                     attributes.index,
-                                     periods,
-                                     variables=['inflow', 'outflow', 'storage'])
+        inputs = [var for var in [cfg.INFLOW, cfg.PRECIPITATION, cfg.EVAPORATION, cfg.DEMAND] if var]
+        outputs = ['storage', 'outflow']
+        timeseries = read_timeseries(
+            path=cfg.PATH_DATA / 'time_series' / 'csv',
+            reservoirs=attributes.index,
+            periods=periods,
+            variables=inputs + outputs
+        )
         logger.info(f'{len(timeseries)} reservoirs with timeseries')
     except IOError:
         logger.exception('Failed to read time series from {0}'.format(cfg.PATH_DATA / 'time_series' / 'csv'))
@@ -89,57 +93,77 @@ def main():
     # === Calibration ===
     for grand_id, ts in tqdm(timeseries.items(), desc='simulating reservoir'):
             
+        dbname = f'{cfg.PATH_CALIB}/{grand_id}_samples'
+        if Path(f'{dbname}.csv').is_file() and not args.overwrite:
+            logger.info(f'Calibration already exists for reservoir {grand_id}, skipping (use --overwrite to force)')
+            continue
+        
+        logger.info(f'Calibrating reservoir {grand_id}')
+        
+        # define input time series
+        inflow = ts[cfg.INFLOW]
+        precipitation = ts[cfg.PRECIPITATION] if cfg.PRECIPITATION in ts.columns else None
+        evaporation = ts[cfg.EVAPORATION] if cfg.EVAPORATION in ts.columns else None
+        demand = ts[cfg.DEMAND] if cfg.DEMAND in ts.columns else None
+        if cfg.MODEL == 'mhm':
+            bias = ts.outflow.mean() / inflow.mean()
+            demand = create_demand(
+                ts.outflow,
+                water_stress=min(1, bias),
+                window=28
+            )
+            
         # storage attributes (m3)
         Vtot = ts.storage.max()
         Vmin = max(0, min(0.1 * Vtot, ts.storage.min()))
         # flow attributes (m3/s)
         Qmin = max(0, ts.outflow.min())
         # catchment area (m2)
-        A = int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6) if cfg.MODEL == 'hanazaki' else None
-        # time series of water demand
-        if cfg.MODEL == 'mhm':
-            bias = ts.outflow.mean() / ts.inflow.mean()
-            demand = create_demand(ts.outflow,
-                                   water_stress=min(1, bias),
-                                   window=28)
-        else:
-            demand = None
+        A = int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6) if cfg.MODEL == 'camaflood' else None
+        # reservoir area (m2)
+        Atot = int(attributes.loc[grand_id, 'AREA_SKM'] * 1e6)
 
         # calibrate
         try:
-            
             # configure calibration kwargs
-            cal_cfg = copy.deepcopy(cfg.SIMULATION_CFG)
-            if cfg.MODEL == 'hanazaki':
+            cal_cfg = {}
+            if cfg.MODEL == 'camaflood':
                 cal_cfg.update({'A': A})
-            elif cfg.MODEL == 'mhm':
-                cal_cfg.update({'demand': demand})
-
+            # elif cfg.MODEL == 'mhm':
+            #     cal_cfg.update({'demand': demand})
             # initialize the calibration setup
-            calibrator = get_calibrator(cfg.MODEL,
-                                        inflow=ts.inflow,
-                                        storage=ts.storage,
-                                        outflow=ts.outflow,
-                                        Vmin=Vmin,
-                                        Vtot=Vtot,
-                                        Qmin=Qmin,
-                                        target=cfg.TARGET,
-                                        obj_func=KGEmod,
-                                        **cal_cfg)
-
-            # calibration output file
-            dbname = f'{cfg.PATH_CALIB}/{grand_id}_samples'
-            if Path(f'{dbname}.csv').is_file() and args.overwrite is False:
-                logger.warning(f'Reservoir {grand_id} has already been calibrated. Skipping calibration.')
-                pass
-            else:
-                logger.info(f'Calibrating reservoir {grand_id:>4}')
-                # define the sampling method
-                sceua = spotpy.algorithms.sceua(calibrator, dbname=dbname, dbformat='csv', save_sim=False)
-                # launch calibration
-                sceua.sample(cfg.MAX_ITER, ngs=cfg.COMPLEXES, kstop=3, pcento=0.01, peps=0.1)
-                logger.info(f'Calibration of reservoir{grand_id} successfully finished')
-            
+            calibrator = get_calibrator(
+                cfg.MODEL,
+                inflow=inflow,
+                storage=ts.storage,
+                outflow=ts.outflow,
+                precipitation=precipitation,
+                evaporation=evaporation,
+                demand=demand,
+                Vmin=Vmin,
+                Vtot=Vtot,
+                Qmin=Qmin,
+                Atot=Atot,
+                target=cfg.TARGET,
+                obj_func=KGEmod,
+                **cal_cfg
+            )
+            # define the sampling method
+            sceua = spotpy.algorithms.sceua(
+                calibrator, 
+                dbname=dbname, 
+                dbformat='csv', 
+                save_sim=False
+            )
+            # launch calibration
+            sceua.sample(
+                cfg.MAX_ITER, 
+                ngs=cfg.COMPLEXES, 
+                kstop=3, 
+                pcento=0.01, 
+                peps=0.1
+            )
+            logger.info(f'Calibration of reservoir {grand_id} successfully finished')
         except RuntimeError:
             logger.exception(f'Reservoir {grand_id} could not be calibrated')
             continue
@@ -161,10 +185,15 @@ def main():
                 yaml.dump(res.get_params(), file)
 
             # simulate the reservoir
-            sim_cfg = {} if cfg.MODEL == 'hanazaki' else cal_cfg
-            sim_cal = res.simulate(inflow=ts.inflow,
-                                   Vo=ts.storage.iloc[0],
-                                   **sim_cfg)
+            # sim_cfg = {} if cfg.MODEL == 'camaflood' else cal_cfg
+            sim_cal = res.simulate(
+                inflow=inflow,
+                Vo=ts.storage.iloc[0],
+                precipitation=precipitation,
+                evaporation=evaporation,
+                demand=demand,
+                # **sim_cfg
+            )
             sim_cal.to_csv(cfg.PATH_CALIB / f'{grand_id}_simulation.csv', float_format='%.3f')
             
             logger.info(f'Simulation of the calibrated reservoir {grand_id} successfully finished')
@@ -185,12 +214,13 @@ def main():
             
         # scatter plot calibration vs observation
         try:
-            res.scatter(sim_cal,
-                        ts,
-                        norm=False,
-                        title=f'grand_id: {grand_id}',
-                        save=cfg.PATH_CALIB / f'{grand_id}_scatter.jpg',
-                       )
+            res.scatter(
+                sim_cal,
+                ts,
+                norm=False,
+                title=f'grand_id: {grand_id}',
+                save=cfg.PATH_CALIB / f'{grand_id}_scatter.jpg',
+            )
             logger.info(f'Scatter plot of simulation from reservoir {grand_id}')
         except IOError:
             logger.exception(f'The scatter plot of reservoir {grand_id} could not be generated')
@@ -206,11 +236,12 @@ def main():
                 }
             else:
                 sim = {'calibrated': sim_cal}
-            res.lineplot(sim,
-                         ts,
-                         figsize=(12, 6),
-                         save=cfg.PATH_CALIB / f'{grand_id}_line.jpg',
-                       )
+            res.lineplot(
+                sim,
+                ts,
+                figsize=(12, 6),
+                save=cfg.PATH_CALIB / f'{grand_id}_line.jpg',
+            )
             logger.info(f'Line plot of simulation from reservoir {grand_id}')
         except IOError:
             logger.exception(f'The line plot of reservoir {grand_id} could not be generated')
