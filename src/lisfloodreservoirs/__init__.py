@@ -20,7 +20,6 @@ class Config:
         
         # model configuration
         self.MODEL = self.cfg['simulation']['model'].lower()
-        self.SIMULATION_CFG = self.cfg['simulation'].get('config', {})
         self.PATH_DEF = path_results / f'{self.MODEL}' / 'default'
         self.PATH_DEF.mkdir(parents=True, exist_ok=True)
         self.INFLOW = self.cfg['simulation']['inputs'].get('inflow', 'inflow')

@@ -14,9 +14,6 @@ simulation:
         precipitation:  # optional (mm). By default, None
         evaporation: # optional (mm). By default, None
         demand: # optional (m3). By default, None
-    # config: # only needed for the Lisflood routine
-        # routine: 1
-        # limit_Q: True
 
 calibration:
     target:
@@ -24,3 +21,4 @@ calibration:
     SCEUA:
         max_iter: 1000
         complexes: 4
+        spinup: # time steps. By default, None
