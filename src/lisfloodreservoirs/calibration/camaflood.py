@@ -2,7 +2,7 @@ import numpy as np
 import pandas as pd
 from spotpy.objectivefunctions import kge
 from spotpy.parameter import Uniform
-from typing import List, Dict, Literal, Optional
+from typing import List, Dict, Literal, Optional, Union
 
 from .basecalibrator import Calibrator
 from ..models import get_model
@@ -10,8 +10,8 @@ from ..utils.utils import return_period
 
 
 
-class Hanazaki_calibrator(Calibrator):
-    """This class allows for calibrating 5 parameters in the Hanazaki reservoir routine, 3 related to the storage limits, and 2 to the outflow limits.
+class Camaflood_calibrator(Calibrator):
+    """This class allows for calibrating 5 parameters in the Camaflood reservoir routine, 3 related to the storage limits, and 2 to the outflow limits.
     
     alpha: quantile of the storage records that defines the flood storage
             Vf = alpha * Vtot
@@ -25,25 +25,28 @@ class Hanazaki_calibrator(Calibrator):
             Qn = epsilon * Qf
     """
     
-    # alpha = Uniform(name='alpha', low=0.5, high=1.0)
     alpha = Uniform(name='alpha', low=0.2, high=0.99)
     beta = Uniform(name='beta', low=0.001, high=0.999)    
     gamma = Uniform(name='gamma', low=0.001, high=0.999)
     delta = Uniform(name='delta', low=0.1, high=0.5)
-    # epsilon = Uniform(name='epsilon', low=0.333, high=1.0)
     epsilon = Uniform(name='epsilon', low=0.001, high=0.999)
     
-    def __init__(self,
-                 inflow: pd.Series,
-                 storage: pd.Series, 
-                 outflow: pd.Series, 
-                 Vmin: float, 
-                 Vtot: float, 
-                 A: int,
-                 target: Literal['storage', 'outflow'], 
-                 obj_func=kge,
-                 Qmin: Optional[float] = None,
-                ):
+    def __init__(
+        self,
+        inflow: pd.Series,
+        storage: pd.Series, 
+        outflow: pd.Series, 
+        Vmin: float, 
+        Vtot: float, 
+        A: int,
+        Qmin: Optional[float] = None,
+        precipitation: Optional[pd.Series] = None,
+        evaporation: Optional[pd.Series] = None,
+        demand: Optional[pd.Series] = None,
+        Atot: Optional[float] = None,
+        target: Union[Literal['storage', 'outflow'], List[Literal['storage', 'outflow']]] = 'storage', 
+        obj_func=kge,
+    ):
         """
         Parameters:
         -----------
@@ -59,15 +62,25 @@ class Hanazaki_calibrator(Calibrator):
             Total reservoir storage capacity (m3)
         A: integer
             Area (m2) of the reservoir catchment
+        Qmin: float (optional)
+            Minimum outflow (m3/s)
+        precipitation: pandas.Series (optional)
+            Time series of precipitation on the reservoir (mm)
+        evaporation: pandas.Series (optional)
+            Time series of open water evaporation from the reservoir (mm)
+        demand: pandas.Series (optional)
+            Time series of total water demand (m3)
+        Atot: float (optional)
+            Reservoir area (m2) at maximum capacity. Only needed if precipitaion or evaporation time series are provided as input
         target: list of strings
             Variable(s) targeted in the calibration. Possible values are 'storage' and/or 'outflow'
         obj_func:
-            A function that assess the performance of a simulation with a single float number. The optimization tries to minimize the objective function. We assume that the objective function would be either NSE or KGE, so the function is internally converted so that better performance corresponds to lower values of the objective function.
+            A function that assesses the performance of a simulation with a single float number. The optimization tries to minimize the objective function. We assume that the objective function would be either NSE or KGE, so the function is internally converted so that better performance corresponds to lower values of the objective function.
         Qmin: float (optional)
-            Minimum outflow (m3/s). Not needed in the Hanazaki routine, so keep as None
+            Minimum outflow (m3/s). Not needed in the Camaflood routine, so keep as None
         """
         
-        super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, target, obj_func)
+        super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, precipitation, evaporation, demand, Atot, target, obj_func)
         
         self.A = A
         
@@ -101,27 +114,23 @@ class Hanazaki_calibrator(Calibrator):
             'Vtot': self.Vtot,
             'Qn': Qn,
             'Qf': Qf,
-            'A': self.A
+            'A': self.A,
+            'Atot': self.Atot
         }
 
         return attributes
         
-    def simulation(self,
-                   pars: List[float],
-                   inflow: Optional[pd.Series] = None,
-                   storage_init: Optional[float] = None,
-                   spinup: Optional[int] = None,
-                   ) -> pd.Series:
+    def simulation(
+        self,
+        pars: List[float],
+        spinup: Optional[int] = None
+    ) -> pd.Series:
         """Given a parameter set, it declares the reservoir and runs the simulation.
         
         Parameters:
         -----------
         pars: list of floats
             The set of parameter values to be simulated
-        inflow: pd.Series
-            Inflow time series used to force the model. If not given, the 'inflow' stored in the class will be used
-        storage_init: float
-            Initial reservoir storage. If not provided, the first value of the method 'storage' stored in the class will be used
         spinup: integer
             Numer or time steps to use to warm up the model. This initial time steps will not be taken into account in the computation of model performance      
         
@@ -131,19 +140,19 @@ class Hanazaki_calibrator(Calibrator):
             Simulated time series of the target variable
         """
         
-        # forcings
-        if inflow is None:
-            inflow = self.inflow
-        if storage_init is None:
-            storage_init = self.observed['storage'].iloc[0]
-        
         # declare the reservoir with the effect of the parameters
         reservoir_attrs = self.pars2attrs(pars)
-        res = get_model('hanazaki', **reservoir_attrs)
+        res = get_model('camaflood', **reservoir_attrs)
         self.reservoir = res
         
         # simulate
-        sim = res.simulate(inflow, storage_init)
+        sim = res.simulate(
+            inflow=self.inflow, 
+            Vo=self.observed['storage'].iloc[0],
+            precipitation=self.precipitation,
+            evaporation=self.evaporation,
+            demand=self.demand
+        )
         if spinup is not None:
             sim = sim.iloc[spinup:]
         
@@ -151,8 +160,8 @@ class Hanazaki_calibrator(Calibrator):
     
     
     
-# class Hanazaki_calibrator(Calibrator):
-#     """This class allows for calibrating 2 parameters in the Hanazaki reservoir routine, 1 related to the flood storage limits, and 1 to the flood outflow.
+# class Camaflood_calibrator(Calibrator):
+#     """This class allows for calibrating 2 parameters in the Camaflood reservoir routine, 1 related to the flood storage limits, and 1 to the flood outflow.
     
 #     alpha: quantile of the storage records that defines the flood storage
 #             Vf = alpha * Vtot
@@ -198,7 +207,7 @@ class Hanazaki_calibrator(Calibrator):
 #         obj_func:
 #             A function that assess the performance of a simulation with a single float number. The optimization tries to minimize the objective function. We assume that the objective function would be either NSE or KGE, so the function is internally converted so that better performance corresponds to lower values of the objective function.
 #         Qmin: float (optional)
-#             Minimum outflow (m3/s). Not needed in the Hanazaki routine, so keep as None
+#             Minimum outflow (m3/s). Not needed in the Camaflood routine, so keep as None
 #         """
         
 #         super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, target, obj_func)
@@ -273,7 +282,7 @@ class Hanazaki_calibrator(Calibrator):
         
 #         # declare the reservoir with the effect of the parameters
 #         reservoir_attrs = self.pars2attrs(pars)
-#         res = get_model('hanazaki', **reservoir_attrs)
+#         res = get_model('camaflood', **reservoir_attrs)
 #         self.reservoir = res
         
 #         # simulate
