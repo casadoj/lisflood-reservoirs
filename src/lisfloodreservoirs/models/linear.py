@@ -83,12 +83,13 @@ class Linear(Reservoir):
             else:
                 raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
             
-        # update reservoir storage with the inflow volume, precipitation, evaporation and demand
+        # update reservoir storage
         V += I * self.At
         if P:
             V += P * 1e-3 * A
         if E:
-            V -= E * 1e-3 * A
+            # evaporation can't happen if there's no water
+            V = max(0, V - E * 1e-3 * A)
         if D:
             # demand can't withdraw water below the minimum storage
             V = max(self.Vmin, V - D)
