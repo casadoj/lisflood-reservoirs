@@ -41,7 +41,7 @@ class Camaflood(Reservoir):
             Normal outflow (m3/s)
         Qf: float
             Outflow (m3/s) in case of flood
-        A: integer
+        catchment: integer
             Area (m2) of the reservoir catchment
         Atot: integer (optional)
             Reservoir area (m2) at maximum capacity
@@ -59,7 +59,7 @@ class Camaflood(Reservoir):
         self.Qn = Qn
         
         # release coefficient
-        self.k = max(1 - 5 * (Vtot - Vf) / A, 0)
+        self.k = max(1 - 5 * (Vtot - Vf) / catchment, 0)
         
     def step(
         self,

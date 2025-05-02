@@ -38,7 +38,7 @@ class Camaflood_calibrator(Calibrator):
         outflow: pd.Series, 
         Vmin: float, 
         Vtot: float, 
-        A: int,
+        catchment: int,
         Qmin: Optional[float] = None,
         precipitation: Optional[pd.Series] = None,
         evaporation: Optional[pd.Series] = None,
@@ -60,7 +60,7 @@ class Camaflood_calibrator(Calibrator):
             Volume (m3) associated to the conservative storage
         Vtot: float
             Total reservoir storage capacity (m3)
-        A: integer
+        catchment: integer
             Area (m2) of the reservoir catchment
         Qmin: float (optional)
             Minimum outflow (m3/s)
@@ -82,7 +82,7 @@ class Camaflood_calibrator(Calibrator):
         
         super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, precipitation, evaporation, demand, Atot, target, obj_func)
         
-        self.A = A
+        self.catchment = catchment
         
     def pars2attrs(self, pars: List) -> Dict:
         """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`
@@ -114,7 +114,7 @@ class Camaflood_calibrator(Calibrator):
             'Vtot': self.Vtot,
             'Qn': Qn,
             'Qf': Qf,
-            'A': self.A,
+            'catchment': self.catchment,
             'Atot': self.Atot
         }
 
@@ -182,7 +182,7 @@ class Camaflood_calibrator(Calibrator):
 #                  outflow: pd.Series, 
 #                  Vmin: float, 
 #                  Vtot: float, 
-#                  A: int,
+#                  catchment: int,
 #                  target: Literal['storage', 'outflow'], 
 #                  obj_func=kge,
 #                  Qmin: Optional[float] = None,
@@ -200,7 +200,7 @@ class Camaflood_calibrator(Calibrator):
 #             Volume (m3) associated to the conservative storage
 #         Vtot: float
 #             Total reservoir storage capacity (m3)
-#         A: integer
+#         catchment: integer
 #             Area (m2) of the reservoir catchment
 #         target: list of strings
 #             Variable(s) targeted in the calibration. Possible values are 'storage' and/or 'outflow'
@@ -212,7 +212,7 @@ class Camaflood_calibrator(Calibrator):
         
 #         super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, target, obj_func)
         
-#         self.A = A
+#         self.catchment = catchment
         
 #     def pars2attrs(self, pars: List) -> Dict:
 #         """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`
@@ -244,7 +244,7 @@ class Camaflood_calibrator(Calibrator):
 #             'Vtot': self.Vtot,
 #             'Qn': Qn,
 #             'Qf': Qf,
-#             'A': self.A
+#             'catchment': self.catchment
 #         }
 
 #         return attributes
