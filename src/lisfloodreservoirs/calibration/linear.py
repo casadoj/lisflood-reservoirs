@@ -30,7 +30,8 @@ class Linear_calibrator(Calibrator):
         demand: Optional[pd.Series] = None,
         Atot: Optional[float] = None, 
         target: Union[Literal['storage', 'outflow'], List[Literal['storage', 'outflow']]] = 'storage', 
-        obj_func=kge
+        obj_func=kge,
+        spinup: Optional[int] = None
     ):
         """
         Parameters:
@@ -59,9 +60,11 @@ class Linear_calibrator(Calibrator):
             Variable(s) targeted in the calibration. Possible values are 'storage' and/or 'outflow'
         obj_func:
             A function that assesses the performance of a simulation with a single float number. The optimization tries to minimize the objective function. We assume that the objective function would be either NSE or KGE, so the function is internally converted so that better performance corresponds to lower values of the objective function.
+        spinup: integer (optional)
+            Numer or time steps to use to warm up the model. These initial time steps will not be taken into account in the computation of model performance. By default, it is None and all the simulation will be used
         """
         
-        super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, precipitation, evaporation, demand, Atot, target, obj_func)  
+        super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, precipitation, evaporation, demand, Atot, target, obj_func, spinup)  
     
     def pars2attrs(self, pars: List) -> Dict:
         """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`
@@ -90,7 +93,6 @@ class Linear_calibrator(Calibrator):
     def simulation(
         self, 
         pars: List[float], 
-        spinup: int = None
     ) -> pd.DataFrame:
         """Given a parameter set, it declares the reservoir and runs the simulation.
         
@@ -98,8 +100,6 @@ class Linear_calibrator(Calibrator):
         -------
         pars: List
             The parameter values used in the current iteration
-        spinup: int
-            Numer or time steps to use to warm up the model. This initial time steps will not be taken into account in the computation of model performance
             
         Returns:
         --------
@@ -120,7 +120,7 @@ class Linear_calibrator(Calibrator):
             evaporation=self.evaporation,
             demand=self.demand
         )
-        if spinup is not None:
-            sim = sim.iloc[spinup:]
+        if self.spinup is not None:
+            sim = sim.iloc[self.spinup:]
 
         return sim[self.target].round(2)

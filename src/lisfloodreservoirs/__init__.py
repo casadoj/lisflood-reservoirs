@@ -29,8 +29,9 @@ class Config:
         
         # calibration
         self.TARGET = self.cfg['calibration']['target']
-        self.MAX_ITER = self.cfg['calibration'].get('max_iter', 1000)
-        self.COMPLEXES = self.cfg['calibration'].get('COMPLEXES', 4)
+        self.MAX_ITER = self.cfg['calibration']['SCEUA'].get('max_iter', 1000)
+        self.COMPLEXES = self.cfg['calibration']['SCEUA'].get('COMPLEXES', 4)
+        self.SPINUP = self.cfg['calibration'].get('spinup', None)
         path_calib = path_results / self.MODEL / 'calibration'
         if len(self.TARGET) == 1:
             self.PATH_CALIB = path_calib / 'univariate' / self.TARGET[0]

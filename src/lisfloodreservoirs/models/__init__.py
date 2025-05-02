@@ -1,6 +1,8 @@
 from typing import Literal, Optional, Dict
 import numpy as np
 import pandas as pd
+import logging
+logger = logging.getLogger(__name__)
 
 from .linear import Linear
 from .lisflood import Lisflood

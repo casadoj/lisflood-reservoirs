@@ -21,4 +21,4 @@ calibration:
     SCEUA:
         max_iter: 1000
         complexes: 4
-        spinup: # time steps. By default, None
+    spinup: # time steps. By default, None

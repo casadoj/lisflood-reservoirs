@@ -22,7 +22,8 @@ class Calibrator(object):
         demand: Optional[pd.Series] = None,
         Atot: Optional[float] = None,
         target: Union[Literal['storage', 'outflow'], List[Literal['storage', 'outflow']]] = 'storage',
-        obj_func=kge
+        obj_func=kge,
+        spinup: Optional[int] = None
     ):
         """
         Parameters:
@@ -51,6 +52,8 @@ class Calibrator(object):
             Variable(s) targeted in the calibration. Possible values are 'storage' and/or 'outflow'
         obj_func:
             A function that assesses the performance of a simulation with a single float number. The optimization tries to minimize the objective function. We assume that the objective function would be either NSE or KGE, so the function is internally converted so that better performance corresponds to lower values of the objective function.
+        spinup: integer (optional)
+            Numer or time steps to use to warm up the model. These initial time steps will not be taken into account in the computation of model performance. By default, it is None and all the simulation will be used
         """
         
         # time series
@@ -72,7 +75,8 @@ class Calibrator(object):
         
         # target variable and objective function
         self.target = target
-        self.obj_func = obj_func       
+        self.obj_func = obj_func
+        self.spinup = spinup
     
     def pars2attrs(
         self, 
@@ -96,7 +100,6 @@ class Calibrator(object):
     def simulation(
         self,
         pars: List[float],
-        spinup: Optional[int] = None
     ) -> pd.Series:
         """Given a parameter set, it declares the reservoir and runs the simulation.
         
@@ -104,8 +107,6 @@ class Calibrator(object):
         -----------
         pars: List
             The set of parameter values to be simulated
-        spinup: int
-            Numer or time steps to use to warm up the model. This initial time steps will not be taken into account in the computation of model performance
             
         Returns:
         --------
@@ -117,14 +118,8 @@ class Calibrator(object):
 
     def evaluation(
         self,
-        spinup: int = None
     ) -> pd.Series:
         """It extracts the observed time series of the target variable and removes (if necessary) the spinup time
-        
-        Parameters:
-        -----------
-        spinup: int
-            Numer or time steps to use to warm up the model. This initial time steps will not be taken into account in the computation of model performance
             
         Returns:
         --------
@@ -132,8 +127,8 @@ class Calibrator(object):
             Observed time series of the target variable
         """
         
-        if spinup is not None:
-            obs = self.observed[self.target].iloc[spinup:]
+        if self.spinup is not None:
+            obs = self.observed[self.target].iloc[self.spinup:]
         else:
             obs = self.observed[self.target]
         
