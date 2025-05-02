@@ -7,8 +7,6 @@ from typing import List, Dict, Literal, Optional, Union
 from .basecalibrator import Calibrator
 from ..models import get_model
 
-np.random.seed(0)
-
 
 class mHM_calibrator(Calibrator):
     """This class allows for calibrating 5 parameters in the mHM reservoir routine, 3 related to the storage limits, 2 to the outflow limits and the last one to the relation between inflow and outflow.
@@ -39,7 +37,7 @@ class mHM_calibrator(Calibrator):
         precipitation: Optional[pd.Series] = None,
         evaporation: Optional[pd.Series] = None,
         Atot: Optional[float] = None,
-        target: Literal['storage', 'outflow'], 
+        target: Union[Literal['storage', 'outflow'], List[Literal['storage', 'outflow']]] = 'storage',  
         obj_func=kge
     ):
         """
@@ -95,7 +93,8 @@ class mHM_calibrator(Calibrator):
             'alpha': pars[1],
             'beta': pars[2],
             'gamma': pars[3],
-            'lambda_': pars[4]
+            'lambda_': pars[4],
+            'Atot': self.Atot
         }
 
         return attributes

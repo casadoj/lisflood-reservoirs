@@ -81,7 +81,8 @@ class Linear_calibrator(Calibrator):
             'Vmin': self.Vmin,
             'Vtot': self.Vtot,
             'Qmin': self.Qmin,
-            'T': pars[0]
+            'T': pars[0],
+            'Atot': self.Atot
         }
         
         return attributes

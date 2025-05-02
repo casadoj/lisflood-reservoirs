@@ -110,7 +110,8 @@ class Lisflood_calibrator(Calibrator):
             'Qmin': min(self.Qmin, Qn),
             'Qn': Qn,
             'Qf': Qf,
-            'k': pars[5]
+            'k': pars[5],
+            'Atot': self.Atot
         }
 
         return attributes
