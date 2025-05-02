@@ -153,7 +153,9 @@ def main():
                 calibrator, 
                 dbname=dbname, 
                 dbformat='csv', 
-                save_sim=False
+                # parallel='mpi',
+                save_sim=False,
+                # seed=42
             )
             # launch calibration
             sceua.sample(
@@ -246,7 +248,7 @@ def main():
         except IOError:
             logger.exception(f'The line plot of reservoir {grand_id} could not be generated')
             
-        del res, calibrator, sim_cal, sim_cfg, calibrated_attrs, performance_cal
+        del res, calibrator, sim_cal, calibrated_attrs, performance_cal#, sim_cfg
         try:
             del sceua
         except:
