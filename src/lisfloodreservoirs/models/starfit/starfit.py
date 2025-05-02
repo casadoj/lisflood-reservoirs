@@ -2,6 +2,8 @@ import numpy as np
 import pandas as pd
 from typing import List, Optional, Literal
 from tqdm.auto import tqdm
+# import logging
+# logger = logging.getLogger(__name__)
 
 from .storage import create_storage_harmonic
 from .release import create_release_harmonic
@@ -72,7 +74,7 @@ class Starfit(Reservoir):
         Atot: Optional[int] = None,
     ):
         
-        super().__init__(Vmin=None, Vtot=Vtot, Qmin=Qmin, Qf=None, Atot=Atot, At=86400)
+        super().__init__(Vmin=None, Vtot=Vtot, Qmin=Qmin, Qf=None, Atot=Atot, timestep=86400)
         
         # self.Vtot = Vtot
         self.avg_inflow = avg_inflow
@@ -84,7 +86,7 @@ class Starfit(Reservoir):
         # self.Qmin = Qmin
         self.Qmax = Qmax
         
-    def timestep(
+    def step(
         self, 
         I: float,
         V: float,
@@ -123,14 +125,17 @@ class Starfit(Reservoir):
             else:
                 raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
             
-        # update reservoir storage with the inflow volume, precipitation, evaporation and demand
-        V += I * self.At
+        # update reservoir storage
+        V += I * self.timestep
         if P:
             V += P * 1e-3 * A
         if E:
-            V -= E * 1e-3 * A
+            # evaporation can't happen if there's no water
+            V = np.max([0, V - E * 1e-3 * A])
         if D:
-            V -= D
+            # demand can't withdraw water below the minimum storage
+            # V = max(self.Vmin, V - D) # Starfit doesn't define Vmin
+            V = np.max([0, V - D])
         
         # standardised inputs
         I_st = I / self.avg_inflow - 1
@@ -157,14 +162,14 @@ class Starfit(Reservoir):
             # Q = min(Qnor, self.Qmax) # original routine
             Q = max(min(Qnor, self.Qmax), self.Qmin)
         elif V_st > Vf:
-            # Q = min((V_st - Vf) * self.Vtot / self.At + I, self.Qmax) # original routine
+            # Q = min((V_st - Vf) * self.Vtot / self.timestep + I, self.Qmax) # original routine
             Q = Qnor + (self.Qmax - Qnor) * (V_st - Vf) / (1 - Vf)
 
         # ensure mass conservation
-        Q = max(min(Q, V / self.At), (V - self.Vtot) / self.At)
+        Q = max(min(Q, V / self.timestep), (V - self.Vtot) / self.timestep)
         
         # update storage
-        V -= Q * self.At
+        V -= Q * self.timestep
         
         assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
         assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
@@ -213,7 +218,7 @@ class Starfit(Reservoir):
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
         for date, I in tqdm(inflow.items()):
             storage[date] = Vo
-            Q, V = self.timestep(
+            Q, V = self.step(
                 I, 
                 Vo, 
                 date.dayofyear,
