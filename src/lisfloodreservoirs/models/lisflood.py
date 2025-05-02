@@ -4,6 +4,8 @@ import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
 from tqdm.auto import tqdm
 from typing import Union, List, Tuple, Dict, Optional
+import logging
+logger = logging.getLogger(__name__)
 
 from .basemodel import Reservoir
 
@@ -130,7 +132,7 @@ class Lisflood(Reservoir):
         elif V - Q * self.timestep < self.Vmin:
             Q = (V - self.Vmin) / self.timestep - eps if V >= self.Vmin else 0
         if Q < 0:
-            print(f'WARNING. The simulated outflow was negative ({Q:.6f} m3/s). Limitted to 0')
+            logger.warning(f'The simulated outflow was negative ({Q:.6f} m3/s). Limitted to 0')
             Q = 0
 
         # update reservoir storage with the outflow volume
@@ -138,7 +140,6 @@ class Lisflood(Reservoir):
         
         assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
         assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
-        # assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
             
         return Q, V
         

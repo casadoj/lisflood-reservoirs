@@ -3,9 +3,13 @@ from typing import List, Tuple, Literal, Dict, Optional, Union
 from pathlib import Path
 import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
+import logging
 
 from ..utils.metrics import KGEmod
 from ..utils.plots import reservoir_analysis
+
+# set logger
+logger = logging.getLogger(__name__)
 
 
 class Reservoir:
