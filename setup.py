@@ -19,6 +19,7 @@ setup(
         'cartopy',
         'dask',
         'matplotlib',
+        # 'mpi4py',
         'netcdf4',
         'numpy',
         'pandas',
