@@ -18,7 +18,7 @@ class Reservoir:
         Qmin: Optional[float] = None,
         Qf: Optional[float] = None,
         Atot: Optional[float] = None,
-        At: int = 86400
+        timestep: int = 86400
     ):
         """
         Parameters:
@@ -33,7 +33,7 @@ class Reservoir:
             Non-damaging outflow (m3/s)
         Atot: float (optional)
             Reservoir area (m2) at maximum capacity
-        At: int
+        timestep: int
             Simulation time step in seconds.
         """
         
@@ -42,9 +42,9 @@ class Reservoir:
         self.Qmin = Qmin
         self.Qf = Qf
         self.Atot = Atot
-        self.At = At
+        self.timestep = timestep
 
-    def timestep(
+    def step(
         self, 
         I: float, 
         V: float,
@@ -69,11 +69,11 @@ class Reservoir:
             
         Returns:
         --------
-        Q, V, A: List[float]
-            Outflow (m3/s), updated storage (m3) and area (m2)
+        Q, V: List[float]
+            Outflow (m3/s) and updated storage (m3)
         """
-        
-        pass
+
+        raise NotImplementedError("The 'step' method must be implemented in the subclass.")
     
     def simulate(
         self,
@@ -121,7 +121,7 @@ class Reservoir:
         timesteps = tqdm(inflow.items(), total=len(inflow), desc='timesteps')
         for ts, I in timesteps:
             storage[ts] = Vo
-            Q, V = self.timestep(
+            Q, V = self.step(
                 I, 
                 Vo, 
                 P=precipitation[ts] if precipitation is not None else None, 
@@ -147,7 +147,7 @@ class Reservoir:
         Parameters:
         -----------
         volume: pandas.Series
-            Time series of reservoir storage
+            Time series of reservoir storage (m3)
         elev_masl: float
             Elevation of the top of the dam in meters above sea level
         dam_hgt_m: float
@@ -156,7 +156,7 @@ class Reservoir:
         Returns:
         --------
         level_masl: pandas.Series
-            Time series of reservoir level
+            Time series of reservoir level (m.a.s.l.)
         """
         
         h = dam_hgt_m * (volume / self.Vtot)**(1/3)
@@ -168,20 +168,19 @@ class Reservoir:
         self, 
         volume: pd.Series, 
     ) -> pd.Series:
-        """Estimates the reservoir level assuming a triangular pyramid shape
+        """Estimates the reservoir area assuming a triangular pyramid shape
         
             area = Atot * (volume / Vtot)**(2/3)
         
         Parameters:
         -----------
         volume: pandas.Series
-            Time series of reservoir storage
-        . The units of the result will be the same as those provided here
+            Time series of reservoir storage (m3)
             
         Returns:
         --------
         area: pandas.Series
-            Time series of reservoir area
+            Time series of reservoir area (m2)
         """
         
         area = self.Atot * (volume / self.Vtot)**(2/3)

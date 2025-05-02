@@ -23,7 +23,7 @@ class Lisflood(Reservoir):
         Qf: float,
         k: float = 1.2,
         Atot: Optional[int] = None,
-        At: int = 86400
+        timestep: int = 86400
     ):
         """
         Parameters:
@@ -46,11 +46,11 @@ class Lisflood(Reservoir):
             Non-damaging outflow (m3/s)
         Atot: integer (optional)
             Reservoir area (m2) at maximum capacity
-        At: int
+        timestep: int
             Simulation time step in seconds.
         """
         
-        super().__init__(Vmin, Vtot, Qmin, Qf, Atot, At)
+        super().__init__(Vmin, Vtot, Qmin, Qf, Atot, timestep)
         
         # storage limits
         self.Vn = Vn
@@ -61,7 +61,7 @@ class Lisflood(Reservoir):
         self.Qn = Qn
         self.k = k
     
-    def timestep(
+    def step(
         self,
         I: float,
         V: float,
@@ -98,15 +98,15 @@ class Lisflood(Reservoir):
                 raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
                 
         # update reservoir storage
-        V += I * self.At
+        V += I * self.timestep
         if P:
             V += P * 1e-3 * A
         if E:
             # evaporation can't happen if there's no water
-            V = max(0, V - E * 1e-3 * A)
+            V = np.max([0, V - E * 1e-3 * A])
         if D:
             # demand can't withdraw water below the minimum storage
-            V = max(self.Vmin, V - D)
+            V = np.max([self.Vmin, V - D])
         
         # ouflow depending on the storage level
         if V < 2 * self.Vmin:
@@ -120,17 +120,25 @@ class Lisflood(Reservoir):
             if Q > self.k * I:
                 Q = np.max([self.k * I, self.Qn])
         elif V > self.Vf:
-            Q = np.max([(V - self.Vf) / self.At, np.min([self.Qf, np.max([self.k * I, self.Qn])])])
+            Q = np.max([(V - self.Vf) / self.timestep, np.min([self.Qf, np.max([self.k * I, self.Qn])])])
         
         # limit outflow so the final storage is between 0 and 1
-        Q = np.max([np.min([Q, (V - self.Vmin) / self.At]), (V - self.Vtot) / self.At])
+        # Q = np.max([np.min([Q, V / self.timestep]), (V - self.Vtot) / self.timestep])
+        eps = 1e-3
+        if V - Q * self.timestep > self.Vtot:
+            Q = (V - self.Vtot) / self.timestep + eps
+        elif V - Q * self.timestep < self.Vmin:
+            Q = (V - self.Vmin) / self.timestep - eps if V >= self.Vmin else 0
+        if Q < 0:
+            print(f'WARNING. The simulated outflow was negative ({Q:.6f} m3/s). Limitted to 0')
+            Q = 0
 
         # update reservoir storage with the outflow volume
-        V -= Q * self.At
+        V -= Q * self.timestep
         
         assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
         assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
-        assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
+        # assert 0 <= Q, f'The simulated outflow is negative: {Q:.6f} m3/s'
             
         return Q, V
         
@@ -158,7 +166,7 @@ class Lisflood(Reservoir):
             assert I >= 0, '"I" must be a positive value'
             I = pd.Series(I, index=V.index)
         
-        O1 = V / self.At 
+        O1 = V / self.timestep 
         O1[O1 > self.Qmin] = self.Qmin
         O = O1.copy()
         
@@ -177,7 +185,7 @@ class Lisflood(Reservoir):
         Omax = 1.2 * I
         Omax[Omax < self.Qn] = self.Qn
         Omax[Omax > self.Qf] = self.Qf
-        O5 = pd.concat(((V - self.Vf - .01 * self.Vtot) / self.At, Omax), axis=1).max(axis=1)
+        O5 = pd.concat(((V - self.Vf - .01 * self.Vtot) / self.timestep, Omax), axis=1).max(axis=1)
         maskV5 = self.Vf <= V
         O[maskV5] = O5[maskV5]
         
@@ -257,7 +265,8 @@ class Lisflood(Reservoir):
             'Qmin': self.Qmin,
             'Qn': self.Qn,
             'Qf': self.Qf,
-            'k': self.k
+            'k': self.k,
+            'Atot': self.Atot
         }
         params = {key: float(value) for key, value in params.items()}
 
