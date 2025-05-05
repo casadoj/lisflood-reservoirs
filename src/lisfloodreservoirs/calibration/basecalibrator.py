@@ -3,8 +3,8 @@ import pandas as pd
 from spotpy.objectivefunctions import kge
 from spotpy.parameter import Uniform
 from typing import List, Literal, Optional, Dict, Union
-    
-    
+
+
 class Calibrator(object):
     """Parent class used for the univariate calibration of reservoir modules. A specific child class needs to be created for each reservoir module to specify its parameter space and simulation process.
     """

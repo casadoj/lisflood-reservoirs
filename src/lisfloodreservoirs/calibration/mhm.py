@@ -3,6 +3,8 @@ import pandas as pd
 from spotpy.objectivefunctions import kge
 from spotpy.parameter import Uniform
 from typing import List, Dict, Literal, Optional, Union
+import logging
+logger = logging.getLogger(__name__)
 
 from .basecalibrator import Calibrator
 from ..models import get_model

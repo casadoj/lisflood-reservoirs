@@ -169,7 +169,7 @@ def main():
         
         # performance
         try:
-            performance_def = compute_performance(ts, sim_def)
+            performance_def = compute_performance(ts.iloc[cfg.SPINUP:], sim_def.iloc[cfg.SPINUP:])
             performance_def.to_csv(cfg.PATH_DEF / f'{grand_id}_performance.csv', float_format='%.3f')
             logger.info(f'Performance of reservoir {grand_id} has been computed')
         except IOError:
@@ -181,6 +181,7 @@ def main():
                 sim_def,
                 ts,
                 norm=False,
+                spinup=cfg.SPINUP,
                 title=f'grand_id: {grand_id}',
                 save=cfg.PATH_DEF / f'{grand_id}_scatter_obs_sim.jpg'
             )
@@ -191,9 +192,11 @@ def main():
         # line plot simulation vs observation
         try:
             res.lineplot(
-                {#'GloFAS': glofas,
-                    'sim': sim_def},
+                {
+                'sim': sim_def
+                },
                 ts,
+                spinup=cfg.SPINUP,
                 figsize=(12, 6),
                 save=cfg.PATH_DEF / f'{grand_id}_line_obs_sim.jpg'
             )

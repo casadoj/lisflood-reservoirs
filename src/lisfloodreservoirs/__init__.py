@@ -26,12 +26,12 @@ class Config:
         self.PRECIPITATION = self.cfg['simulation']['inputs'].get('precipitation', None)
         self.EVAPORATION = self.cfg['simulation']['inputs'].get('evaporation', None)
         self.DEMAND = self.cfg['simulation']['inputs'].get('demand', None)
+        self.SPINUP = self.cfg['simulation'].get('spinup', 0)
         
         # calibration
         self.TARGET = self.cfg['calibration']['target']
         self.MAX_ITER = self.cfg['calibration']['SCEUA'].get('max_iter', 1000)
         self.COMPLEXES = self.cfg['calibration']['SCEUA'].get('COMPLEXES', 4)
-        self.SPINUP = self.cfg['calibration'].get('spinup', None)
         path_calib = path_results / self.MODEL / 'calibration'
         if len(self.TARGET) == 1:
             self.PATH_CALIB = path_calib / 'univariate' / self.TARGET[0]

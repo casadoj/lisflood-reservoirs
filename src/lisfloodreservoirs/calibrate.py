@@ -146,6 +146,7 @@ def main():
                 Atot=Atot,
                 target=cfg.TARGET,
                 obj_func=KGEmod,
+                spinup=cfg.SPINUP,
                 **cal_cfg
             )
             # define the sampling method
@@ -208,7 +209,7 @@ def main():
         
         # performance
         try:
-            performance_cal = compute_performance(ts, sim_cal)
+            performance_cal = compute_performance(ts.iloc[cfg.SPINUP:], sim_cal.iloc[cfg.SPINUP:])
             performance_cal.to_csv(cfg.PATH_CALIB / f'{grand_id}_performance.csv', float_format='%.3f')
             logger.info(f'Performance of reservoir {grand_id} has been computed')
         except IOError:
@@ -219,6 +220,7 @@ def main():
             res.scatter(
                 sim_cal,
                 ts,
+                spinup=cfg.SPINUP,
                 norm=False,
                 title=f'grand_id: {grand_id}',
                 save=cfg.PATH_CALIB / f'{grand_id}_scatter.jpg',
@@ -241,6 +243,7 @@ def main():
             res.lineplot(
                 sim,
                 ts,
+                spinup=cfg.SPINUP,
                 figsize=(12, 6),
                 save=cfg.PATH_CALIB / f'{grand_id}_line.jpg',
             )

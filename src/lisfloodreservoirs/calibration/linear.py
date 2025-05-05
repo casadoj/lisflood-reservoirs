@@ -3,6 +3,8 @@ import pandas as pd
 from spotpy.objectivefunctions import kge
 from spotpy.parameter import Uniform
 from typing import List, Literal, Optional, Dict, Union
+import logging
+logger = logging.getLogger(__name__)
 
 from .basecalibrator import Calibrator
 from ..models import get_model
@@ -64,7 +66,7 @@ class Linear_calibrator(Calibrator):
             Numer or time steps to use to warm up the model. These initial time steps will not be taken into account in the computation of model performance. By default, it is None and all the simulation will be used
         """
         
-        super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, precipitation, evaporation, demand, Atot, target, obj_func, spinup)  
+        super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, precipitation, evaporation, demand, Atot, target, obj_func, spinup)
     
     def pars2attrs(self, pars: List) -> Dict:
         """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`

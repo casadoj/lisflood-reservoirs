@@ -233,6 +233,7 @@ class Reservoir:
         norm: bool = True, 
         Vlims: Optional[List[float]] = None,
         Qlims: Optional[List[float]] = None,
+        spinup: Optional[int] = None,
         save: Optional[Union[Path, str]] = None,  # Optional added here
         **kwargs
     ):
@@ -250,6 +251,8 @@ class Reservoir:
             Storage limits (if any) used in the reservoir routine
         Qlims: list (optional)
             Outflow limits (if any) used in the reservoir routine
+        spinup: integer (otpional)
+            Number of time steps at the beginning of the simulation skipped in the computation of performance
         save: Union[Path, str]
             Directory and file where the figure will be saved
                     
@@ -262,7 +265,7 @@ class Reservoir:
         alpha: float
             The transparency of the scatter plot
         """
-        
+
         if norm:
             series1_ = self.normalize_timeseries(series1)
             if series2 is not None:
@@ -275,21 +278,28 @@ class Reservoir:
             if series2 is not None:
                 series2_ = series2
             x1lim = (0, None)
-        reservoir_analysis(series1_, series2_,
-                           x_thr=Vlims,
-                           y_thr=Qlims,
-                           title=kwargs.get('title', None),
-                           labels=kwargs.get('labels', ['sim', 'obs']),
-                           alpha=kwargs.get('alpha', .05),
-                           x1lim=x1lim,
-                           save=save)
-        
+        if spinup is not None:
+            series1_ = series1_.iloc[spinup:]
+            series2_ = series2_.iloc[spinup:]
+        reservoir_analysis(
+            series1_, 
+            series2_,
+            x_thr=Vlims,
+            y_thr=Qlims,
+            title=kwargs.get('title', None),
+            labels=kwargs.get('labels', ['sim', 'obs']),
+            alpha=kwargs.get('alpha', .05),
+            x1lim=x1lim,
+            save=save
+        )
+    
     def lineplot(
         self,
         sim: Dict[str, pd.DataFrame],
         obs: Optional[pd.DataFrame] = None,
         Vlims: Optional[List[float]] = None,
         Qlims: Optional[List[float]] = None,
+        spinup: Optional[int] = None,
         save: Optional[Union[Path, str]] = None,
         **kwargs
     ):
@@ -305,6 +315,8 @@ class Reservoir:
             Storage limits (if any) used in the reservoir routine
         Qlims: list (optional)
             Outflow limits (if any) used in the reservoir routine
+        spinup: integer (otpional)
+            Number of time steps at the beginning of the simulation skipped in the computation of performance
         save: Union[Path, str]
             Directory and file where the figure will be saved
             
@@ -338,17 +350,25 @@ class Reservoir:
                 ax.plot(serie[var] * f, lw=lw, label=label)
                 if obs is not None:
                     try:
-                        kge, alpha, beta, corr = KGEmod(obs[var], serie[var])
-                    except:
+                        if spinup is None:
+                            kge, alpha, beta, corr = KGEmod(obs[var], serie[var])
+                        else:
+                            kge, alpha, beta, corr = KGEmod(obs[var].iloc[spinup:], serie[var].iloc[spinup:])
+                            ax.axvline(serie[var].index[spinup], c='k', ls='--', lw=.5)
+                    except Exception as e:
+                        logger.error(f'{e}')
                         continue
                     text = f'KGE={kge:.2f}  α={alpha:.2f}  β={beta:.2f}  ρ={corr:.2f}'
+                    x = .01
+                    if spinup is not None:
+                        x += spinup / len(serie[var])
                     if var == 'outflow':
                         y = .97 - .08 * i
                         ha = 'top'
                     elif var == 'storage':
                         y = .03 + .08 * i
                         ha = 'bottom'
-                    ax.text(0.01, y, text, ha='left', va=ha,
+                    ax.text(x, y, text, ha='left', va=ha,
                             color=f'C{i}', transform=ax.transAxes, fontsize=10,
                             bbox=dict(facecolor='white', edgecolor='none', alpha=0.5))
             if dct['thresholds'] is not None:
