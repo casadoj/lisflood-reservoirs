@@ -2,26 +2,30 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.axes import Axes
-from typing import Union, List, Tuple, Dict
+from typing import Union, List, Tuple, Dict, Optional
 from pathlib import Path
+import logging
+logger = logging.getLogger(__name__)
 
 from ..utils.plots import reservoir_analysis
 from .basemodel import Reservoir
 
-       
         
-class Hanazaki(Reservoir):
+class Camaflood(Reservoir):
     """Representation of a reservoir according to Hanazaki, Yamazaki & Yoshimura (2021)."""
     
-    def __init__(self,
-                 Vmin: float,
-                 Vf:float,
-                 Ve: float,
-                 Vtot: float,
-                 Qn: float,
-                 Qf: float,
-                 A: int,
-                 At: int = 86400):
+    def __init__(
+        self,
+        Vmin: float,
+        Vf:float,
+        Ve: float,
+        Vtot: float,
+        Qn: float,
+        Qf: float,
+        A: int,
+        Atot: Optional[int] = None,
+        timestep: int = 86400
+    ):
         """        
         Parameters:
         -----------
@@ -37,13 +41,15 @@ class Hanazaki(Reservoir):
             Normal outflow (m3/s)
         Qf: float
             Outflow (m3/s) in case of flood
-        A: integer
+        catchment: integer
             Area (m2) of the reservoir catchment
-        At: int
+        Atot: integer (optional)
+            Reservoir area (m2) at maximum capacity
+        timestep: int
             Simulation time step in seconds.
         """
         
-        super().__init__(Vmin, Vtot, None, Qf, At)
+        super().__init__(Vmin, Vtot, Qmin=None, Qf=Qf, Atot=Atot, timestep=timestep)
         
         # storage limits
         self.Vf = Vf
@@ -53,13 +59,17 @@ class Hanazaki(Reservoir):
         self.Qn = Qn
         
         # release coefficient
-        self.k = max(1 - 5 * (Vtot - Vf) / A, 0)
+        self.k = max(1 - 5 * (Vtot - Vf) / catchment, 0)
         
-    def timestep(self,
-                 I: float,
-                 V: float,
-                 verbose: bool = False
-                ) -> List[float]:
+    def step(
+        self,
+        I: float,
+        V: float,
+        P: Optional[float] = None,
+        E: Optional[float] = None,
+        D: Optional[float] = None,
+        verbose: bool = False
+    ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
         
         Parameters:
@@ -68,6 +78,12 @@ class Hanazaki(Reservoir):
             Inflow (m3/s)
         V: float
             Volume stored in the reservoir (m3)
+        P: float (optional)
+            Precipitaion on the reservoir (mm)
+        E: float (optional)
+            Open water evaporation (mm)
+        D: float (optional)
+            Consumptive demand (m3)
         verbose: bool
             Whether to show on screen the evolution
             
@@ -77,8 +93,23 @@ class Hanazaki(Reservoir):
             Outflow (m3/s) and updated storage (m3)
         """
         
-        # update reservoir storage with the inflow volume
-        V += I * self.At
+        # estimate reservoir area at the beginning of the time step
+        if P or E:
+            if self.Atot:
+                A = self.estimate_area(V)
+            else:
+                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
+            
+        # update reservoir storage
+        V += I * self.timestep
+        if P:
+            V += P * 1e-3 * A
+        if E:
+            # evaporation can't happen if there's no water
+            V = np.max([0, V - E * 1e-3 * A])
+        if D:
+            # demand can't withdraw water below the minimum storage
+            V = np.max([self.Vmin, V - D])
         
         # ouflow depending on the inflow and storage level
         if V < self.Vmin:
@@ -101,19 +132,31 @@ class Hanazaki(Reservoir):
             if verbose:
                 if V > self.Vtot:
                     print(f'{V} m3 is greater than the reservoir capacity of {self.Vtot} m3')
-                    
+
+        # limit outflow so the final storage is between 0 and 1
+        eps = 1e-3
+        if V - Q * self.timestep > self.Vtot:
+            Q = (V - self.Vtot) / self.timestep + eps
+        elif V - Q * self.timestep < self.Vmin:
+            Q = (V - self.Vmin) / self.timestep - eps if V >= self.Vmin else 0
+        if Q < 0:
+            logger.warning(f'The simulated outflow was negative ({Q:.6f} m3/s). Limitted to 0')
+            Q = 0
+            
         # update reservoir storage with the outflow volume
-        AV = np.min([Q * self.At, V])
-        AV = np.max([AV, V - self.Vtot])
-        V -= AV
+        V -= Q * self.timestep
 
         assert 0 <= V, f'The volume at the end of the timestep is negative: {V:.0f} m3'
         assert V <= self.Vtot, f'The volume at the end of the timestep is larger than the total reservoir capacity: {V:.0f} m3 > {self.Vtot:.0f} m3'
-        assert 0 <= Q, 'The simulated outflow is negative'
-        
+            
         return Q, V
     
-    def routine(self, V: pd.Series, I: Union[float, pd.Series], modified: bool = True):
+    def routine(
+        self, 
+        V: pd.Series, 
+        I: Union[float, pd.Series], 
+        modified: bool = True
+    ):
         """Given a time series of reservoir storage (m3) and a value or a time series of inflow (m3/s), it computes the ouflow (m3/s). This function is only meant for explanatory purposes; since the volume time series is given, the computed outflow does not update the reservoir storage. If the intention is to simulate the behaviour of the reservoir, refer to the function "simulate"
         
         Parameters:
@@ -174,7 +217,12 @@ class Hanazaki(Reservoir):
 
         return O
     
-    def plot_routine(self, modified: bool = True, ax: Axes = None, **kwargs):
+    def plot_routine(
+        self, 
+        modified: bool = True, 
+        ax: Axes = None, 
+        **kwargs
+    ):
         """It creates a plot that explains the reservoir routine.
         
         Parameters:
@@ -231,18 +279,27 @@ class Hanazaki(Reservoir):
     def get_params(self):
         """It generates a dictionary with the reservoir paramenters in the Hanazaki model."""
 
-        params = {'Vmin': self.Vmin,
-                  'Vf': self.Vf,
-                  'Ve': self.Ve,
-                  'Vtot': self.Vtot,
-                  'Qn': self.Qn,
-                  'Qf': self.Qf,
-                  'k': self.k}
+        params = {
+            'Vmin': self.Vmin,
+            'Vf': self.Vf,
+            'Ve': self.Ve,
+            'Vtot': self.Vtot,
+            'Qn': self.Qn,
+            'Qf': self.Qf,
+            'k': self.k,
+            'Atot': self.Atot
+        }
         params = {key: float(value) for key, value in params.items()}
 
         return params
     
-    def compare(self, series1: pd.DataFrame, series2: pd.DataFrame = None, save: Union[Path, str] = None, **kwargs):
+    def compare(
+        self, 
+        series1: pd.DataFrame, 
+        series2: pd.DataFrame = None, 
+        save: Union[Path, str] = None, 
+        **kwargs
+    ):
         """It compares two reservoir timeseries (inflow, outflow and storage) using the function 'reservoir_analysis'. If only 1 time series is given, the plot will simply show the reservoir behaviour of that set of time series.
         
         Inputs:
@@ -276,9 +333,13 @@ class Hanazaki(Reservoir):
             series2_norm = self.normalize_timeseries(series2)
         else:
             series2_norm = series2
-        reservoir_analysis(series1_norm, series2_norm,
-                           x_thr=Vlims, y_thr=Qlims,
-                           title=kwargs.get('title', None),
-                           labels=kwargs.get('labels', ['sim', 'obs']),
-                           alpha=kwargs.get('alpha', .05),
-                           save=save)
+        reservoir_analysis(
+            series1_norm,
+            series2_norm,
+            x_thr=Vlims, 
+            y_thr=Qlims,
+            title=kwargs.get('title', None),
+            labels=kwargs.get('labels', ['sim', 'obs']),
+            alpha=kwargs.get('alpha', .05),
+            save=save
+        )

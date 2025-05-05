@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='lisflood-reservoirs',
-    version='1.1.0',
+    version='1.2.0',
     packages=find_packages(where='src'),
     package_dir={'': 'src'},
     entry_points={
@@ -19,6 +19,7 @@ setup(
         'cartopy',
         'dask',
         'matplotlib',
+        # 'mpi4py',
         'netcdf4',
         'numpy',
         'pandas',

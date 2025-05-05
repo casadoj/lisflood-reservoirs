@@ -6,7 +6,7 @@ Five different reservoir routines are implemented in this repository:
 
 * Linear reservoir (class [`Linear`](./src/lisfloodreservoirs/models/linear.py))
 * The routine in the hydrological model [LISFLOOD](https://ec-jrc.github.io/lisflood-model/3_03_optLISFLOOD_reservoirs/) (class [`Lisflood`](./src/lisfloodreservoirs/models/lisflood.py))
-* The routine in the hydrological model [CaMa-Flood](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021MS002944) (class [`Hanazaki`](./src/lisfloodreservoirs/models/hanazaki.py))
+* The routine in the hydrological model [CaMa-Flood](https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021MS002944) (class [`Camaflood`](./src/lisfloodreservoirs/models/camaflood.py))
 * The routine in the hydrological model [mHM](https://agupubs.onlinelibrary.wiley.com/doi/10.1029/2023WR035433) (class  [`mHM`](./src/lisfloodreservoirs/models/mhm.py))
 * The reservoir model [Starfit](https://www.sciencedirect.com/science/article/pii/S0022169421008933?via%3Dihub) (class [`Starfit`](./src/lisfloodreservoirs/models/starfit/starfit.py))
 
@@ -34,7 +34,7 @@ pip install .
 
 ## Quick start
 
-The repository contains 4 tools to calibrate and run reservoir models. The models included in the repository can be classified in two groups: those that can be calibrated with an iterative process (i.e., a genetic algorithm), and those that are simply fitted using standard `SciPy` tools. To the first group belong the **linear**, **LISFLOOD**, **Hanazaki** and **mHM** models; the tools [`run_reservoir`](#run_reservoir) and [`cal_reservoir`](#cal_reservoir) apply to this group. To the second group belongs the **Starfit** model; the tools [`run_starfit`](#run_starfit) and [`fit_starfit`](#fit_starfit) apply to it.
+The repository contains 4 tools to calibrate and run reservoir models. The models included in the repository can be classified in two groups: those that can be calibrated with an iterative process (i.e., a genetic algorithm), and those that are simply fitted using standard `SciPy` tools. To the first group belong the **linear**, **LISFLOOD**, **Camaflood** and **mHM** models; the tools [`run_reservoir`](#run_reservoir) and [`cal_reservoir`](#cal_reservoir) apply to this group. To the second group belongs the **Starfit** model; the tools [`run_starfit`](#run_starfit) and [`fit_starfit`](#fit_starfit) apply to it.
 
 ### Configuration
 
@@ -45,7 +45,7 @@ The configuration file has three sections dedicated to data, simulation, and cal
 * The data section defines the location of the reservoir data set and the files that defines the reservoirs to be used (TXT format) and the study period for each of those reservoirs (Pickle format). All the tools are based in a fixed dataset structure:
     *  Attributes must be in a subfolder named *attributes* within the dataset folder.
     *  Time series must be in a subolder named *time_series/csv* within the dataset folder.
-* The simulation section defines the reservoir model to be used (`linear`, `lisflood`, `hanazaki`, `mhm` or `starfit`) and the folder where the results of the simulation with default parameters will be saved.
+* The simulation section defines the reservoir model to be used (`linear`, `lisflood`, `camaflood`, `mhm` or `starfit`) and the folder where the results of the simulation with default parameters will be saved.
 * The calibration section defines the name of the input variable, the target or targets of the calibration (`storage`, `outflow` or both), the parameters of the SCE-UA algorithm, and the directory where results will be saved.
 
 ### Tools
@@ -58,7 +58,7 @@ fit_starfit --config-file config.yml
 
 #### [`run_reservoir`](./src/lisfloodreservoirs/simulate.py)
 
-This tool simulates the reservoir module with default parameters. It is applicable to the **linear**, **LISFLOOD**, **Hanazaki** and **mHM** models.
+This tool simulates the reservoir module with default parameters. It is applicable to the **linear**, **LISFLOOD**, **Camaflood** and **mHM** models.
 
 ```
 usage: simulate.py [-h] -c CONFIG_FILE [-w]
@@ -76,7 +76,7 @@ options:
 
 #### [`cal_reservoir`](./src/lisfloodreservoirs/calibrate.py)
 
-This tool calibrates the reservoir model using the algorithm Shuffle Complex Evolution - University of Arizona (SCE-UA). It is applicable to the **linear**, **LISFLOOD**, **Hanazaki** and **mHM** models, and it can calibrate the observed storage, outflow, or both at the same time. Eventually, the model is run with the optimised parameters.
+This tool calibrates the reservoir model using the algorithm Shuffle Complex Evolution - University of Arizona (SCE-UA). It is applicable to the **linear**, **LISFLOOD**, **Camaflood** and **mHM** models, and it can calibrate the observed storage, outflow, or both at the same time. Eventually, the model is run with the optimised parameters.
 
 ```
 usage: calibrate.py [-h] -c CONFIG_FILE [-w]

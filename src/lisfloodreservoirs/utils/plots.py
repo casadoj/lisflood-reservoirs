@@ -909,27 +909,81 @@ def reservoir_analysis(
 
     # scatter plot: x1 vs y
     ax10 = plt.subplot(gs[1, 0])
-    reservoir_scatter(sim, x1, y, obs, x_thr=x_thr, y_thr=y_thr, xlim=x1_lim, ax=ax10, legend=False,
-                      size=s, alpha=a, color=c, labels=labels)
+    reservoir_scatter(
+        sim, 
+        x1, 
+        y, 
+        obs, 
+        x_thr=x_thr, 
+        y_thr=y_thr, 
+        xlim=x1_lim, 
+        ax=ax10, 
+        legend=False,
+        size=s, 
+        alpha=a, 
+        color=c, 
+        labels=labels
+    )
     
     # scatter plot: x2 vs y
     ax11 = plt.subplot(gs[1, 1])
-    reservoir_scatter(sim, x2, y, obs, x_thr=y_thr, y_thr=y_thr, ax=ax11, legend=False, ylim=ax10.get_ylim(), ylabel='', yticklabels=False,
-                      size=s, alpha=a, color=c, labels=labels)
+    reservoir_scatter(
+        sim, 
+        x2,
+        y, 
+        obs, 
+        x_thr=y_thr, 
+        y_thr=y_thr, 
+        ax=ax11, 
+        legend=False, 
+        ylim=ax10.get_ylim(), 
+        ylabel='', 
+        yticklabels=False,
+        size=s, 
+        alpha=a, 
+        color=c, 
+        labels=labels
+    )
     ax11.plot(ax10.get_ylim(), ax10.get_ylim(), c='k', lw=.5, ls=':', zorder=0)
     
     # density distribution: x1
     ax00 = plt.subplot(gs[0, 0])
-    reservoir_kde(sim, obs, x=x1, thr=x_thr, ax=ax00, xlim=ax10.get_xlim(), xticklabels=False,                   color=c)
+    reservoir_kde(
+        sim, 
+        obs, 
+        x=x1, 
+        thr=x_thr, 
+        ax=ax00, 
+        xlim=ax10.get_xlim(), 
+        xticklabels=False,   
+        color=c
+    )
     
     # density distribution: x2
     ax01 = plt.subplot(gs[0, 1])
-    reservoir_kde(sim, obs, x=x2, thr=y_thr, ax=ax01, xlim=ax11.get_xlim(), xticklabels=False,
-                  color=c)
+    reservoir_kde(
+        sim, 
+        obs, 
+        x=x2, 
+        thr=y_thr, 
+        ax=ax01, 
+        xlim=ax11.get_xlim(), 
+        xticklabels=False,
+        color=c
+    )
 
     # density distribution: y
     ax12 = plt.subplot(gs[1, 2])
-    reservoir_kde(sim, obs, y=y, thr=y_thr, ax=ax12, ylim=ax10.get_ylim(), yticklabels=False, color=c)
+    reservoir_kde(
+        sim, 
+        obs, 
+        y=y, 
+        thr=y_thr, 
+        ax=ax12, 
+        ylim=ax10.get_ylim(), 
+        yticklabels=False, 
+        color=c
+    )
     
     fig.legend(*ax10.get_legend_handles_labels(), frameon=False, ncol=3, loc=8, bbox_to_anchor=[.25, -.04, .5, .05])
     

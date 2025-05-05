@@ -5,20 +5,20 @@ data:
     path: /PATH_ROOT/ResOpsUS/v2.0/
     reservoirs: /PATH_ROOT/ResOpsUS/v2.0/selection/reservoirs.txt
     periods: /PATH_ROOT/ResOpsUS/v2.0/selection/periods.pkl
-
+    results: /PATH_ROOT/ResOpsUS/v2.0/results/
+    
 simulation:
     model: mhm
-    # only needed for the Lisflood routine
-    # config:
-        # routine: 1
-        # limit_Q: True
-    path: /PATH_ROOT/ResOpsUS/v2.0/results/
+    inputs: # names of the time series
+        inflow: inflow # compulsory (m3/s). By default, 'inflow'
+        precipitation:  # optional (mm). By default, None
+        evaporation: # optional (mm). By default, None
+        demand: # optional (m3). By default, None
+    spinup: # time steps. By default, None
 
 calibration:
-    input:
-        - inflow
     target:
         - storage
-    max_iter: 1000
-    complexes: 4
-    path: /PATH_ROOT/ResOpsUS/v2.0/results/
+    SCEUA:
+        max_iter: 1000
+        complexes: 4

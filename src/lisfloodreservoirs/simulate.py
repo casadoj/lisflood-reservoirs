@@ -22,7 +22,7 @@ from .utils.logging import setup_logger
 
 def main():
 
-    # read argument specifying the configuration file
+    # parse arguments
     parser = argparse.ArgumentParser(
         description="""
         Run the reservoir routine with default parameters.
@@ -43,7 +43,6 @@ def main():
     )
 
     logger.info(f'Default simulation results will be saved in: {cfg.PATH_DEF}')
-    
     
     # === Load reservoir list ===
     try:
@@ -70,69 +69,73 @@ def main():
 
     # === read time series ===
     try:
-        timeseries = read_timeseries(cfg.PATH_DATA / 'time_series' / 'csv',
-                                     attributes.index,
-                                     periods,
-                                     variables=['inflow', 'outflow', 'storage'])
+        inputs = [var for var in [cfg.INFLOW, cfg.PRECIPITATION, cfg.EVAPORATION, cfg.DEMAND] if var]
+        outputs = ['storage', 'outflow']
+        timeseries = read_timeseries(
+            path=cfg.PATH_DATA / 'time_series' / 'csv',
+            reservoirs=attributes.index,
+            periods=periods,
+            variables=inputs + outputs
+        )
         logger.info(f'{len(timeseries)} reservoirs with timeseries')
     except IOError:
         logger.exception('Failed to read time series from {0}: {1}'.format(cfg.PATH_DATA / 'time_series' / 'csv'))
         raise
-
 
     # === Simulate reservoir routine ===
     for grand_id, ts in tqdm(timeseries.items(), desc='simulating reservoir'):
 
         out_file = cfg.PATH_DEF / f'{grand_id}_simulation.csv'
         if out_file.exists() and not args.overwrite:
-            logger.info(f'Simulation already exists for {grand_id}, skipping (use --overwrite to force)')
+            logger.info(f'Simulation already exists for reservoir {grand_id}, skipping (use --overwrite to force)')
             continue
             
-        logger.info(f'Simulating reservoir {grand_id:>4}')
-
+        logger.info(f'Simulating reservoir {grand_id}')
+        
+        # define input time series
+        inflow = ts[cfg.INFLOW]
+        precipitation = ts[cfg.PRECIPITATION] if cfg.PRECIPITATION in ts.columns else None
+        evaporation = ts[cfg.EVAPORATION] if cfg.EVAPORATION in ts.columns else None
+        demand = ts[cfg.DEMAND] if cfg.DEMAND in ts.columns else None
+        if cfg.MODEL == 'mhm':
+            bias = ts.outflow.mean() / inflow.mean()
+            demand = create_demand(
+                ts.outflow,
+                water_stress=min(1, bias),
+                window=28
+            )
+            
         # plot observed time series
         try:
             path_obs = cfg.PATH_DEF.parent.parent / 'observed'
             path_obs.mkdir(exist_ok=True)
-            plot_resops(ts.storage,
-                        ts.elevation if 'elevation' in ts.columns else None,
-                        ts.inflow,
-                        ts.outflow,
-                        attributes.loc[grand_id, 'CAP_MCM'] * 1e6,
-                        title=grand_id,
-                        save=path_obs / f'{grand_id}_line.jpg'
-                       )
+            plot_resops(
+                storage=ts.storage,
+                elevation=ts.elevation if 'elevation' in ts.columns else None,
+                inflow=inflow,
+                outflow=ts.outflow,
+                capacity=attributes.loc[grand_id, 'CAP_MCM'] * 1e6,
+                title=grand_id,
+                save=path_obs / f'{grand_id}_line.jpg'
+            )
             logger.info(f'Line plot of observations from reservoir {grand_id}')
         except IOError:
             logger.exception(f'The line plot of observed records could not be generated')
         
         # estimate default parameters
         try:
-            # storage limits (m3)
             Vtot = ts.storage.max()
-            Vmin = max(0, min(0.1 * Vtot, ts.storage.min()))
-            
-            # time series of water demand
-            if cfg.MODEL == 'mhm':
-                bias = ts.outflow.mean() / ts.inflow.mean()
-                demand = create_demand(ts.outflow,
-                                       water_stress=min(1, bias),
-                                       window=28)
-            else:
-                demand = None
-                
-            # default reservoir attributes
             reservoir_attrs = default_attributes(
                 cfg.MODEL,
-                ts.inflow,
+                inflow,
                 Vtot,
-                Vmin,
+                Vmin=max(0, min(0.1 * Vtot, ts.storage.min())),
                 Qmin=max(0, ts.outflow.min()),
                 A=int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6),
+                Atot=int(attributes.loc[grand_id, 'AREA_SKM'] * 1e6),
                 storage=ts.storage,
                 demand=demand
             ) 
-            
         except RuntimeError:
             logger.exception(f'Default parameters for reservoir {grand_id} could not be estimated')
             continue
@@ -147,12 +150,13 @@ def main():
                 yaml.dump(res.get_params(), file)
 
             # simulate the reservoir
-            sim_cfg = copy.deepcopy(cfg.SIMULATION_CFG)
-            if cfg.MODEL == 'mhm':
-                sim_cfg.update({'demand': demand})
-            sim_def = res.simulate(inflow=ts.inflow,
-                                   Vo=ts.storage.iloc[0],
-                                   **sim_cfg)
+            sim_def = res.simulate(
+                inflow=inflow,
+                Vo=ts.storage.iloc[0],
+                precipitation=precipitation,
+                evaporation=evaporation,
+                demand=demand,
+            )
             sim_def.to_csv(cfg.PATH_DEF / f'{grand_id}_simulation.csv', float_format='%.3f')
 
             logger.info(f'Reservoir {grand_id} correctly simulated')
@@ -165,7 +169,7 @@ def main():
         
         # performance
         try:
-            performance_def = compute_performance(ts, sim_def)
+            performance_def = compute_performance(ts.iloc[cfg.SPINUP:], sim_def.iloc[cfg.SPINUP:])
             performance_def.to_csv(cfg.PATH_DEF / f'{grand_id}_performance.csv', float_format='%.3f')
             logger.info(f'Performance of reservoir {grand_id} has been computed')
         except IOError:
@@ -173,29 +177,34 @@ def main():
         
         # scatter plot simulation vs observation
         try:
-            res.scatter(sim_def,
-                        ts,
-                        norm=False,
-                        title=f'grand_id: {grand_id}',
-                        save=cfg.PATH_DEF / f'{grand_id}_scatter_obs_sim.jpg',
-                       )
+            res.scatter(
+                sim_def,
+                ts,
+                norm=False,
+                spinup=cfg.SPINUP,
+                title=f'grand_id: {grand_id}',
+                save=cfg.PATH_DEF / f'{grand_id}_scatter_obs_sim.jpg'
+            )
             logger.info(f'Scatter plot of simulation from reservoir {grand_id}')
         except IOError:
             logger.exception(f'The scatter plot of reservoir {grand_id} could not be generated')
         
         # line plot simulation vs observation
         try:
-            res.lineplot({#'GloFAS': glofas,
-                          'sim': sim_def},
-                         ts,
-                         figsize=(12, 6),
-                         save=cfg.PATH_DEF / f'{grand_id}_line_obs_sim.jpg',
-                       )
+            res.lineplot(
+                {
+                'sim': sim_def
+                },
+                ts,
+                spinup=cfg.SPINUP,
+                figsize=(12, 6),
+                save=cfg.PATH_DEF / f'{grand_id}_line_obs_sim.jpg'
+            )
             logger.info(f'Line plot of simulation from reservoir {grand_id}')
         except IOError:
             logger.exception(f'The line plot of reservoir {grand_id} could not be generated')
 
-        del res, sim_def, sim_cfg, reservoir_attrs, performance_def
+        del res, sim_def, reservoir_attrs, performance_def
 
 if __name__ == "__main__":
     main()

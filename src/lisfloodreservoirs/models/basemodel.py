@@ -3,20 +3,27 @@ from typing import List, Tuple, Literal, Dict, Optional, Union
 from pathlib import Path
 import matplotlib.pyplot as plt
 from tqdm.auto import tqdm
+import logging
 
 from ..utils.metrics import KGEmod
 from ..utils.plots import reservoir_analysis
+
+# set logger
+logger = logging.getLogger(__name__)
 
 
 class Reservoir:
     """Parent class to model reservoirs"""
     
-    def __init__(self,
-                 Vmin: float,
-                 Vtot: float,
-                 Qmin: Optional[float] = None,
-                 Qf: Optional[float] = None,
-                 At: int = 86400):
+    def __init__(
+        self,
+        Vmin: float,
+        Vtot: float,
+        Qmin: Optional[float] = None,
+        Qf: Optional[float] = None,
+        Atot: Optional[float] = None,
+        timestep: int = 86400
+    ):
         """
         Parameters:
         -----------
@@ -28,7 +35,9 @@ class Reservoir:
             Minimum outflow (m3/s)
         Qf: float, optional
             Non-damaging outflow (m3/s)
-        At: int
+        Atot: float (optional)
+            Reservoir area (m2) at maximum capacity
+        timestep: int
             Simulation time step in seconds.
         """
         
@@ -36,15 +45,17 @@ class Reservoir:
         self.Vtot = Vtot
         self.Qmin = Qmin
         self.Qf = Qf
-        self.At = At
+        self.Atot = Atot
+        self.timestep = timestep
 
-    def timestep(self, 
-                 I: float, 
-                 V: float,
-                 P: Optional[float] = None,
-                 E: Optional[float] = None,
-                 D: Optional[float] = None
-                ) -> List[float]:
+    def step(
+        self, 
+        I: float, 
+        V: float,
+        P: Optional[float] = None,
+        E: Optional[float] = None,
+        D: Optional[float] = None
+    ) -> List[float]:
         """Given an inflow and an initial storage values, it computes the corresponding outflow
         
         Parameters:
@@ -65,16 +76,17 @@ class Reservoir:
         Q, V: List[float]
             Outflow (m3/s) and updated storage (m3)
         """
-        
-        pass
+
+        raise NotImplementedError("The 'step' method must be implemented in the subclass.")
     
-    def simulate(self,
-                 inflow: pd.Series,
-                 Vo: Optional[float ] = None,
-                 precipitation: Optional[pd.Series] = None,
-                 evaporation: Optional[pd.Series] = None,
-                 demand: Optional[pd.Series] = None,
-                ) -> pd.DataFrame:
+    def simulate(
+        self,
+        inflow: pd.Series,
+        Vo: Optional[float ] = None,
+        precipitation: Optional[pd.Series] = None,
+        evaporation: Optional[pd.Series] = None,
+        demand: Optional[pd.Series] = None,
+    ) -> pd.DataFrame:
         """Given an inflow time series (m3/s) and an initial storage (m3), it computes the time series of outflow (m3/s) and storage (m3)
         
         Parameters:
@@ -86,13 +98,14 @@ class Reservoir:
         precipitation: pandas.Series (optional)
             Time series of precipitation on the reservoir (mm)
         evaporation: pandas.Series (optional)
+            Time series of open water evaporation from the reservoir (mm)
         demand: pandas.Series (optional)
             Time series of total water demand (m3)
             
         Returns:
         --------
         pd.DataFrame
-            A table that concatenates the storage, inflow and outflow time series.
+            A table that concatenates the storage (m3), inflow (m3/s) and outflow (m3/s) time series.
         """
         
         if Vo is None:
@@ -105,22 +118,32 @@ class Reservoir:
         if demand is not None and not isinstance(demand, pd.Series):
             raise ValueError('"demand" must be a pandas.Series representing a time series of water demand (m3/s).')
         
+        # compute outflow and storage
+        inflow.name = 'inflow'
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
-        for ts in tqdm(inflow.index):
-            # compute outflow and new storage
-            if demand is None:
-                Q, V = self.timestep(inflow[ts], Vo)
-            else:
-                Q, V = self.timestep(inflow[ts], Vo, demand[ts])
-            storage[ts] = V
+        timesteps = tqdm(inflow.items(), total=len(inflow), desc='timesteps')
+        for ts, I in timesteps:
+            storage[ts] = Vo
+            Q, V = self.step(
+                I, 
+                Vo, 
+                P=precipitation[ts] if precipitation is not None else None, 
+                E=evaporation[ts] if evaporation is not None else None,
+                D=demand[ts] if demand is not None else None
+            )
             outflow[ts] = Q
             # update current storage
             Vo = V
-
+        
         return pd.concat((storage, inflow, outflow), axis=1)
     
-    def estimate_level(self, volume: pd.Series, elev_masl: float, dam_hgt_m: float, ) -> pd.Series:
+    def estimate_level(
+        self, 
+        volume: pd.Series, 
+        elev_masl: float, 
+        dam_hgt_m: float
+    ) -> pd.Series:
         """Estimates the reservoir level assuming a triangular pyramid shape
         
             level_masl = elev_masl - {dam_hgt_m * [1 - (volume / Vtot)**(1/3)]}
@@ -128,7 +151,7 @@ class Reservoir:
         Parameters:
         -----------
         volume: pandas.Series
-            Time series of reservoir storage
+            Time series of reservoir storage (m3)
         elev_masl: float
             Elevation of the top of the dam in meters above sea level
         dam_hgt_m: float
@@ -137,7 +160,7 @@ class Reservoir:
         Returns:
         --------
         level_masl: pandas.Series
-            Time series of reservoir level
+            Time series of reservoir level (m.a.s.l.)
         """
         
         h = dam_hgt_m * (volume / self.Vtot)**(1/3)
@@ -145,25 +168,26 @@ class Reservoir:
         
         return level_masl
     
-    def estimate_area(self, volume: pd.Series, Atot: float, ) -> pd.Series:
-        """Estimates the reservoir level assuming a triangular pyramid shape
+    def estimate_area(
+        self, 
+        volume: pd.Series, 
+    ) -> pd.Series:
+        """Estimates the reservoir area assuming a triangular pyramid shape
         
             area = Atot * (volume / Vtot)**(2/3)
         
         Parameters:
         -----------
         volume: pandas.Series
-            Time series of reservoir storage
-        Atot: float
-            Reservoir area at maximum capacity. The units of the result will be the same as those provided here
+            Time series of reservoir storage (m3)
             
         Returns:
         --------
         area: pandas.Series
-            Time series of reservoir area
+            Time series of reservoir area (m2)
         """
         
-        area = Atot * (volume / self.Vtot)**(2/3)
+        area = self.Atot * (volume / self.Vtot)**(2/3)
         
         return area
     
@@ -178,9 +202,10 @@ class Reservoir:
 
         pass
 
-    def normalize_timeseries(self,
-                             timeseries: pd.DataFrame
-                            ) -> pd.DataFrame:
+    def normalize_timeseries(
+        self,
+        timeseries: pd.DataFrame
+    ) -> pd.DataFrame:
         """It normalizes the timeseries using the total reservoir capacity and the non-damaging outflow. In this way, the storage time series ranges between 0 and 1, and the inflow and outflow time series are in the order of units.
         
         Parameters:
@@ -201,15 +226,17 @@ class Reservoir:
 
         return ts_norm
     
-    def scatter(self, 
-                series1: pd.DataFrame, 
-                series2: Optional[pd.DataFrame] = None, 
-                norm: bool = True, 
-                Vlims: Optional[List[float]] = None,
-                Qlims: Optional[List[float]] = None,
-                save: Optional[Union[Path, str]] = None,  # Optional added here
-                **kwargs
-               ):
+    def scatter(
+        self, 
+        series1: pd.DataFrame, 
+        series2: Optional[pd.DataFrame] = None, 
+        norm: bool = True, 
+        Vlims: Optional[List[float]] = None,
+        Qlims: Optional[List[float]] = None,
+        spinup: Optional[int] = None,
+        save: Optional[Union[Path, str]] = None,  # Optional added here
+        **kwargs
+    ):
         """It compares two reservoir timeseries (inflow, outflow and storage) using the function 'reservoir_analysis'. If only 1 time series is given, the plot will simply show the reservoir behaviour of that set of time series.
         
         Parameters:
@@ -224,6 +251,8 @@ class Reservoir:
             Storage limits (if any) used in the reservoir routine
         Qlims: list (optional)
             Outflow limits (if any) used in the reservoir routine
+        spinup: integer (otpional)
+            Number of time steps at the beginning of the simulation skipped in the computation of performance
         save: Union[Path, str]
             Directory and file where the figure will be saved
                     
@@ -236,7 +265,7 @@ class Reservoir:
         alpha: float
             The transparency of the scatter plot
         """
-        
+
         if norm:
             series1_ = self.normalize_timeseries(series1)
             if series2 is not None:
@@ -249,22 +278,31 @@ class Reservoir:
             if series2 is not None:
                 series2_ = series2
             x1lim = (0, None)
-        reservoir_analysis(series1_, series2_,
-                           x_thr=Vlims,
-                           y_thr=Qlims,
-                           title=kwargs.get('title', None),
-                           labels=kwargs.get('labels', ['sim', 'obs']),
-                           alpha=kwargs.get('alpha', .05),
-                           x1lim=x1lim,
-                           save=save)
-        
-    def lineplot(self,
-                 sim: Dict[str, pd.DataFrame],
-                 obs: Optional[pd.DataFrame] = None,
-                 Vlims: Optional[List[float]] = None,
-                 Qlims: Optional[List[float]] = None,
-                 save: Optional[Union[Path, str]] = None,
-                 **kwargs):
+        if spinup is not None:
+            series1_ = series1_.iloc[spinup:]
+            series2_ = series2_.iloc[spinup:]
+        reservoir_analysis(
+            series1_, 
+            series2_,
+            x_thr=Vlims,
+            y_thr=Qlims,
+            title=kwargs.get('title', None),
+            labels=kwargs.get('labels', ['sim', 'obs']),
+            alpha=kwargs.get('alpha', .05),
+            x1lim=x1lim,
+            save=save
+        )
+    
+    def lineplot(
+        self,
+        sim: Dict[str, pd.DataFrame],
+        obs: Optional[pd.DataFrame] = None,
+        Vlims: Optional[List[float]] = None,
+        Qlims: Optional[List[float]] = None,
+        spinup: Optional[int] = None,
+        save: Optional[Union[Path, str]] = None,
+        **kwargs
+    ):
         """It plots the simulated time series of outflow and storage. If the observed time series is provided, it is plotted and the modified KGE shown.
 
         Parameters:
@@ -277,6 +315,8 @@ class Reservoir:
             Storage limits (if any) used in the reservoir routine
         Qlims: list (optional)
             Outflow limits (if any) used in the reservoir routine
+        spinup: integer (otpional)
+            Number of time steps at the beginning of the simulation skipped in the computation of performance
         save: Union[Path, str]
             Directory and file where the figure will be saved
             
@@ -310,17 +350,25 @@ class Reservoir:
                 ax.plot(serie[var] * f, lw=lw, label=label)
                 if obs is not None:
                     try:
-                        kge, alpha, beta, corr = KGEmod(obs[var], serie[var])
-                    except:
+                        if spinup is None:
+                            kge, alpha, beta, corr = KGEmod(obs[var], serie[var])
+                        else:
+                            kge, alpha, beta, corr = KGEmod(obs[var].iloc[spinup:], serie[var].iloc[spinup:])
+                            ax.axvline(serie[var].index[spinup], c='k', ls='--', lw=.5)
+                    except Exception as e:
+                        logger.error(f'{e}')
                         continue
                     text = f'KGE={kge:.2f}  α={alpha:.2f}  β={beta:.2f}  ρ={corr:.2f}'
+                    x = .01
+                    if spinup is not None:
+                        x += spinup / len(serie[var])
                     if var == 'outflow':
                         y = .97 - .08 * i
                         ha = 'top'
                     elif var == 'storage':
                         y = .03 + .08 * i
                         ha = 'bottom'
-                    ax.text(0.01, y, text, ha='left', va=ha,
+                    ax.text(x, y, text, ha='left', va=ha,
                             color=f'C{i}', transform=ax.transAxes, fontsize=10,
                             bbox=dict(facecolor='white', edgecolor='none', alpha=0.5))
             if dct['thresholds'] is not None:
