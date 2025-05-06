@@ -1,4 +1,4 @@
-version: v2.0
+version: v2.1
 
 paths:
     LISFLOOD: 
@@ -14,10 +14,10 @@ normalize: True # normalize time series by reservoir storage capacity
 
 period:
     start: 1982-01-01
-    end: 2019-12-30
+    end: #2019-12-30
 
 conditions:
-    min_area: 250 # km²
+    min_area: 50 # km²
     min_volume: 10 # hm3
     min_dor: 0.08 # degree of regulation
     min_dod: 0.06 # degree of disruptivity
