@@ -425,6 +425,8 @@ def time_encoding(
         norm_da = (da - 1) * 2 * np.pi / period
     elif da.min().item() == 0:
         norm_da = da * 2 * np.pi / period
+    else:
+        norm_da = (da - 1) * 2 * np.pi / period
         
     # correct leap years, if necessary
     norm_da = norm_da.where(norm_da <= np.pi * 2, np.pi * 2)
