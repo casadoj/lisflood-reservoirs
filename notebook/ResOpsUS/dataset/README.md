@@ -1,4 +1,4 @@
-# [ResOpsUS](https://www.nature.com/articles/s41597-022-01134-7): Reservoir Operations USA
+# ResOpsUS: dataset
 
 This folder contains all the notebooks used to create the dataset of reservoir operations in the US. It uses four sources of information:
 
