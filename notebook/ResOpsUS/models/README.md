@@ -1,5 +1,9 @@
 # ResOpsUS: model development & comparison
 
-* [ ] The notebooks called _5.*_simulation_{MODEL}.ipynb_  are test runs of each reservoir routine. Now they could all be integrated into a single notebook in which the configuration file defines the reservoir routine to be used and the function `lisfloodreservoirs.models.get_model()` instanciates the correct routine.
+This folder contains notebooks used for developing/testing the simulation and calibration of the reservoir routines in the repository. On top of that, there are notebooks analysing the results of the simulations and calibrations of the different routines.
 
-* [ ] All the notebooks called _6.*_{MODEL}*.ipynb_ are calibrations (or comparisons of calibration) for the different reservoir routines and univariate (storage or outflow) or bivariate (storage and outflow) calibrations. They can all be fused into a single file now; the configuration file must identify the calibration algorithm (SCE-US or MC), the target variables and the reservoir routine to be used. The function `lisfloodreservoirs.calibrations.get_calibrator()` uses these parameters to instanciate the correct calibration.
+* The first set of notebooks (_1_simulate*.ipynb_) are used to run the reservoir routines with default parameters.
+
+* The second set of notebooks (_2_calibrate*.ipynb_) are used to calibrate the reservoir routines.
+
+* The third and last set of notebooks (_3_compare*.ipynb_) analyse the results of the previous runs and calibrations.
