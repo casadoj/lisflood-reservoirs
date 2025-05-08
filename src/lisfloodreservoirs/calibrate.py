@@ -10,16 +10,13 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 import spotpy
-import copy
 from datetime import datetime
 
 from . import Config, read_attributes, read_timeseries
 from .models import get_model
 from .calibration import get_calibrator, read_results
 from .utils.metrics import KGEmod, compute_performance
-from .utils.utils import return_period
 from .utils.timeseries import create_demand
-from .utils.plots import plot_resops
 from .utils.logging import setup_logger
 
 
@@ -119,7 +116,7 @@ def main():
         # flow attributes (m3/s)
         Qmin = max(0, ts.outflow.min())
         # catchment area (m2)
-        A = int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6) if cfg.MODEL == 'camaflood' else None
+        catchment = int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6) if cfg.MODEL == 'camaflood' else None
         # reservoir area (m2)
         Atot = int(attributes.loc[grand_id, 'AREA_SKM'] * 1e6)
 
@@ -128,7 +125,7 @@ def main():
             # configure calibration kwargs
             cal_cfg = {}
             if cfg.MODEL == 'camaflood':
-                cal_cfg.update({'A': A})
+                cal_cfg.update({'catchment': catchment})
             # elif cfg.MODEL == 'mhm':
             #     cal_cfg.update({'demand': demand})
             # initialize the calibration setup
