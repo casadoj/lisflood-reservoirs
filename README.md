@@ -1,3 +1,5 @@
+<img src="./images/logo.jpg" alt="lisflood-reservoirs logo" width="150">
+
 # LISFLOOD reservoirs
 
 This repository contains tools to run and calibrate different reservoir routines meant to be used in large-scale hydrological models like [LISFLOOD Open Source](https://github.com/ec-jrc/lisflood-code).
