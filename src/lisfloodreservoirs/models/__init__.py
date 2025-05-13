@@ -57,7 +57,7 @@ def default_attributes(
     Vtot: float,
     Vmin: Optional[float] = 0,
     Qmin: Optional[float] = 0,
-    A: Optional[float] = None,
+    catchment: Optional[float] = None,
     Atot: Optional[float] = None,
     storage: Optional[pd.Series] = None,
     demand: Optional[pd.Series] = None,
@@ -76,7 +76,7 @@ def default_attributes(
         Minimum reservoir storage (m3). Required by the 'lisflood' model. If not provided, a value of 0 is used
     Qmin: float(optional)
         Minimum outflow (m3/s). Required by the 'lionear', 'lisflood' and 'camaflood' models. If not provided, a value of 0  is used
-    A: float (optional)
+    catchment: float (optional)
         Reservoir catchment area (m2). Required by the 'camaflood' model
     storage: pandas.Series (optional)
         Time series of reservoir storage (m3). Required by the 'camaflood' routine
@@ -117,8 +117,8 @@ def default_attributes(
             'k': 1.2
         })
     elif model_name.lower() == 'camaflood':
-        if A is None:
-            raise ValueError(f"Model '{model_name}' requires the attribute 'A' reporting the reservoir catchment area (m2)")
+        if catchment is None:
+            raise ValueError(f"Model '{model_name}' requires the attribute 'catchment' reporting the reservoir catchment area (m2)")
         if storage is None:
             raise ValueError(f"Model '{model_name}' requires the attribute 'storage' reporting a time series of reservoir storage (m3)")
         Vf = float(storage.quantile(.75))
@@ -132,7 +132,7 @@ def default_attributes(
             'Vmin': Vmin,
             'Qn': Qn,
             'Qf': Qf,
-            'A': A
+            'catchment': catchment
         })
         del attributes['Qmin']
     elif model_name.lower() == 'mhm':

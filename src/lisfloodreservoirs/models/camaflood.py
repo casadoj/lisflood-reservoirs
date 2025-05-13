@@ -22,7 +22,7 @@ class Camaflood(Reservoir):
         Vtot: float,
         Qn: float,
         Qf: float,
-        A: int,
+        catchment: int,
         Atot: Optional[int] = None,
         timestep: int = 86400
     ):

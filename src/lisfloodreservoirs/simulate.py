@@ -131,7 +131,7 @@ def main():
                 Vtot,
                 Vmin=max(0, min(0.1 * Vtot, ts.storage.min())),
                 Qmin=max(0, ts.outflow.min()),
-                A=int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6),
+                catchment=int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6),
                 Atot=int(attributes.loc[grand_id, 'AREA_SKM'] * 1e6),
                 storage=ts.storage,
                 demand=demand
