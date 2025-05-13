@@ -1,5 +1,5 @@
 <!-- <img src="./images/logo.jpg" alt="lisflood-reservoirs logo" width="150"> -->
-<img src="./images/logo2_empty.png" alt="lisflood-reservoirs logo" width="250">
+<img src="./images/logo.png" alt="lisflood-reservoirs logo" width="175">
 
 # LISFLOOD reservoirs
 
