@@ -119,7 +119,7 @@ def main():
         # flow attributes (m3/s)
         Qmin = max(0, ts.outflow.min())
         # catchment area (m2)
-        A = int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6) if cfg.MODEL == 'camaflood' else None
+        catchment = int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6) if cfg.MODEL == 'camaflood' else None
         # reservoir area (m2)
         Atot = int(attributes.loc[grand_id, 'AREA_SKM'] * 1e6)
 
@@ -128,7 +128,7 @@ def main():
             # configure calibration kwargs
             cal_cfg = {}
             if cfg.MODEL == 'camaflood':
-                cal_cfg.update({'A': A})
+                cal_cfg.update({'catchment': catchment})
             # elif cfg.MODEL == 'mhm':
             #     cal_cfg.update({'demand': demand})
             # initialize the calibration setup
