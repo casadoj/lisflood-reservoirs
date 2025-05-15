@@ -44,7 +44,7 @@ def main():
     logger = setup_logger(
         name=__name__,
         log_level=logging.INFO,
-        log_file=f'{datetime.now():%Y%m%d%H%M}_calibrate_{cfg.MODEL}.log'
+        log_file=f'{datetime.now():%Y%m%d%H%M%S}_calibrate_{cfg.MODEL}.log'
     )
     
     logger.info(f'Calibration results will be saved in: {cfg.PATH_CALIB}')

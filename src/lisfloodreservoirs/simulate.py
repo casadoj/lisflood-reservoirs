@@ -38,7 +38,7 @@ def main():
     logger = setup_logger(
         name=__name__,
         log_level=logging.INFO,
-        log_file=f'{datetime.now():%Y%m%d%H%M}_simulate_{cfg.MODEL}.log'
+        log_file=f'{datetime.now():%Y%m%d%H%M%S}_simulate_{cfg.MODEL}.log'
     )
 
     logger.info(f'Default simulation results will be saved in: {cfg.PATH_DEF}')

@@ -2,8 +2,8 @@ import numpy as np
 import pandas as pd
 from typing import List, Optional, Literal
 from tqdm.auto import tqdm
-# import logging
-# logger = logging.getLogger(__name__)
+import logging
+logger = logging.getLogger(__name__)
 
 from .storage import create_storage_harmonic
 from .release import create_release_harmonic
@@ -166,7 +166,15 @@ class Starfit(Reservoir):
             Q = Qnor + (self.Qmax - Qnor) * (V_st - Vf) / (1 - Vf)
 
         # ensure mass conservation
-        Q = max(min(Q, V / self.timestep), (V - self.Vtot) / self.timestep)
+        # Q = max(min(Q, V / self.timestep), (V - self.Vtot) / self.timestep)
+        eps = 1e-3
+        if V - Q * self.timestep > self.Vtot:
+            Q = (V - self.Vtot) / self.timestep + eps
+        elif V - Q * self.timestep < 0:
+            Q = V / self.timestep - eps
+        if Q < 0:
+            logger.warning(f'The simulated outflow was negative ({Q:.6f} m3/s). Limitted to 0')
+            Q = 0
         
         # update storage
         V -= Q * self.timestep

@@ -35,7 +35,7 @@ def main():
     logger = setup_logger(
         name=__name__,
         log_level=logging.INFO,
-        log_file=f'{datetime.now():%Y%m%d%H%M}_run_starfit.log'
+        log_file=f'{datetime.now():%Y%m%d%H%M%S}_run_starfit.log'
     )
 
     # read configuration file
