@@ -113,7 +113,7 @@ class Camaflood(Reservoir):
         
         # ouflow depending on the inflow and storage level
         if V < self.Vmin:
-            Q = V * self.Qn / self.Vf
+            Q = V / self.Vf * self.Qn
         elif V < self.Vf:
             if I < self.Qf:
                 Q = self.Vmin / self.Vf * self.Qn + ((V - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
@@ -137,8 +137,10 @@ class Camaflood(Reservoir):
         eps = 1e-3
         if V - Q * self.timestep > self.Vtot:
             Q = (V - self.Vtot) / self.timestep + eps
-        elif V - Q * self.timestep < self.Vmin:
-            Q = (V - self.Vmin) / self.timestep - eps if V >= self.Vmin else 0
+        # elif V - Q * self.timestep < self.Vmin:
+        #     Q = (V - self.Vmin) / self.timestep - eps if V >= self.Vmin else 0
+        elif V - Q * self.timestep < 0:
+            Q = V / self.timestep - eps
         if Q < 0:
             logger.warning(f'The simulated outflow was negative ({Q:.6f} m3/s). Limitted to 0')
             Q = 0
