@@ -10,16 +10,13 @@ from pathlib import Path
 import pandas as pd
 from tqdm import tqdm
 import spotpy
-import copy
 from datetime import datetime
 
 from . import Config, read_attributes, read_timeseries
 from .models import get_model
 from .calibration import get_calibrator, read_results
 from .utils.metrics import KGEmod, compute_performance
-from .utils.utils import return_period
 from .utils.timeseries import create_demand
-from .utils.plots import plot_resops
 from .utils.logging import setup_logger
 
 

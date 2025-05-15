@@ -5,7 +5,6 @@ from typing import Union, List, Dict, Tuple, Optional, Literal
 from statsmodels.distributions.empirical_distribution import ECDF
 
 
-
 def quantile_mapping(obs: pd.Series, sim: pd.Series) -> pd.Series:
     """It corrects the bias in the "sim" time series to replicate the empirical cumulative density function of the observed time series
     
@@ -73,7 +72,6 @@ def quantile_mapping(obs: pd.Series, sim: pd.Series) -> pd.Series:
 #     return annual, seasonality, residuals
 
 
-
 # class Decomposition:
 #     def __init__(self, original: Tuple[Union[pd.DataFrame, pd.Series]], trend: Tuple[Union[pd.DataFrame, pd.Series]], seasonal: Tuple[Union[pd.DataFrame, pd.Series]], residuals: Tuple[Union[pd.DataFrame, pd.Series]]):
 #         self.original = original
@@ -110,14 +108,21 @@ def quantile_mapping(obs: pd.Series, sim: pd.Series) -> pd.Series:
 #     return Decomposition(data, trend, seasonal, residual)
 
 
-
-def decompose_timeseries(data: pd.Series, window: int = 365, center: bool = True) -> pd.DataFrame:
+def decompose_timeseries(
+    data: pd.Series, 
+    window: int = 365, 
+    center: bool = True
+) -> pd.DataFrame:
     """It decomposes the timeseries in three components: trend, seasonality and residuals.
     
     Parameters:
     -----------
-    data: pd.Series
+    data: pandas.Series
         Time series to be decomposed
+    window: integer
+        Width of the rolling window used to extract the trend
+    center: boolean
+        Whether to center or not the rolling window used to extract the trend        
         
     Returns:
     --------
@@ -128,7 +133,7 @@ def decompose_timeseries(data: pd.Series, window: int = 365, center: bool = True
     assert isinstance(data, pd.Series), '"data" must be a pandas.Series'
     
     # trend as the 365 rolling mean
-    trend = data.rolling(window=365, min_periods=180, center=center).mean()
+    trend = data.rolling(window=window, min_periods=180, center=center).mean()
 
     # seasonality
     detrended = data - trend
@@ -143,12 +148,12 @@ def decompose_timeseries(data: pd.Series, window: int = 365, center: bool = True
     return decomposition
 
 
-
-def clean_storage(storage: pd.Series,
-                  w: int = 7,
-                  error_thr: float = .1,
-                  inplace: bool = False
-                 ) -> Optional[pd.Series]:
+def clean_storage(
+    storage: pd.Series,
+    w: int = 7,
+    error_thr: float = .1,
+    inplace: bool = False
+    ) -> Optional[pd.Series]:
     """It removes values from a reservoir storage time series that exceed an acceptable error ("error_thr") between the actual value and that of a centered, moving median of width "w"
     
     Parameters:
@@ -173,7 +178,7 @@ def clean_storage(storage: pd.Series,
     # remove values lower or equal than 0
     storage_[storage <= 0] = np.nan
     
-    median = storage_.rolling(w, center=True, min_periods=int(np.floor(w / 2))).median(skipna=True)
+    median = storage_.rolling(w, center=True, min_periods=int(np.floor(w / 2))).median()
     error = (storage_ - median) / median
     storage_[error.abs() > error_thr] = np.nan
     
@@ -183,13 +188,13 @@ def clean_storage(storage: pd.Series,
         return storage_
 
     
-    
-def clean_storage2(storage: pd.Series,
-                   capacity: Optional[float] = None,
-                   w: int = 7,
-                   error_thr: float = .1,
-                   inplace: bool = False
-                  ) -> Optional[pd.Series]:
+def clean_storage2(
+    storage: pd.Series,
+    capacity: Optional[float] = None,
+    w: int = 7,
+    error_thr: float = .1,
+    inplace: bool = False
+    ) -> Optional[pd.Series]:
     """It removes values from a reservoir storage time series that exceed an acceptable error ("error_thr") between the actual value and that of a centered, moving median of width "w". Compared with the previous version of this function, the error is a quotient of the storage capacity, instead of the median storage
     
     Parameters:
@@ -220,7 +225,7 @@ def clean_storage2(storage: pd.Series,
     storage_[storage == 0] = np.nan
         
     # remove outliers
-    median = storage_.rolling(w, center=True, min_periods=int(np.floor(w / 2))).median(skipna=True)
+    median = storage_.rolling(w, center=True, min_periods=int(np.floor(w / 2))).median()
     error = (storage_ - median) / capacity # only change compared with `clean_storage2`
     storage_[error.abs() > error_thr] = np.nan
     
@@ -230,16 +235,16 @@ def clean_storage2(storage: pd.Series,
         return storage_
     
     
-
-def clean_inflow(inflow: pd.Series,
-                 storage: Optional[pd.Series] = None,
-                 outflow: Optional[pd.Series] = None,
-                 grad_thr: int = 10000,
-                 balance_thr: Optional[int] = 5,
-                 int_method: Literal['linear', 'quadratic', 'spline'] = 'linear',
-                 inplace: bool = False,
-                 **kwargs
-                ) -> pd.Series:
+def clean_inflow(
+    inflow: pd.Series,
+    storage: Optional[pd.Series] = None,
+    outflow: Optional[pd.Series] = None,
+    grad_thr: int = 10000,
+    balance_thr: Optional[int] = 5,
+    int_method: Literal['linear', 'quadratic', 'spline'] = 'linear',
+    inplace: bool = False,
+    **kwargs
+    ) -> pd.Series:
     """It prepares the time series of inflow to be used as input for the reservoir model, i.e., it removes erroneous peaks and it fills in the gaps.
     
         - To remove peaks, it uses two error identifiers. When both conditions identify an error in the inflow time series, that time step is converted into a NaN:
@@ -314,11 +319,11 @@ def clean_inflow(inflow: pd.Series,
         return inflow_
     
     
-    
-def create_demand(outflow: pd.Series,
-                  water_stress: float = 1,
-                  window: int = 8
-                 ) -> pd.Series:
+def create_demand(
+    outflow: pd.Series,
+    water_stress: float = 1,
+    window: int = 8
+    ) -> pd.Series:
     """It creates a demand time series out of the outflow time series.
     First, it computes the average outflow for every day of the year (scaled with the "water_stress" coefficient), and then it applies a rolling mean of "window" width to smooth the resulting time series.
     
@@ -356,9 +361,7 @@ def create_demand(outflow: pd.Series,
     return demand
 
 
-
-def define_period(series: Union[pd.Series, pd.DataFrame],
-                 ) -> Tuple[np.datetime64, np.datetime64]:
+def define_period(series: Union[pd.Series, pd.DataFrame]) -> Tuple[np.datetime64, np.datetime64]:
     """
     If finds the beginning and end of the longest period with available data. If that period does not exceed a minimum number of years, the function skips the computation
     
@@ -397,7 +400,6 @@ def define_period(series: Union[pd.Series, pd.DataFrame],
         return np.nan, np.nan
     
     
-    
 def time_encoding(
     da: xr.DataArray,
     period: int
@@ -423,6 +425,8 @@ def time_encoding(
         norm_da = (da - 1) * 2 * np.pi / period
     elif da.min().item() == 0:
         norm_da = da * 2 * np.pi / period
+    else:
+        norm_da = (da - 1) * 2 * np.pi / period
         
     # correct leap years, if necessary
     norm_da = norm_da.where(norm_da <= np.pi * 2, np.pi * 2)

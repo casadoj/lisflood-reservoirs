@@ -22,9 +22,9 @@ from .metrics import KGEmod, KGE
 
 def plot_reservoir_map(
     geometry,
-    volume,
-    area=None,
-    save=None,
+    volume: Optional[pd.Series] = None,
+    area: Optional[pd.Series] = None,
+    save: Union[str, Path] = None,
     **kwargs
 ):
     """Creates a maps where reservoirs are represented as dots. The size of the dots reflects the reservoir storage, and the colour the catchment area (if provided)
@@ -43,6 +43,8 @@ def plot_reservoir_map(
     
     figsize = kwargs.get('figsize', (20, 5))
     title = kwargs.get('title', None)
+    alpha = kwargs.get('alpha', .7)
+    size = kwargs.get('size', 12)
     
     # set up plot
     fig, ax = plt.subplots(figsize=figsize, subplot_kw=dict(projection=ccrs.PlateCarree()))
@@ -50,34 +52,50 @@ def plot_reservoir_map(
     ax.axis('off')
     
     # plot reservoir poitns
-    if area is not None:
-        scatter = ax.scatter(
+    s = np.sqrt(volume) if volume is not None else size
+    c = np.sqrt(area) if area is not None else 'steelblue'
+    cmap = 'coolwarm' if area is not None else None
+    scatter = ax.scatter(
         geometry.x,
         geometry.y,
-        s=volume / 1000, #np.cbrt(volume),
-        c=np.sqrt(area), #, c=np.log10(icold.DOR_PC.replace(0, .1))
-        cmap='coolwarm',
-        alpha=.7)
-    else:
-        scatter = ax.scatter(
-        geometry.x,
-        geometry.y,
-        s=volume / 1000, #np.cbrt(volume),
-        color='steelblue',
-        alpha=.7)
+        s=s, #volume / 1000
+        c=c, #, c=np.log10(icold.DOR_PC.replace(0, .1))
+        cmap=cmap,
+        alpha=alpha
+    )
+    # if area is not None:
+    #     scatter = ax.scatter(
+    #         geometry.x,
+    #         geometry.y,
+    #         s=np.sqrt(volume), #volume / 1000
+    #         c=np.sqrt(area), #, c=np.log10(icold.DOR_PC.replace(0, .1))
+    #         cmap='coolwarm',
+    #         alpha=alpha
+    #     )
+    # else:
+    #     scatter = ax.scatter(
+    #         geometry.x,
+    #         geometry.y,
+    #         s=np.sqrt(volume), #volume / 1000
+    #         color='steelblue',
+    #         alpha=alpha
+    #     )
     
     # title
     if title is not None:
         ax.text(.5, 1.125, title, horizontalalignment='center', verticalalignment='bottom', transform=ax.transAxes, fontsize=12)
-    text = '{0} reservoirs\n{1:.0f} km³'.format(volume.shape[0], volume.sum() / 1000)
+    text = f'{len(geometry)} reservoirs'
+    if volume is not None:
+        text += '\n{0:.0f} km³'.format(volume.sum() / 1000)
     ax.text(.5, 1.02, text, horizontalalignment='center', verticalalignment='bottom', transform=ax.transAxes)
     
     # legend
     if area is not None:
         legend1 = ax.legend(*scatter.legend_elements(prop='colors', num=4, alpha=.5), title='catchment (km²)', bbox_to_anchor=[1.025, .6, .06, .25], frameon=False)
         ax.add_artist(legend1)
-    legend2 = ax.legend(*scatter.legend_elements(prop='sizes', num=4, alpha=.5), title='storage (km³)', bbox_to_anchor=[1.025, .1, .1, .5], frameon=False)
-    ax.add_artist(legend2)
+    if volume is not None:
+        legend2 = ax.legend(*scatter.legend_elements(prop='sizes', num=4, alpha=.5), title='storage (km³)', bbox_to_anchor=[1.025, .1, .1, .5], frameon=False)
+        ax.add_artist(legend2)
 
     # save
     if save is not None:

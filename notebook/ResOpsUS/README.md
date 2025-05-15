@@ -1,7 +1,9 @@
 # [ResOpsUS](https://www.nature.com/articles/s41597-022-01134-7): Reservoir Operations USA
 
-A dataset that includes records for 679 major reservoirs across the US. The time series include inflow, storage, outflow and evaporation, although not all variables are available for all reservoirs. The reservoir characteristics (storage capacity, surface area, catchment area, use...) is taken from the Global Reservoir and Dam dataBase ([GRanD](https://www.globaldamwatch.org/grand/)).
+This folder contains several analysis done using as observations the ResOpsUS data, a dataset that includes records for 679 major reservoirs across the US. The time series include inflow, storage, outflow and evaporation, although not all variables are available for all reservoirs. 
 
-* [ ] The notebooks called _5.*_simulation_{MODEL}.ipynb_  are test runs of each reservoir routine. Now they could all be integrated into a single notebook in which the configuration file defines the reservoir routine to be used and the function `lisfloodreservoirs.models.get_model()` instanciates the correct routine.
+The folder [EDA](./EDA) contains the exploratory data analysis of the data in the ResOpsUS dataset and the reservoir simulations in GloFASv4.
 
-* [ ] All the notebooks called _6.*_{MODEL}*.ipynb_ are calibrations (or comparisons of calibration) for the different reservoir routines and univariate (storage or outflow) or bivariate (storage and outflow) calibrations. They can all be fused into a single file now; the configuration file must identify the calibration algorithm (SCE-US or MC), the target variables and the reservoir routine to be used. The function `lisfloodreservoirs.calibrations.get_calibrator()` uses these parameters to instanciate the correct calibration.
+The folder [dataset](./dataset) contains the notebooks that creates a new version of the ResOpsUS dataset that includes, apart from the original observations, static attributes from GRanD, GloFAS and ERA5, and time series from GloFAS and ERA5. This new version of the dataset will be used to train and compare reservoir models.
+
+The folder [models](./models) contains notebooks used for the development of the different reservoir routines contained in the repository, and a notebook that compares the performance of these routines.

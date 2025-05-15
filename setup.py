@@ -17,6 +17,7 @@ setup(
     },
     install_requires=[
         'cartopy',
+        # 'cfgrib',
         'dask',
         'matplotlib',
         # 'mpi4py',
@@ -24,6 +25,7 @@ setup(
         'numpy',
         'pandas',
         'pyyaml',
+        # 'scikit-learn',
         'seaborn',
         'spotpy',
         'statsmodels',
