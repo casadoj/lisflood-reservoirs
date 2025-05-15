@@ -13,7 +13,7 @@ paths:
 normalize: True # normalize time series by reservoir storage capacity
 
 period:
-    start: 1982-01-01
+    start: #1982-01-01
     end: #2019-12-30
 
 conditions:
