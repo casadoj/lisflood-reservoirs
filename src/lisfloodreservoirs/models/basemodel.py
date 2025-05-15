@@ -350,7 +350,7 @@ class Reservoir:
                 ax.plot(serie[var] * f, lw=lw, label=label)
                 if obs is not None:
                     try:
-                        if spinup is None:
+                        if (spinup is None) or (spinup == 0):
                             kge, alpha, beta, corr = KGEmod(obs[var], serie[var])
                         else:
                             kge, alpha, beta, corr = KGEmod(obs[var].iloc[spinup:], serie[var].iloc[spinup:])
