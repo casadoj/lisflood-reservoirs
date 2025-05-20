@@ -188,7 +188,7 @@ def main():
             Vo = ts.storage.iloc[0]
             sim_cal = res.simulate(
                 inflow=inflow,
-                Vo=Vo if ~np.isnan(Vo) else None,
+                Vo=Vo if ~pd.isna(Vo) else None,
                 precipitation=precipitation,
                 evaporation=evaporation,
                 demand=demand,
