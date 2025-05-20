@@ -149,9 +149,10 @@ def main():
                 yaml.dump(res.get_params(), file)
 
             # simulate the reservoir
+            Vo = ts.storage.iloc[0]
             sim_def = res.simulate(
                 inflow=inflow,
-                Vo=ts.storage.iloc[0],
+                Vo=Vo if ~np.isnan(Vo) else None,
                 precipitation=precipitation,
                 evaporation=evaporation,
                 demand=demand,
