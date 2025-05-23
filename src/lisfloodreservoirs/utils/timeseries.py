@@ -3,6 +3,7 @@ import pandas as pd
 import xarray as xr
 from typing import Union, List, Dict, Tuple, Optional, Literal
 from statsmodels.distributions.empirical_distribution import ECDF
+from timezonefinder import TimezoneFinder
 
 
 def quantile_mapping(obs: pd.Series, sim: pd.Series) -> pd.Series:
