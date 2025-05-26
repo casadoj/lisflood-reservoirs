@@ -92,6 +92,60 @@ def water_balance_iterative(
     return storage
 
 
+def water_balance_timestep(
+    storage: pd.Series,
+    inflow: pd.Series, 
+    outflow: pd.Series
+) -> pd.Series:
+    """Calculates by water balance the time series of reservoir storage. It operates independently for each
+    time step, using the time series of storage, inflow and outflow. It works if there are missing values in
+    the input time series.
+
+    The objective of this function it to check if the convertion of time series into 00 UTC conserves mass.
+
+    Parameters:
+    -----------
+    storage: pd.Series
+        Time series of reservoir storage
+    inflow: pandas.Series
+        Time series of reservoir inflow
+    outflow: pandas.Series
+        Time series of reservoir outflow
+
+    Returns:
+    --------
+    pandas.DataFrame
+        Time series of reservoir storage at the beginning of each time step
+    """
+
+    # concatenate inputs
+    df = pd.concat([inflow, outflow, storage], axis=1)
+    df.columns = ['inflow', 'outflow', 'storage']
+    
+    # empty result object
+    result = pd.Series(index=df.index, name='storage_wb')
+    
+    # time step duration
+    duration = pd.Series(df.index.diff().total_seconds(), index=df.index).shift(-1)
+    water_balance_timestep.duration = duration
+    
+    # compute water balance
+    mask = df[['inflow', 'outflow', 'storage']].notna().all(axis=1) # time steps with all data
+    storage_wb = df.loc[mask, 'storage'] + (df.loc[mask, 'inflow'] - df.loc[mask, 'outflow']) * duration[mask]
+    storage_wb = storage_wb.shift().dropna()
+    
+    # assign water balance to the results
+    idx = result.index.intersection(storage_wb.index)
+    result[idx] = storage_wb[idx]
+    
+    # fill in gaps with original data
+    missing = df.storage.notnull() & result.isnull()
+    result[missing] = df.loc[missing, 'storage']
+    
+    return result
+
+
+
 def reindex_to_00utc(series_utc: pd.DataFrame) -> pd.DataFrame:
     """Takes a daily time series in the UTC timezone, but with an offset (at hours different that 00 am),
     and estimates the associated value at 00 am UTC.
@@ -147,59 +201,6 @@ def reindex_to_00utc(series_utc: pd.DataFrame) -> pd.DataFrame:
     # series_00utc.loc[mask_error, 'storage'] = storage_wb[mask_error]
 
     return series_00utc
-
-
-def water_balance_timestep(
-    storage: pd.Series,
-    inflow: pd.Series, 
-    outflow: pd.Series
-) -> pd.Series:
-    """Calculates by water balance the time series of reservoir storage. It operates independently for each
-    time step, using the time series of storage, inflow and outflow. It works if there are missing values in
-    the input time series.
-
-    The objective of this function it to check if the convertion of time series into 00 UTC conserves mass.
-
-    Parameters:
-    -----------
-    storage: pd.Series
-        Time series of reservoir storage
-    inflow: pandas.Series
-        Time series of reservoir inflow
-    outflow: pandas.Series
-        Time series of reservoir outflow
-
-    Returns:
-    --------
-    pandas.DataFrame
-        Time series of reservoir storage at the beginning of each time step
-    """
-
-    # concatenate inputs
-    df = pd.concat([inflow, outflow, storage], axis=1)
-    df.columns = ['inflow', 'outflow', 'storage']
-    
-    # empty result object
-    result = pd.Series(index=df.index, name='storage_wb')
-    
-    # time step duration
-    duration = pd.Series(df.index.diff().total_seconds(), index=df.index).shift(-1)
-    water_balance_timestep.duration = duration
-    
-    # compute water balance
-    mask = df[['inflow', 'outflow', 'storage']].notna().all(axis=1) # time steps with all data
-    storage_wb = df.loc[mask, 'storage'] + (df.loc[mask, 'inflow'] - df.loc[mask, 'outflow']) * duration[mask]
-    storage_wb = storage_wb.shift().dropna()
-    
-    # assign water balance to the results
-    idx = result.index.intersection(storage_wb.index)
-    result[idx] = storage_wb[idx]
-    
-    # fill in gaps with original data
-    missing = df.storage.notnull() & result.isnull()
-    result[missing] = df.loc[missing, 'storage']
-    
-    return result
 
     
 def resample_to_00utc(
@@ -285,6 +286,7 @@ def plot_tz_conversion(
     original: pd.DataFrame,
     shifted: pd.DataFrame,
     plot_dates: bool = True,
+    **kwargs
 ):
     """
     Plot and compare original and timezone-shifted time series data 
@@ -340,6 +342,9 @@ def plot_tz_conversion(
             for date in np.unique(shifted.index.date):
                 ax.axvline(date, c='k', lw=.5, ls=':')
         ax.set_title(variable)
+
+    if 'xlim' in kwargs:
+        ax.set_xlim(kwargs['xlim'])
     
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(handles, labels, frameon=False, loc=6, bbox_to_anchor=[.91, .4, .1, .3]);
