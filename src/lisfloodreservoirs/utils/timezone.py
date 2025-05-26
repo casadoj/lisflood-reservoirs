@@ -36,7 +36,10 @@ def convert_to_utc(
     # define timezone
     ts_local = series.copy()
     if ts_local.index.tz is None:
-        ts_local.index = ts_local.index.tz_localize(local_timezone)
+        try:
+            ts_local.index = ts_local.index.tz_localize(local_timezone)
+        except:
+            ts_local.index = ts_local.index.tz_localize(local_timezone, ambiguous=False)
     else:
         ts_local.index = ts_local.index.tz_convert(local_timezone)
 
