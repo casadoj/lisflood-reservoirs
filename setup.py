@@ -29,6 +29,7 @@ setup(
         'seaborn',
         'spotpy',
         'statsmodels',
+        'timezonefinder',
         'tqdm',
         'xarray',
     ],
