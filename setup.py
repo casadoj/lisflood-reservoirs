@@ -20,7 +20,7 @@ setup(
         # 'cfgrib',
         'dask',
         'matplotlib',
-        # 'mpi4py',
+        'mpi4py',
         'netcdf4',
         'numpy',
         'pandas',
