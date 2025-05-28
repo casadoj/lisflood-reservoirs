@@ -1,5 +1,7 @@
-<!-- <img src="./images/logo.jpg" alt="lisflood-reservoirs logo" width="150"> -->
-<img src="./images/logo.png" alt="lisflood-reservoirs logo" width="175">
+<!-- <img src="./images/logo.png" alt="lisflood-reservoirs logo" width="100" align="center"> -->
+<img src="./images/copernicus_logo.png" alt="Logo Copernicus" width="280" align="center"><img src="./images/copernicus_emergency_management.png" alt="Logo CEMS" width="200" align="center">
+
+
 
 # LISFLOOD reservoirs
 

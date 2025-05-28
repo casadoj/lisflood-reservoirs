@@ -185,14 +185,13 @@ def main():
                 yaml.dump(res.get_params(), file)
 
             # simulate the reservoir
-            # sim_cfg = {} if cfg.MODEL == 'camaflood' else cal_cfg
+            Vo = ts.storage.iloc[0]
             sim_cal = res.simulate(
                 inflow=inflow,
-                Vo=ts.storage.iloc[0],
+                Vo=None if pd.isna(Vo) else Vo,
                 precipitation=precipitation,
                 evaporation=evaporation,
                 demand=demand,
-                # **sim_cfg
             )
             sim_cal.to_csv(cfg.PATH_CALIB / f'{grand_id}_simulation.csv', float_format='%.3f')
             
