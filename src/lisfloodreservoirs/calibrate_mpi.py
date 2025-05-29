@@ -1,6 +1,69 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
+# import yaml
+import os
+import subprocess
+import argparse
+import sys
+
+from . import Config
+
+def run_mpi_calibration():
+    parser = argparse.ArgumentParser(
+        description="""
+        Run SpotPy calibration with MPI, using the number of complexes as the number of parallel cores.
+        It calibrates the reservoir model parameters of the defined routine using the
+        SCE-UA (Shuffle Complex Evolution-University of Arizona) algorithm for each of
+        the selected reservoirs.
+        The optimal parameters are simulated and plotted, if possible comparing against
+        a simulation with default parameters
+        """
+    )
+    parser.add_argument('-c', '--config-file', type=str, required=True, help='Path to the YAML configuration file (e.g., config.yml).')
+    parser.add_argument('-o', '--overwrite', action='store_true', default=False, help='Overwrite existing calibration results.')
+    args = parser.parse_args()
+
+    # read configuration file
+    cfg = Config(args.config_file)
+
+    # Construct the mpirun command
+    if os.name == 'nt':
+        mpi_command = 'mpiexec'
+    elif os.name == 'posix':
+        mpi_command = 'mpirun'
+    command = [
+        mpi_command,
+        '-np', str(cfg.COMPLEXES),
+        "python", "calibrate.py",
+        "--config-file", args.config_file
+    ]
+    if args.overwrite:
+        command.append("--overwrite")
+
+    print(f"Executing command: {' '.join(command)}")
+
+    try:
+        # Use subprocess.run to execute the command.
+        # capture_output=False (default) will allow stdout/stderr from calibrate.py to be printed directly.
+        # check=True will raise a CalledProcessError if the command returns a non-zero exit code.
+        subprocess.run(command, check=True)
+    except subprocess.CalledProcessError as e:
+        print(f"Error during MPI calibration: Command '{' '.join(e.cmd)}' exited with non-zero status {e.returncode}", file=sys.stderr)
+        sys.exit(e.returncode)
+    except FileNotFoundError:
+        print("Error: 'mpirun' or 'python' command not found. Ensure MPI and Python are in your PATH.", file=sys.stderr)
+        sys.exit(1)
+    except Exception as e:
+        print(f"An unexpected error occurred: {e}", file=sys.stderr)
+        sys.exit(1)
+
+if __name__ == "__main__":
+    run_mpi_calibration()
+
+
+***
+
 import argparse
 import logging
 import yaml
@@ -33,9 +96,8 @@ def main():
         a simulation with default parameters
         """
     )
-    parser.add_argument('-c', '--config-file', type=str, required=True, help='Path to the YAML configuration file (e.g., config.yml).')
-    parser.add_argument('-o', '--overwrite', action='store_true', default=False, help='Overwrite existing calibration results.')
-    parser.add_argument('-p', '--parallel', action='store_true', default=False, help='Parallelize calibration using MPI')
+    parser.add_argument('-c', '--config-file', type=str, required=True, help='Path to the configuration file')
+    parser.add_argument('-o', '--overwrite', action='store_true', default=False, help='Overwrite existing simulation files')
     args = parser.parse_args()
 
     # read configuration file
@@ -152,7 +214,7 @@ def main():
                 calibrator, 
                 dbname=dbname, 
                 dbformat='csv', 
-                parallel='mpi' if args.parallel else 'seq',
+                parallel='mpi',
                 save_sim=False,
                 # seed=42
             )
