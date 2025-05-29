@@ -33,8 +33,9 @@ def main():
         a simulation with default parameters
         """
     )
-    parser.add_argument('-c', '--config-file', type=str, required=True, help='Path to the configuration file')
-    parser.add_argument('-o', '--overwrite', action='store_true', default=False, help='Overwrite existing simulation files')
+    parser.add_argument('-c', '--config-file', type=str, required=True, help='Path to the YAML configuration file (e.g., config.yml).')
+    parser.add_argument('-o', '--overwrite', action='store_true', default=False, help='Overwrite existing calibration results.')
+    # parser.add_argument('-p', '--parallel', action='store_true', default=False, help='Parallelize calibration using MPI')
     args = parser.parse_args()
 
     # read configuration file
@@ -151,7 +152,7 @@ def main():
                 calibrator, 
                 dbname=dbname, 
                 dbformat='csv', 
-                # parallel='mpi',
+                # parallel='mpi' if args.parallel else 'seq',
                 save_sim=False,
                 # seed=42
             )
