@@ -52,7 +52,70 @@ def fit_reservoir_curve(
 
     return reservoir_curve
 
-    
+
+def storage_from_elevation(
+    reservoir_curve: np.poly1d,
+    elevation: pd.Series
+) -> pd.Series:
+    """
+        Produces a time series of reservoir storage given the reservoir curve and an elevation time series.
+
+    Parameters:
+    -----------
+    reservoir_curve: numpy.poly1d
+        A NumPy polynomial object representing a fitted reservoir curve (storage vs elevation)
+    elevation: pandas.Series
+        A pandas Series containing elevation data.
+
+    Returns:
+    --------
+    storage: pandas.Series
+        A pandas Series containing corresponding reservoir storage data.
+    """
+
+    # estimate storage
+    storage = pd.Series(
+        data=reservoir_curve(elevation),
+        index=elevation.index,
+        name='storage'
+        )
+
+    return storage
+
+
+def elevation_from_storage(
+    reservoir_curve: np.poly1d,
+    storage: pd.Series
+) -> pd.Series:
+    """
+    Produces a time series of reservoir elevation given the reservoir curve and a storage time series.
+
+    Parameters:
+    -----------
+    reservoir_curve: numpy.poly1d
+        A NumPy polynomial object representing a fitted reservoir curve (storage vs elevation)
+    storage: pandas.Series
+        A pandas Series containing corresponding reservoir storage data.
+
+    Returns:
+    --------
+    elevation: pandas.Series
+        A pandas Series containing elevation data.
+    """
+
+    # coefficients of the polynomial
+    a, b, c = reservoir_curve.coefficients
+
+    # estimate elevation
+    elevation = pd.Series(
+        data=(-b + np.sqrt(b**2 - 4 * a * (c - storage))) / (2 * a),
+        index=storage.index,
+        name='elevation'
+    )
+
+    return elevation
+
+
 def quantile_mapping(obs: pd.Series, sim: pd.Series) -> pd.Series:
     """It corrects the bias in the "sim" time series to replicate the empirical cumulative density function of the observed time series
     
