@@ -6,6 +6,53 @@ from statsmodels.distributions.empirical_distribution import ECDF
 from timezonefinder import TimezoneFinder
 
 
+def fit_reservoir_curve(
+    elevation: pd.Series,
+    storage: pd.Series,
+    degree: int = 2,
+) -> np.poly1d: 
+    """
+    Fits a polynomial curve to elevation-storage data for a reservoir.
+
+    This function takes two pandas Series, one for elevation and one for storage,
+    and fits a polynomial curve to represent their relationship. The resulting
+    polynomial function can then be used to predict storage values for given
+    elevation values, including for extrapolation beyond the original data range.
+
+    Parameters:
+    -----------
+    elevation: pandas.Series
+        A pandas Series containing elevation data. This will be treated as the 
+        independent variable (x-values).
+    storage: pandas.Series
+        A pandas Series containing corresponding reservoir storage data. This will be 
+        treated as the dependent variable (y-values).
+    degree: integer (optional)
+        The degree of the polynomial to fit. Defaults to 2 (quadratic). A higher degree 
+        may fit the existing data more closely but could lead to less reliable extrapolation.
+
+    Returns:
+    --------
+    numpy.poly1d: 
+        A NumPy polynomial object representing the fitted curve. This object can be called 
+        like a function to predict storage values for new elevation inputs 
+        (e.g., `fitted_curve(new_elevation)`).
+    """
+    
+    # prepare DataFrame
+    df = pd.concat([elevation, storage], axis=1)
+    df.columns = ['elevation', 'storage']
+    df.dropna(axis=0, how='any', inplace=True)
+    df.sort_values('elevation', inplace=True)
+    df.reset_index(drop=True, inplace=True)
+
+    # fit reservoir curve
+    coefficients = np.polyfit(df.elevation, df.storage, degree)
+    reservoir_curve = np.poly1d(coefficients)
+
+    return reservoir_curve
+
+    
 def quantile_mapping(obs: pd.Series, sim: pd.Series) -> pd.Series:
     """It corrects the bias in the "sim" time series to replicate the empirical cumulative density function of the observed time series
     
