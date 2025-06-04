@@ -108,8 +108,8 @@ def read_timeseries(
     if reservoirs is None:
         reservoirs = [int(file.stem) for file in path_ts.glob('*.csv')]
 
-    if variables is None:
-        variables = ['inflow', 'storage', 'outflow', 'elevation']
+    # if variables is None:
+    #     variables = ['inflow', 'storage', 'outflow', 'elevation']
         
     # read time series
     timeseries = {}
@@ -132,13 +132,14 @@ def read_timeseries(
         except Exception as e:
             print(f'Error while trimming to the study period the time series for ID {ID}:\m{e}')
 
-        # select variables
+        # select varibles
         try:
-            missing_vars = set(variables).difference(ts.columns)
-            if len(missing_vars) > 0:
-                print(f'Time series for ID {ID} is missing variables: {missing_vars}')
-            ts = ts[ts.columns.intersection(variables)]
-            # convert storage to m3
+            if variables is not None:
+                missing_vars = set(variables).difference(ts.columns)
+                if len(missing_vars) > 0:
+                    print(f'Time series for ID {ID} is missing variables: {missing_vars}')
+                ts = ts[ts.columns.intersection(variables)]
+            # convert storage variables to m3
             ts.iloc[:, ts.columns.str.contains('storage')] *= 1e6
         except Exception as e:
             print(f'Error while selecting variables from the time series for ID {ID}:\m{e}')
