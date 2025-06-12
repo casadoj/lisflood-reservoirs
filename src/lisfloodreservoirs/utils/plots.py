@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 import xarray as xr
 from pathlib import Path
-from typing import Union, Dict, List, Tuple, Optional
+from typing import Union, Dict, List, Tuple, Optional, Literal
 from statsmodels.distributions.empirical_distribution import ECDF
 
 # from utils import Decomposition
@@ -1359,6 +1359,190 @@ def boxplot_comparison(
     # Add legend
     legend_handles = [Patch(facecolor=c, edgecolor='none', alpha=.7, label=col) for col, c in colors.items()]
     fig.legend(handles=legend_handles, frameon=False, loc=6, bbox_to_anchor=[.90, 0, .05, 1]);
+
+    if save is not None:
+        plt.savefig(save, dpi=300, bbox_inches='tight');
+
+
+def swarmplot_comparison(
+    performance: xr.Dataset,
+    ax_dim: str,
+    col_dim: str,
+    kind: Literal['swarm', 'strip'] = 'swarm',
+    metric: str = 'KGE',
+    save: Optional[Union[str, Path]] = None,
+    **kwargs,
+):
+    """
+    Generate side-by-side plots (swarmplot or stripplot) comparing model performance
+    across different metrics, storage/outflow components, and categories (e.g., model types).
+
+    Parameters
+    ----------
+    performance : xr.Dataset
+        An xarray dataset containing performance scores.
+        It must include the specified `ax_dim`, `col_dim`, and a 'metric' dimension.
+        It should also contain variables named 'storage' and 'outflow'.
+    ax_dim : str
+        Dimension of the dataset to map to different subplots (columns of subplots).
+        Typically a grouping like region or threshold, defining the individual plot columns.
+    col_dim : str
+        Dimension that identifies the groups within each plot, represented by different
+        colors and plotted as individual point swarms/strips (e.g., different models, scenarios).
+    kind : {'swarm', 'strip'}, default='swarm'
+        Type of plot to generate.
+        - 'swarm': Uses `seaborn.swarmplot` to ensure points do not overlap.
+        - 'strip': Uses `seaborn.stripplot` which allows jittering to prevent overlap.
+    metric : str, default='KGE'
+        Performance metric to be plotted (e.g., 'KGE', 'NSE', 'RMSE').
+        This selects a specific slice from the 'metric' dimension in the dataset.
+    save : str or Path, optional
+        Path where the generated figure will be saved. If `None` (default), the plot
+        is displayed but not saved to a file.
+    **kwargs : dict, optional
+        Additional plot customization options that are passed to the function:
+        - `figsize` (tuple, default=(20, 3)): Size of the overall figure in inches.
+        - `alpha` (float, default=1): Transparency of the swarmplot/stripplot points.
+        - `jitter` (float or bool, default=True): Only applicable if `kind='strip'`.
+          Determines the amount of jittering applied to points. `True` for default jitter,
+          `False` for no jitter, or a float for a specific amount.
+        - `linewidth` (float, default=1): Line width for boxplot elements (edges, whiskers, median).
+        - `size` (float, default=1.5): Size of the individual points in the swarmplot/stripplot.
+        - `width` (float, default=0.5): Width of each box in the boxplot.
+        - `width_ratio` (float, default=0.5): Ratio of the width of the empty space between
+          `ax_dim` groups compared to the width of a single subplot.
+        - `wspace` (float, default=0.25): Horizontal spacing between subplots.
+        - `ylim` (tuple, default=(-1, 1)): Tuple specifying the y-axis limits.
+
+    Notes
+    -----
+    The function generates three types of performance visualizations for each `ax_dim` group:
+    'outflow', 'storage', and a composite 'outflow & storage'. The composite metric is calculated as:
+    $1 - \sqrt{(1 - \text{outflow})^2 + (1 - \text{storage})^2}$
+
+    A color-coded legend is automatically added at the bottom of the figure,
+    based on the unique values found in the `col_dim` dimension.
+
+    Returns
+    -------
+    None
+        The function displays the plot and optionally saves it to the specified file path.
+    """
+
+    if kind not in ['swarm', 'strip']:
+        raise ValueError(f'The attribute "kind" must be either "swarm" or "strip", but {kind} was provided')
+
+    # extract keyword arguments
+    figsize = kwargs.get('figsize', (20, 3))
+    alpha = kwargs.get('alpha', 1)
+    jitter = kwargs.get('jitter', True)
+    lw = kwargs.get('linewidth', 1)
+    s = kwargs.get('size', 1.5)
+    w = kwargs.get('width', .5)
+    wratio = kwargs.get('width_ratio', .5)
+    wspace = kwargs.get('wspace', 0.25)
+    ylim = kwargs.get('ylim', (-1, 1))
+    
+    colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivedrab']
+    colors = {str(key): color for key, color in zip(performance[col_dim].data, colors)}
+
+    # setup the axes
+    n_ax = len(performance[ax_dim])
+    n_label = 3
+    n_col = 0
+    fig = plt.figure(figsize=figsize)
+    gs = gridspec.GridSpec(
+        nrows=1, 
+        ncols=n_ax * (n_label + 1) - 1, 
+        width_ratios=(([1] * n_label + [wratio]) * n_ax)[:-1]
+    )
+    plt.subplots_adjust(wspace=wspace)
+
+    for i, title in enumerate(performance[ax_dim].data):
+    
+        perf = performance.sel({ax_dim: title, 'metric': metric})
+        
+        perf_dct = {var: perf[var].to_pandas().transpose() for var in ['outflow', 'storage']}
+        perf_dct['outflow &\nstorage'] = 1 - ((1 - perf_dct['outflow'])**2 + (1 - perf_dct['storage'])**2)**.5
+    
+        labels = ['outflow', 'storage', 'outflow &\nstorage']
+        for j, label in enumerate(labels):
+
+            # create axis
+            pos = i * (n_ax + 1) + j
+            ax = plt.subplot(gs[pos])
+
+            # boxplot
+            box = sns.boxplot(
+                perf_dct[label],
+                width=w,
+                showcaps=False,
+                showfliers=False,
+                boxprops=dict(facecolor='none', edgecolor='k', linewidth=lw),
+                whiskerprops=dict(color='k', linewidth=lw),
+                medianprops=dict(color='k', linewidth=lw * 1.5),
+                zorder=1,
+                ax=ax
+            )
+                
+            # swarmplot
+            if kind == 'swarm':
+                swarm = sns.swarmplot(
+                    perf_dct[label],
+                    order=colors.keys(),
+                    palette=colors.values(),
+                    size=s,
+                    alpha=alpha,
+                    zorder=0,
+                    ax=ax
+                )
+            elif kind == 'strip':
+                strip = sns.stripplot(
+                    perf_dct[label],
+                    order=colors.keys(),
+                    palette=colors.values(),
+                    jitter=jitter,
+                    size=s,
+                    alpha=alpha,
+                    zorder=0,
+                    ax=ax
+                )
+
+            n_col = max(n_col, perf_dct[label].shape[1])
+            
+            # axis setup
+            ax.tick_params(axis='x', length=0)
+            ax.set(
+                xlabel=label,
+                xticks=[],
+                ylim=ylim,                
+            )
+            if j % 3 == 0:
+                ax.set(
+                    ylabel=metric,
+                    # yticks=[-1, -.5, 0, .5, 1],
+                )
+                ax.text(-.5, 1.1, f'{chr(97 + i)})', transform=ax.transAxes)
+                ax.spines[['top', 'right', 'bottom']].set_visible(False)
+            else:
+                ax.set(
+                    ylabel=None,
+                    yticks=[],
+                )
+                ax.spines[['top', 'right', 'bottom', 'left']].set_visible(False)
+            
+            if j == 1:
+                ax.set_title(title)
+        
+    # Add legend
+    legend_handles = [Patch(facecolor=c, edgecolor='none', alpha=.7, label=col) for col, c in colors.items()]
+    fig.legend(
+        handles=legend_handles, 
+        frameon=False, 
+        ncol=n_col, 
+        loc='lower center', 
+        bbox_to_anchor=[.3, -0.175, .4, 0.1]
+    )
 
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight');
