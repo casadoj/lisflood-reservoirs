@@ -1441,7 +1441,7 @@ def swarmplot_comparison(
     w = kwargs.get('width', .5)
     wratio = kwargs.get('width_ratio', .5)
     wspace = kwargs.get('wspace', 0.25)
-    ylim = kwargs.get('ylim', (-1, 1))
+    ylim = kwargs.get('ylim', (-1.05, 1.05))
     
     colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivedrab']
     colors = {str(key): color for key, color in zip(performance[col_dim].data, colors)}
@@ -1530,7 +1530,7 @@ def swarmplot_comparison(
                     yticks=[],
                 )
                 ax.spines[['top', 'right', 'bottom', 'left']].set_visible(False)
-            
+                ax.spines['left'].set_bounds(-1, 1);
             if j == 1:
                 ax.set_title(title)
         
@@ -1546,3 +1546,99 @@ def swarmplot_comparison(
 
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight');
+
+
+def plot_timeseries(
+    ts: pd.DataFrame, 
+    cap_mcm: Optional[float] = None, 
+    elev_masl: Optional[None] = None,
+    dam_hgt_m: Optional[None] = None,
+    save: Optional[Union[str, Path]] = None,
+    **kwargs
+):
+    """
+    Plots reservoir elevation-storage curve and time series of storage.
+
+    The function creates a two-panel figure:
+    - Left panel: elevation vs. storage scatter plot (colored by time).
+    - Right panel: time series of storage (also colored by time).
+
+    Optional lines can be drawn to indicate reservoir capacity, dam crest elevation, 
+    and base elevation (crest minus dam height).
+
+    Parameters
+    ----------
+    ts : pandas.DataFrame
+        Time series with at least a 'storage' column (in cubic meters).
+        If an 'elevation' column is present, it is used in the elevation-storage plot.
+    cap_mcm : float, optional
+        Reservoir capacity in million cubic meters (hm³). Draws horizontal dashed lines at this value.
+    elev_masl : float, optional
+        Dam crest elevation in meters above sea level (masl). Draws vertical dashed line at this elevation.
+    dam_hgt_m : float, optional
+        Dam height in meters. If provided with `elev_masl`, another vertical line is drawn at the base elevation.
+    save : str or pathlib.Path, optional
+        If provided, path to save the figure as a PNG file. Otherwise, the figure is shown interactively.
+    **kwargs : dict, optional
+        Additional keyword arguments. Recognized key:
+            - 'title': str
+                Title for the figure.
+
+    Returns
+    -------
+    None
+        Displays or saves the generated figure.
+
+    Notes
+    -----
+    - Storage values are converted from cubic meters to million cubic meters (hm³).
+    - Points are colored by date using the `coolwarm_r` colormap.
+    """
+
+    fig = plt.figure(figsize=(15, 3))
+    gs = gridspec.GridSpec(1, 2, width_ratios=[1, 4], wspace=.05)
+    ax0 = fig.add_subplot(gs[0, 0])
+    ax1 = fig.add_subplot(gs[0, 1], sharey=ax0)
+    
+    # reservoir curve
+    if 'elevation' in ts.columns:
+        ax0.scatter(
+            x=ts.elevation, 
+            y=ts.storage * 1e-6, 
+            c=ts.index,
+            cmap='coolwarm_r',
+            s=1,
+        )
+    ax0.set(
+        xlabel='elevation (masl)',
+        ylabel='storage (hm3)'
+    )
+    if cap_mcm is not None:
+        ax0.axhline(cap_mcm, c='k', ls='--', lw=.5)
+        ax1.axhline(cap_mcm, c='k', ls='--', lw=.5)
+    if elev_masl is not None:
+        ax0.axvline(elev_masl, c='k', ls='--', lw=.5)
+        if dam_hgt_m is not None:
+            ax0.axvline(elev_masl - dam_hgt_m, c='k', ls='--', lw=.5)
+    
+    # storage time series
+    ax1.scatter(
+        x=ts.index,
+        y=ts.storage * 1e-6,
+        c=ts.index,
+        cmap='coolwarm_r',
+        s=1
+    )
+    ax1.set(
+        xlabel='date',
+        xlim=(ts.first_valid_index(), ts.last_valid_index())
+    )
+    ax1.yaxis.set_tick_params(labelleft=False)
+    # ax1.set_yticklabels([])
+
+    if 'title' in kwargs:
+        fig.suptitle(kwargs['title']);
+
+    if save is not None:
+        plt.savefig(save, dpi=300, bbox_inches='tight')
+        plt.close(fig)
