@@ -160,9 +160,9 @@ def main():
             sceua.sample(
                 cfg.MAX_ITER, 
                 ngs=cfg.COMPLEXES, 
-                kstop=3, 
-                pcento=0.01, 
-                peps=0.1
+                kstop=5, 
+                pcento=0.001, 
+                peps=0.01
             )
             logger.info(f'Calibration of reservoir {grand_id} successfully finished')
         except RuntimeError:
