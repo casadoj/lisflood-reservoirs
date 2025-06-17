@@ -59,7 +59,7 @@ class Camaflood(Reservoir):
         self.Qn = Qn
         
         # release coefficient
-        self.k = max(1 - 5 * (Vtot - Vf) / catchment, 0)
+        self.k = max(1 - 1 / 0.2 * (Vtot - Vf) / catchment, 0)
         
     def step(
         self,
