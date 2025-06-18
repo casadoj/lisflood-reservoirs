@@ -30,8 +30,11 @@ class Config:
         
         # calibration
         self.TARGET = self.cfg['calibration']['target']
-        self.MAX_ITER = self.cfg['calibration']['SCEUA'].get('max_iter', 1000)
-        self.COMPLEXES = self.cfg['calibration']['SCEUA'].get('COMPLEXES', 4)
+        self.MAX_ITER = self.cfg['calibration']['SCEUA'].get('max_iter', 2000)
+        self.COMPLEXES = self.cfg['calibration']['SCEUA'].get('complexes', 8)
+        self.KSTOP = self.cfg['calibration']['SCEUA'].get('kstop', 5)
+        self.PEPS = self.cfg['calibration']['SCEUA'].get('peps', 0.01)
+        self.PCENTO = self.cfg['calibration']['SCEUA'].get('pcento', 0.001)
         path_calib = path_results / self.MODEL / 'calibration'
         if len(self.TARGET) == 1:
             self.PATH_CALIB = path_calib / 'univariate' / self.TARGET[0]
@@ -104,12 +107,12 @@ def read_timeseries(
     timeseries: dictionary
         It contains the timeseries of the selected reservoirs as pandas.DataFrame
     """
-    
-    if variables is None:
-        variables = ['inflow', 'storage', 'outflow', 'elevation']
-    
+
     if reservoirs is None:
         reservoirs = [int(file.stem) for file in path_ts.glob('*.csv')]
+
+    # if variables is None:
+    #     variables = ['inflow', 'storage', 'outflow', 'elevation']
         
     # read time series
     timeseries = {}
@@ -123,17 +126,29 @@ def read_timeseries(
         else:
             print(f"File {file} doesn't exist")
             continue
-        
+
+        # select study period
         try:
-            # select study period
             if periods is not None:
                 start, end = [periods[str(ID)][f'{x}_dates'][0] for x in ['start', 'end']]
-                ts = ts.loc[start:end, variables]
+                ts = ts.loc[start:end, :]
+        except Exception as e:
+            print(f'Error while trimming to the study period the time series for ID {ID}:\m{e}')
 
-            # convert storage to m3
+        # select varibles
+        try:
+            if variables is not None:
+                missing_vars = set(variables).difference(ts.columns)
+                if len(missing_vars) > 0:
+                    print(f'Time series for ID {ID} is missing variables: {missing_vars}')
+                ts = ts[ts.columns.intersection(variables)]
+            # convert storage variables to m3
             ts.iloc[:, ts.columns.str.contains('storage')] *= 1e6
+        except Exception as e:
+            print(f'Error while selecting variables from the time series for ID {ID}:\m{e}')
 
-            # save time series
+        # save time series
+        try:
             timeseries[ID] = ts
         except Exception as e:
             print(f'Time series for ID {ID} could not be saved:\n{e}')

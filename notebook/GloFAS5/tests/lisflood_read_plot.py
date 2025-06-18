@@ -50,7 +50,11 @@ def xml_timeinfo(xml: Union[str, Path]) -> Tuple[datetime, int, datetime, dateti
     return CalendarDayStart, DtSec, StepStart, StepEnd
 
 
-def read_tss(tss: Union[str, Path], xml: Union[str, Path] = None, squeeze: bool = True) -> Union[pd.DataFrame, pd.Series]:
+def read_tss(
+    tss: Union[str, Path], 
+    xml: Union[str, Path] = None, 
+    squeeze: bool = True
+) -> Union[pd.DataFrame, pd.Series]:
     """It generates a Pandas DataFrame or Series from a TSS file. The settings XML file is required to add the temporal information to the time series; if not provided, the index will contain integers indicating the timestep since the considered origin of time.
     
     Inputs:
@@ -75,7 +79,7 @@ def read_tss(tss: Union[str, Path], xml: Union[str, Path] = None, squeeze: bool 
         cols = [f.readline().strip() for i in range(n_cols)]        
     
     # extract timeseries
-    df = pd.read_csv(tss, skiprows=2 + n_cols, delim_whitespace=True, header=None)
+    df = pd.read_csv(tss, skiprows=2 + n_cols, sep='\s+', header=None) #delim_whitespace=True
     df.columns = cols
     
     # define timesteps

@@ -19,6 +19,10 @@ simulation:
 calibration:
     target:
         - storage
+        # - outflow
     SCEUA:
-        max_iter: 1000
-        complexes: 4
+        max_iter: 5000
+        complexes: 16
+        kstop: 5 # number of generations without performance improvement
+        peps: 0.01 # absolute improvement in performance to keep interating
+        pcento: 0.001 # relative improvement in performance to keep iterating

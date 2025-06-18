@@ -73,10 +73,13 @@ def main():
 
     # === read time series ===
     try:
+        inputs = [var for var in [cfg.INFLOW, cfg.PRECIPITATION, cfg.EVAPORATION, cfg.DEMAND] if var]
+        outputs = ['storage', 'outflow']
         timeseries = read_timeseries(
-            cfg.PATH_DATA / 'time_series' / 'csv',
-            attributes.index,
-            periods
+            path=cfg.PATH_DATA / 'time_series' / 'csv',
+            reservoirs=attributes.index,
+            periods=periods,
+            variables=inputs + outputs
         )
         for grand_id, obs in timeseries.items():
             # convert units
