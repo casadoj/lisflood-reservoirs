@@ -17,7 +17,7 @@ from typing import Union, Dict, List, Tuple, Optional, Literal
 from statsmodels.distributions.empirical_distribution import ECDF
 
 # from utils import Decomposition
-from .metrics import KGEmod, KGE
+from .metrics import KGEmod, KGE, is_pareto_efficient
 
 
 def plot_reservoir_map(
@@ -659,11 +659,11 @@ def reservoir_scatter(
     sim: pd.DataFrame, 
     x: str, 
     y: str, 
-    obs: pd.DataFrame = None, 
-    x_thr: List = None, 
-    y_thr: List = None, 
+    obs: Optional[pd.DataFrame] = None, 
+    x_thr: Optional[List] = None, 
+    y_thr: Optional[List] = None, 
     legend: bool = True, 
-    ax: Axes = None, 
+    ax: Optional[Axes] = None, 
     **kwargs
 ):
     """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line represents the reference LISFLOOD routine. On top, a plot shows the density function (kernel density estimation) of storage. On the right, a plot shows the density function (kernel density estimation) of outflow.
@@ -676,15 +676,15 @@ def reservoir_scatter(
         Column of "sim" (and "obs") to be used in the X axis
     y:     str
         Column of "sim" (and "obs") to be used in the Y axis
-    obs:   pd.DataFrame
+    obs:   pd.DataFrame (optional)
         Oberved time series of reservoir behaviour. It should contain colums "x" and "y"
-    x_thr:    List
+    x_thr:    List (optional)
         Thresholds in the LISFLOOD reservoir routine to be used in the X axis
-    y_thr:    List
+    y_thr:    List (optional)
         Thresholds in the LISFLOOD reservoir routine to be used in the Y axis
     legend:   bool
         Whether to plot the legend or not
-    ax:       Axes
+    ax:       Axes (optional)
         Matplotlib axes in which to insert the plot
     
     Keyword arguments:
@@ -859,13 +859,13 @@ def reservoir_kde(
             
 def reservoir_analysis(
     sim: pd.DataFrame,
-    obs: pd.DataFrame = None,
+    obs: Optional[pd.DataFrame] = None,
     x1: str = 'storage',
     x2: str = 'inflow',
     y: str = 'outflow',
-    x_thr: List = None,
-    y_thr: List = None,
-    save: Union[Path, str] = None,
+    x_thr: Optional[List] = None,
+    y_thr: Optional[List] = None,
+    save: Optional[Union[Path, str]] = None,
     **kwargs
 ):
     """It creates a figure that compares the storage and outflow time series. The figure is composed of three plots. In the center, a scatter plot of storage versus outflow; if the storage and outflow limits are provided, a line
@@ -875,7 +875,7 @@ def reservoir_analysis(
     -----------
     sim:   pd.DataFrame
         Simulated time series of reservoir behaviour. It should contain colums "x" and "y"
-    obs:   pd.DataFrame
+    obs:   pd.DataFrame (optional)
         Oberved time series of reservoir behaviour. It should contain colums "x" and "y"
     x1:     str
         Column of "sim" (and "obs") that will be used in the X axis of the first scatter plot
@@ -883,11 +883,11 @@ def reservoir_analysis(
         Column of "sim" (and "obs") that will be used in the X axis of the second scatter plot
     y:     str
         Column of "sim" (and "obs") that will be used in the Y axis of both scatter plots
-    x_thr:    List
+    x_thr:    List (optional)
         Thresholds in the LISFLOOD reservoir routine to be used in the "x1" variable
-    y_thr:    List
+    y_thr:    List (optional)
         Thresholds in the LISFLOOD reservoir routine to be used in the "y" axis
-    save:      Union[str, Path]
+    save:      string or pathlib.Path (optional)
         Path where to save the figure
     
     Keyword arguments:
@@ -1638,6 +1638,101 @@ def plot_timeseries(
 
     if 'title' in kwargs:
         fig.suptitle(kwargs['title']);
+
+    if save is not None:
+        plt.savefig(save, dpi=300, bbox_inches='tight')
+        plt.close(fig)
+
+
+def plot_pareto_front(
+    kge_storage: pd.Series, 
+    kge_outflow: pd.Series,
+    save: Optional[Union[str, Path]] = None,
+    **kwargs):
+    """
+    Plot the Pareto front of KGE scores for storage and outflow.
+
+    This function visualizes the trade-off between two performance metrics 
+    (KGE for storage and KGE for outflow) across multiple iterations or 
+    parameter sets. Each point is colored by its bivariate KGE score 
+    (the Euclidean distance from the ideal point [1,1]). The Pareto front 
+    is overlaid, and the best overall iteration (with highest bivariate 
+    KGE) is highlighted.
+
+    Parameters
+    ----------
+    kge_storage : pd.Series
+        KGE values for storage, indexed by iteration or model ID.
+    kge_outflow : pd.Series
+        KGE values for outflow, indexed by iteration or model ID.
+    save : str or Path, optional
+        Path to save the plot. If None, the plot is shown inline or left open.
+    **kwargs :
+        Additional keyword arguments, such as:
+            - alpha (float): Transparency of scatter points (default is 0.7).
+            - figsize (tuple): Figure size in inches (default is (6, 5)).
+            - size (float): Size of scatter points (default is 4).
+            - title (str): Title for the plot (default is None).
+
+    Returns
+    -------
+    None
+        The function creates a matplotlib plot and optionally saves it to disk.
+    """
+
+    alpha = kwargs.get('alpha', .7)
+    figsize = kwargs.get('figsize', (6, 5))
+    size = kwargs.get('size', 4)
+    title = kwargs.get('title', None)
+    
+    fig, ax = plt.subplots(figsize=figsize)
+
+    # scatter plot of iterations
+    kge_2var = 1 - np.sqrt((1 - kge_storage)**2 + (1 - kge_outflow)**2)
+    sct = ax.scatter(
+        kge_storage, 
+        kge_outflow, 
+        c=kge_2var, 
+        cmap='coolwarm_r', 
+        vmin=-1, 
+        vmax=1,
+        s=size, 
+        alpha=alpha
+    )
+    cbar = plt.colorbar(sct, label='KGE bivariate', shrink=.66)
+
+    # pareto front
+    mask_pareto = is_pareto_efficient(kge_storage, kge_outflow)
+    pareto_front = pd.concat([kge_storage[mask_pareto], kge_outflow[mask_pareto]], axis=1)
+    pareto_front.sort_values(pareto_front.columns[0], inplace=True)
+    ax.plot(
+        pareto_front.iloc[:, 0], 
+        pareto_front.iloc[:, 1], 
+        c='k', 
+        lw=.8, 
+        zorder=2
+    )
+
+    # best iteration
+    best_iter = kge_2var.idxmax()
+    ax.scatter(
+        kge_storage[best_iter],
+        kge_outflow[best_iter],
+        marker='+',
+        c='k',
+        zorder=3
+    )
+
+    # setup
+    vlim = (-.025, 1.025)
+    ax.plot(vlim, vlim, c='k', ls='--', lw=.5)
+    ax.set(
+        xlim=vlim,
+        xlabel='KGE storage',
+        ylim=vlim,
+        ylabel='KGE outflow',
+        title=title,
+    )
 
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight')
