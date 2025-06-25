@@ -360,3 +360,42 @@ def compute_performance(obs: pd.DataFrame, sim: pd.DataFrame):
             continue
             
     return performance
+
+
+def is_pareto_efficient(
+    perf1: pd.Series, 
+    perf2: pd.Series
+) -> pd.Series:
+    """
+    Identify Pareto-efficient points from two performance metrics.
+
+    Given two aligned pandas Series representing performance metrics 
+    (e.g., model skill scores), this function returns a Boolean Series 
+    indicating which points are Pareto-efficient. A point is considered 
+    Pareto-efficient if no other point is better in both metrics.
+
+    Parameters
+    ----------
+    perf1 : pd.Series
+        First performance metric (e.g., KGE for storage).
+    perf2 : pd.Series
+        Second performance metric (e.g., KGE for outflow).
+
+    Returns
+    -------
+    pd.Series
+        Boolean Series with the same index as the input, where True 
+        indicates a Pareto-efficient point.
+    """
+    
+    performance = pd.concat([perf1, perf2], axis=1).dropna(axis=0, how='any')
+    
+    is_efficient = pd.Series(True, index=performance.index, dtype=bool)
+    for i, point in performance.iterrows():
+        if not is_efficient[i]:
+            continue
+        others = performance[is_efficient]
+        dominated = (others < point).all(axis=1)
+        is_efficient[dominated.index] &= ~dominated
+    
+    return is_efficient
