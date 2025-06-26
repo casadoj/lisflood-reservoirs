@@ -8,7 +8,7 @@ data:
     results: /PATH_ROOT/ResOpsUS/v2.0/results/
     
 simulation:
-    model: mhm
+    model: starfit
     inputs: # names of the time series
         inflow: inflow # compulsory (m3/s). By default, 'inflow'
         precipitation:  # optional (mm). By default, None
@@ -21,8 +21,8 @@ calibration:
         - storage
         # - outflow
     SCEUA:
-        max_iter: 5000
-        complexes: 16
-        kstop: 5 # number of generations without performance improvement
-        peps: 0.01 # absolute improvement in performance to keep interating
-        pcento: 0.001 # relative improvement in performance to keep iterating
+        max_iter: # maximum number of interations. By default 5000
+        complexes: # number of complexes. By default 8
+        kstop: # number of generations without performance improvement. By default 5
+        peps: # absolute improvement in performance to keep interating. By default 0.01
+        pcento: # relative improvement in performance to keep iterating. By default 0.001

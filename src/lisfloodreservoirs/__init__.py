@@ -1,8 +1,17 @@
 import yaml
 from pathlib import Path
-from typing import Union, Optional, List, Dict
+from typing import Union, Optional, List, Dict, TypedDict, Literal
 import pandas as pd
 from tqdm.auto import tqdm
+
+
+class ParamRange(TypedDict):
+    low: float
+    high: float
+
+
+ParameterName = Literal['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'k']
+ParametersConfig = Dict[ParameterName, ParamRange]
 
 
 class Config:
@@ -29,20 +38,26 @@ class Config:
         self.SPINUP = self.cfg['simulation'].get('spinup', 0)
         
         # calibration
-        self.TARGET = self.cfg['calibration']['target']
-        self.MAX_ITER = self.cfg['calibration']['SCEUA'].get('max_iter', 2000)
-        self.COMPLEXES = self.cfg['calibration']['SCEUA'].get('complexes', 8)
-        self.KSTOP = self.cfg['calibration']['SCEUA'].get('kstop', 5)
-        self.PEPS = self.cfg['calibration']['SCEUA'].get('peps', 0.01)
-        self.PCENTO = self.cfg['calibration']['SCEUA'].get('pcento', 0.001)
-        path_calib = path_results / self.MODEL / 'calibration'
-        if len(self.TARGET) == 1:
-            self.PATH_CALIB = path_calib / 'univariate' / self.TARGET[0]
-        elif len(self.TARGET) == 2:
-            self.PATH_CALIB = path_calib / 'bivariate'
-        else:
-            raise ValueError('ERROR. Only univariate or bivariate calibrations are supported')
-        self.PATH_CALIB.mkdir(parents=True, exist_ok=True)
+        cfg_cal = self.cfg.get('calibration', None)
+        if cfg_cal is not None:
+            # targets
+            self.TARGET = cfg_cal.get('target', ['storage'])
+            # parameters
+            self.PARAMETERS: ParametersConfig = cfg_cal.get('parameters', None)
+            # optimization
+            self.MAX_ITER = cfg_cal['SCEUA'].get('max_iter', 2000)
+            self.COMPLEXES = cfg_cal['SCEUA'].get('complexes', 8)
+            self.KSTOP = cfg_cal['SCEUA'].get('kstop', 5)
+            self.PEPS = cfg_cal['SCEUA'].get('peps', 0.01)
+            self.PCENTO = cfg_cal['SCEUA'].get('pcento', 0.001)
+            path_calib = path_results / self.MODEL / 'calibration'
+            if len(self.TARGET) == 1:
+                self.PATH_CALIB = path_calib / 'univariate' / self.TARGET[0]
+            elif len(self.TARGET) == 2:
+                self.PATH_CALIB = path_calib / 'bivariate'
+            else:
+                raise ValueError('ERROR. Only univariate or bivariate calibrations are supported')
+            self.PATH_CALIB.mkdir(parents=True, exist_ok=True)
         
         
 def read_attributes(

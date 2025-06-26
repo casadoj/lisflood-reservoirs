@@ -351,7 +351,7 @@ def return_period(series: pd.Series, T: float = 100) -> float:
     # discharge associated to return period
     x = gumbel_r.ppf(1 - 1 / T, *pars)
     
-    return float(x)
+    return np.float16(x)
 
 
 

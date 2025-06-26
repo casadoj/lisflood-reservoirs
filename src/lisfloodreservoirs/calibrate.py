@@ -112,14 +112,15 @@ def main():
             )
             
         # storage attributes (m3)
-        Vtot = ts.storage.max()
+        Vtot = max(attributes.loc[grand_id, 'CAP_MCM'].item() * 1e6, ts.storage.max())
+        # Vtot = ts.storage.max()
         Vmin = max(0, min(0.1 * Vtot, ts.storage.min()))
         # flow attributes (m3/s)
         Qmin = max(0, ts.outflow.min())
         # catchment area (m2)
-        catchment = int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6) if cfg.MODEL == 'camaflood' else None
+        catchment = int(attributes.loc[grand_id, 'CATCH_SKM'].item() * 1e6) if cfg.MODEL == 'camaflood' else None
         # reservoir area (m2)
-        Atot = int(attributes.loc[grand_id, 'AREA_SKM'] * 1e6)
+        Atot = int(attributes.loc[grand_id, 'AREA_SKM'].item() * 1e6)
 
         # calibrate
         try:
@@ -132,6 +133,7 @@ def main():
             # initialize the calibration setup
             calibrator = get_calibrator(
                 cfg.MODEL,
+                parameters=cfg.PARAMETERS,
                 inflow=inflow,
                 storage=ts.storage,
                 outflow=ts.outflow,
@@ -180,6 +182,8 @@ def main():
 
             # declare the reservoir with optimal parameters
             res = get_model(cfg.MODEL, **calibrated_attrs)
+            # if cfg.MODEL == 'camaflood':
+            #     res.k = parameters['k']
 
             # export calibrated parameters
             with open(cfg.PATH_CALIB / f'{grand_id}_optimal_parameters.yml', 'w') as file:
