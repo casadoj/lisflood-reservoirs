@@ -20,6 +20,22 @@ calibration:
     target:
         - storage
         # - outflow
+    parameters: # comment those you don't want to calibrate
+        w:
+            low: 0.0
+            high: 1.0
+        alpha:
+            low: 0.0
+            high: 5.0
+        beta:
+            low: 0.5
+            high: 3.0
+        gamma:
+            low: 0.0
+            high: 1.0
+        lambda:
+            low: 0.25
+            high: 3.0
     SCEUA:
         max_iter: # maximum number of interations. By default 5000
         complexes: # number of complexes. By default 8
