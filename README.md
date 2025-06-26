@@ -1,7 +1,7 @@
 <!-- <img src="./images/logo.png" alt="lisflood-reservoirs logo" width="100" align="center"> -->
 <img src="./images/copernicus_logo.png" alt="Logo Copernicus" width="280" align="center"><img src="./images/copernicus_emergency_management.png" alt="Logo CEMS" width="200" align="center">
 
-
+![Python_3.11](https://img.shields.io/badge/Python-%3E%3D3.11-blue?labelColor=343b41)
 
 # LISFLOOD reservoirs
 
