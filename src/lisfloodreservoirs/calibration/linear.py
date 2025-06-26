@@ -18,8 +18,6 @@ class LinearCalibrator(Calibrator):
         Residence time in days. The coefficient of the linear reservoir is the inverse of T (1/T)
     """
     
-    # T = Uniform(name='T', low=7, high=2190)#, optguess=0.01)
-
     def __init__(
         self,
         parameters: ParametersConfig,
