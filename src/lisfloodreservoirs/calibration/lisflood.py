@@ -107,26 +107,26 @@ class LisfloodCalibrator(Calibrator):
 
         # map parameter names and values
         param_dict = dict(zip(self.param_names, pars))
-        
+
         # volume limits
         Vf = param_dict.get('alpha', 0.97) * self.Vtot
-        Vn = self.Vmin + param_dict.get('beta', 0.655) * (Vf - self.Vmin)
-        Vn_adj = Vn + param_dict.get('gamma', 0.633) * (Vf - Vn)
-        
+        Vn = self.Vmin + param_dict['beta'] * (Vf - self.Vmin) if 'beta' in param_dict else 0.67 * self.Vtot
+        Vn_adj = Vn + param_dict['gamma'] * (Vf - Vn) if 'gamma' in param_dict else 0.83 * self.Vtot
+
         # outflow limits
         Qf = param_dict.get('delta', 0.3) * return_period(self.inflow, T=100)
         Qn = param_dict['epsilon'] * Qf if 'epsilon' in param_dict else self.inflow.mean()
         
         attributes = {
             'Vmin': min(self.Vmin, Vn), 
-            'Vn': Vn, 
-            'Vn_adj': Vn_adj,
-            'Vf': Vf,
+            'Vn': float(Vn), 
+            'Vn_adj': float(Vn_adj),
+            'Vf': float(Vf),
             'Vtot': self.Vtot,
-            'Qmin': min(self.Qmin, Qn),
-            'Qn': Qn,
-            'Qf': Qf,
-            'k': param_dict.get('k', 1.2),
+            'Qmin': min(self.Qmin, float(Qn)),
+            'Qn': float(Qn),
+            'Qf': float(Qf),
+            'k': float(param_dict.get('k', 1.2)),
             'Atot': self.Atot
         }
 
