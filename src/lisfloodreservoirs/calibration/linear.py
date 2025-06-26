@@ -8,19 +8,21 @@ logger = logging.getLogger(__name__)
 
 from .basecalibrator import Calibrator
 from ..models import get_model
+from .. import ParametersConfig
     
     
-class Linear_calibrator(Calibrator):
+class LinearCalibrator(Calibrator):
     """This class allows for calibrating the only parameter (residence time) in the linear reservoir routine by comparing the simulated time series of one variable: storage or outflow.
     
     T: integer
         Residence time in days. The coefficient of the linear reservoir is the inverse of T (1/T)
     """
     
-    T = Uniform(name='T', low=7, high=2190)#, optguess=0.01)
+    # T = Uniform(name='T', low=7, high=2190)#, optguess=0.01)
 
     def __init__(
         self,
+        parameters: ParametersConfig,
         inflow: pd.Series,
         storage: pd.Series, 
         outflow: pd.Series, 
@@ -38,6 +40,9 @@ class Linear_calibrator(Calibrator):
         """
         Parameters:
         -----------
+        parametes: typed dictionary
+            A dictionary that defines the parameters to be calibrated, together with the 'low' and 'high' values in
+            the search range
         inflow: pd.Series
             Inflow time seris used to force the model (m3/s)
         storage: pd.Series
@@ -67,8 +72,18 @@ class Linear_calibrator(Calibrator):
         """
         
         super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, precipitation, evaporation, demand, Atot, target, obj_func, spinup)
+
+        # define parameter distributions and names
+        self.parameters = [
+            Uniform(name=key, low=val['low'], high=val['high'])
+            for key, val in parameters.items()
+        ]
+        self.param_names = list(parameters.keys())
     
-    def pars2attrs(self, pars: List) -> Dict:
+    def pars2attrs(
+        self, 
+        pars: List
+    ) -> Dict:
         """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`
         
         Parameters:
@@ -81,12 +96,15 @@ class Linear_calibrator(Calibrator):
         attributes: dictionary
             Reservoir attributes needed to declare a reservoir using the function `models.get_model()`
         """
+
+        # map parameter names and values
+        param_dict = dict(zip(self.param_names, pars))
         
         attributes = {
             'Vmin': self.Vmin,
             'Vtot': self.Vtot,
             'Qmin': self.Qmin,
-            'T': pars[0],
+            'T': param_dict.get('T', 183),
             'Atot': self.Atot
         }
         
