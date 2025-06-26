@@ -2,11 +2,10 @@ import pandas as pd
 from typing import Literal, Optional, Union, Tuple, Dict, List
 from pathlib import Path
 
-from .linear import Linear_calibrator
-from .lisflood import Lisflood_calibrator
-from .camaflood import Camaflood_calibrator
-from .mhm import mHM_calibrator
-from ..utils.utils import return_period
+from .linear import LinearCalibrator
+from .lisflood import LisfloodCalibrator
+from .camaflood import CamafloodCalibrator
+from .mhm import MhmCalibrator
 
 
 def get_calibrator(
@@ -32,13 +31,13 @@ def get_calibrator(
     """
     
     if model_name.lower() == 'linear':
-        return Linear_calibrator(*args, **kwargs)
+        return LinearCalibrator(*args, **kwargs)
     elif model_name.lower() == 'lisflood':
-        return Lisflood_calibrator(*args, **kwargs)
+        return LisfloodCalibrator(*args, **kwargs)
     elif model_name.lower() == 'camaflood':
-        return Camaflood_calibrator(*args, **kwargs)
+        return CamafloodCalibrator(*args, **kwargs)
     elif model_name.lower() == 'mhm':
-        return mHM_calibrator(*args, **kwargs)
+        return MhmCalibrator(*args, **kwargs)
     else:
         raise ValueError("Invalid model name. Please choose either 'linear', 'lisflood', 'camaflood' or 'mhm'.")
         
@@ -64,6 +63,7 @@ def read_results(filename: Union[str, Path]) -> Tuple[pd.DataFrame, Dict]:
     results.index.name = 'iteration'
     parcols = {col: col[3:] for col in results.columns if col.startswith('par')}
     results.rename(columns=parcols, inplace=True)
+    results['chain'] = results['chain'].astype(int)
     
     # extract optimal parameter set
     optimal_par = results.iloc[results.like1.idxmin()][parcols.values()].to_dict()

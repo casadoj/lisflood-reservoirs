@@ -268,19 +268,17 @@ class Reservoir:
 
         if norm:
             series1_ = self.normalize_timeseries(series1)
-            if series2 is not None:
-                series2_ = self.normalize_timeseries(series2)
+            series2_ = self.normalize_timeseries(series2) if series2 is not None else None
             Vlims /= self.Vtot
             Qlims /= self.Qf
             x1lim = (-.02, 1.02)
         else:
             series1_ = series1
-            if series2 is not None:
-                series2_ = series2
+            series2_ = series2 if series2 is not None else None
             x1lim = (0, None)
         if spinup is not None:
             series1_ = series1_.iloc[spinup:]
-            series2_ = series2_.iloc[spinup:]
+            series2_ = series2_.iloc[spinup:] if series2_ is not None else None
         reservoir_analysis(
             series1_, 
             series2_,
@@ -335,12 +333,18 @@ class Reservoir:
         
         fig, axes = plt.subplots(nrows=2, figsize=figsize, sharex=True)
 
-        variables = {'outflow': {'unit': 'm3/s',
-                                 'factor': 1,
-                                 'thresholds': Qlims},
-                     'storage': {'unit': 'hm3',
-                                 'factor': 1e-6,
-                                 'thresholds': Vlims}}
+        variables = {
+            'outflow': {
+                'unit': 'm3/s',
+                'factor': 1,
+                'thresholds': Qlims
+            },
+            'storage': {
+                'unit': 'hm3',
+                'factor': 1e-6,
+                'thresholds': Vlims
+            }
+        }
 
         for ax, (var, dct) in zip(axes, variables.items()):
             f = dct['factor']

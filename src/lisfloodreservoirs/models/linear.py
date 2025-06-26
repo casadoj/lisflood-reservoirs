@@ -120,6 +120,7 @@ class Linear(Reservoir):
             'T': 1 / (self.k * 86400), # days
             'Atot': self.Atot
         }
-        params = {key: float(value) for key, value in params.items()}
+        # params = {key: float(value) for key, value in params.items()}
+        params = {key: float(value) if value is not None else None for key, value in params.items()}
 
         return params

@@ -171,6 +171,7 @@ class mHM(Reservoir):
             'rho': self.rho,
             'Atot': self.Atot
         }
-        params = {key: float(value) for key, value in params.items()}
+        # params = {key: float(value) for key, value in params.items()}
+        params = {key: float(value) if value is not None else None for key, value in params.items()}
 
         return params

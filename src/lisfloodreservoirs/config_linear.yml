@@ -1,0 +1,32 @@
+# Example of the configuration file need to run functions `simulate` and `calibrate`.
+# In this example, we will use the mHM reservoir routine and calibrate it using "storage" as the target variable.
+
+data:
+    path: /PATH_ROOT/ResOpsUS/v2.0/
+    reservoirs: /PATH_ROOT/ResOpsUS/v2.0/selection/reservoirs.txt
+    periods: /PATH_ROOT/ResOpsUS/v2.0/selection/periods.pkl
+    results: /PATH_ROOT/ResOpsUS/v2.0/results/
+    
+simulation:
+    model: lisflood
+    inputs: # names of the time series
+        inflow: inflow # compulsory (m3/s). By default, 'inflow'
+        precipitation:  # optional (mm). By default, None
+        evaporation: # optional (mm). By default, None
+        demand: # optional (m3). By default, None
+    spinup: # time steps. By default, None
+
+calibration:
+    target:
+        - storage
+        # - outflow
+    parameters: # comment those you don't want to calibrate
+        T:
+            low: 7
+            high: 2190
+    SCEUA:
+        max_iter: # maximum number of interations. By default 5000
+        complexes: # number of complexes. By default 8
+        kstop: # number of generations without performance improvement. By default 5
+        peps: # absolute improvement in performance to keep interating. By default 0.01
+        pcento: # relative improvement in performance to keep iterating. By default 0.001
