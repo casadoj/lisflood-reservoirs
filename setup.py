@@ -19,6 +19,7 @@ setup(
         'cartopy',
         # 'cfgrib',
         'dask',
+        'gwwapi',
         'matplotlib',
         'mpi4py',
         'netcdf4',
