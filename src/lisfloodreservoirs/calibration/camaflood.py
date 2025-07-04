@@ -25,6 +25,7 @@ class CamafloodCalibrator(Calibrator):
             Qf = delta * Q100
     epsilon: factor of the mean inflow that defines the normal outflow (Qn)
             Qn = epsilon * Qf
+    k: release coefficient that limits the outflow under flood conditions (V >= Vf & I > Qf)
     """
     
     def __init__(
