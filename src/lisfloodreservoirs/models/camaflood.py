@@ -96,7 +96,7 @@ class Camaflood(Reservoir):
         eps = 5e-3
 
         if factor <= 1e-2:
-            weight = np.where(I < Qf, 0, 1)
+            weight = np.where(I < self.Qf, 0, 1)
         else:
             # estimate the value of alpha based on the width
             half_width = factor * self.Qf
@@ -180,7 +180,7 @@ class Camaflood(Reservoir):
                     if V > self.Vtot:
                         print(f'{V} m3 is greater than the reservoir capacity of {self.Vtot} m3')
             # compute release as a weighed sum of the "normal" and "flood" mode
-            w = self.weighing(I, factor=1e-2)
+            w = self.weighing(I, factor=0)#0.2)
             Q = (1 - w) * Qlow + w * Qhigh
 
         # limit outflow so the final storage is between 0 and 1
