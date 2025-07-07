@@ -96,7 +96,7 @@ class Camaflood(Reservoir):
         eps = 5e-3
 
         if factor <= 1e-2:
-            weight = 0 if I < self.Qf else 1
+            weight = np.where(I < Qf, 0, 1)
         else:
             # estimate the value of alpha based on the width
             half_width = factor * self.Qf
