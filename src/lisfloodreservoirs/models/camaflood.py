@@ -59,7 +59,10 @@ class Camaflood(Reservoir):
         self.Qn = Qn
         
         # release coefficient
-        self.k = max(1 - 5 * (Vtot - Vf) / catchment, 0)
+        self.k = max(1 - (Vtot - Vf) / (catchment * .2), 0)
+        # self.k = max(1 - (Vtot - Vf) / (catchment * .2), .1)
+        # self.k = max(1 - (Vtot - Vf) / (catchment * .2), .5)
+        # self.k = 1
         
     def step(
         self,
@@ -291,7 +294,8 @@ class Camaflood(Reservoir):
             'k': self.k,
             'Atot': self.Atot
         }
-        params = {key: float(value) for key, value in params.items()}
+        # params = {key: float(value) for key, value in params.items()}
+        params = {key: float(value) if value is not None else None for key, value in params.items()}
 
         return params
     

@@ -1,0 +1,25 @@
+version: v2.2
+
+paths:
+    LISFLOOD: 
+        root: Z:/nahaUsers/casadje/GloFASv4/
+        timeseries: long_run/rsfil/
+    GRanD: Z:/nahaUsers/casadje/datasets/reservoirs/GRanD/v1_3/
+    ResOps: 
+        root: Z:/nahaUsers/casadje/datasets/reservoirs/ResOpsUS/
+        obs_timeseries: raw/time_series_all/
+        sim_timeseries: ancillary/LISFLOOD/
+
+normalize: True # normalize time series by reservoir storage capacity
+
+period:
+    start: 1975-01-01
+    end: #2019-12-30
+
+conditions:
+    min_area: 50 # km²
+    min_volume: 10 # hm3
+    min_dor: 0.08 # degree of regulation
+    min_dod: 0.06 # degree of disruptivity
+    min_years: 4 # years
+    tol_bias: 0.3 # relative bias accepted between inflow and outflow

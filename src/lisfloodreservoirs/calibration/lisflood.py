@@ -8,10 +8,11 @@ logger = logging.getLogger(__name__)
 
 from .basecalibrator import Calibrator
 from ..models import get_model
+from .. import ParametersConfig
 from ..utils.utils import return_period
 
 
-class Lisflood_calibrator(Calibrator):
+class LisfloodCalibrator(Calibrator):
     """This class allows for calibrating 6 parameters in the LISFLOOD reservoir routine, 3 related to the storage limits, 2 to the outflow limits and the last one to the relation between inflow and outflow.
                
     alpha: fraction filled flood. The proportion of reservoir capacity that defines the upper limit of the flood zone. Calibration range [0.2, 1)
@@ -27,15 +28,9 @@ class Lisflood_calibrator(Calibrator):
     k: release coefficient. A factor of the inflow that limits the outflow. Calibration range [1, 5]
     """
     
-    alpha = Uniform(name='alpha', low=0.20, high=0.99)
-    beta = Uniform(name='beta', low=0.001, high=0.999)
-    gamma = Uniform(name='gamma', low=0.001, high=0.999)
-    delta = Uniform(name='delta', low=0.1, high=0.5)
-    epsilon = Uniform(name='epsilon', low=0.001, high=0.999)
-    k = Uniform(name='k', low=1.0, high=5.0)
-    
     def __init__(
         self,
+        parameters: ParametersConfig,
         inflow: pd.Series,
         storage: pd.Series, 
         outflow: pd.Series, 
@@ -53,6 +48,9 @@ class Lisflood_calibrator(Calibrator):
         """
         Parameters:
         -----------
+        parametes: typed dictionary
+            A dictionary that defines the parameters to be calibrated, together with the 'low' and 'high' values in
+            the search range
         inflow: pd.Series
             Inflow time seris used to force the model (m3/s)
         storage: pd.Series
@@ -82,8 +80,18 @@ class Lisflood_calibrator(Calibrator):
         """
         
         super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, precipitation, evaporation, demand, Atot, target, obj_func, spinup)
+
+        # define parameter distributions and names
+        self.parameters = [
+            Uniform(name=key, low=val['low'], high=val['high'])
+            for key, val in parameters.items()
+        ]
+        self.param_names = list(parameters.keys())
         
-    def pars2attrs(self, pars: List) -> Dict:
+    def pars2attrs(
+        self, 
+        pars: List
+    ) -> Dict:
         """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`
         
         Parameters:
@@ -96,26 +104,29 @@ class Lisflood_calibrator(Calibrator):
         attributes: dictionary
             Reservoir attributes needed to declare a reservoir using the function `models.get_model()`
         """
-        
+
+        # map parameter names and values
+        param_dict = dict(zip(self.param_names, pars))
+
         # volume limits
-        Vf = pars[0] * self.Vtot 
-        Vn = self.Vmin + pars[1] * (Vf - self.Vmin)
-        Vn_adj = Vn + pars[2] * (Vf - Vn)
-        
+        Vf = param_dict.get('alpha', 0.97) * self.Vtot
+        Vn = self.Vmin + param_dict['beta'] * (Vf - self.Vmin) if 'beta' in param_dict else 0.67 * self.Vtot
+        Vn_adj = Vn + param_dict['gamma'] * (Vf - Vn) if 'gamma' in param_dict else 0.83 * self.Vtot
+
         # outflow limits
-        Qf = pars[3] * return_period(self.inflow, T=100) # self.inflow.quantile(pars[3])
-        Qn = pars[4] * Qf
+        Qf = param_dict.get('delta', 0.3) * return_period(self.inflow, T=100)
+        Qn = param_dict['epsilon'] * Qf if 'epsilon' in param_dict else self.inflow.mean()
         
         attributes = {
             'Vmin': min(self.Vmin, Vn), 
-            'Vn': Vn, 
-            'Vn_adj': Vn_adj,
-            'Vf': Vf,
+            'Vn': float(Vn), 
+            'Vn_adj': float(Vn_adj),
+            'Vf': float(Vf),
             'Vtot': self.Vtot,
-            'Qmin': min(self.Qmin, Qn),
-            'Qn': Qn,
-            'Qf': Qf,
-            'k': pars[5],
+            'Qmin': min(self.Qmin, float(Qn)),
+            'Qn': float(Qn),
+            'Qf': float(Qf),
+            'k': float(param_dict.get('k', 1.2)),
             'Atot': self.Atot
         }
 

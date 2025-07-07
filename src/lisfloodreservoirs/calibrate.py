@@ -33,8 +33,9 @@ def main():
         a simulation with default parameters
         """
     )
-    parser.add_argument('-c', '--config-file', type=str, required=True, help='Path to the configuration file')
-    parser.add_argument('-o', '--overwrite', action='store_true', default=False, help='Overwrite existing simulation files')
+    parser.add_argument('-c', '--config-file', type=str, required=True, help='Path to the YAML configuration file (e.g., config.yml).')
+    parser.add_argument('-o', '--overwrite', action='store_true', default=False, help='Overwrite existing calibration results.')
+    # parser.add_argument('-p', '--parallel', action='store_true', default=False, help='Parallelize calibration using MPI')
     args = parser.parse_args()
 
     # read configuration file
@@ -111,14 +112,15 @@ def main():
             )
             
         # storage attributes (m3)
-        Vtot = ts.storage.max()
+        Vtot = max(attributes.loc[grand_id, 'CAP_MCM'].item() * 1e6, ts.storage.max())
+        # Vtot = ts.storage.max()
         Vmin = max(0, min(0.1 * Vtot, ts.storage.min()))
         # flow attributes (m3/s)
         Qmin = max(0, ts.outflow.min())
         # catchment area (m2)
-        catchment = int(attributes.loc[grand_id, 'CATCH_SKM'] * 1e6) if cfg.MODEL == 'camaflood' else None
+        catchment = int(attributes.loc[grand_id, 'CATCH_SKM'].item() * 1e6) if cfg.MODEL == 'camaflood' else None
         # reservoir area (m2)
-        Atot = int(attributes.loc[grand_id, 'AREA_SKM'] * 1e6)
+        Atot = int(attributes.loc[grand_id, 'AREA_SKM'].item() * 1e6)
 
         # calibrate
         try:
@@ -131,6 +133,7 @@ def main():
             # initialize the calibration setup
             calibrator = get_calibrator(
                 cfg.MODEL,
+                parameters=cfg.PARAMETERS,
                 inflow=inflow,
                 storage=ts.storage,
                 outflow=ts.outflow,
@@ -151,7 +154,7 @@ def main():
                 calibrator, 
                 dbname=dbname, 
                 dbformat='csv', 
-                # parallel='mpi',
+                # parallel='mpi' if args.parallel else 'seq',
                 save_sim=False,
                 # seed=42
             )
@@ -159,9 +162,9 @@ def main():
             sceua.sample(
                 cfg.MAX_ITER, 
                 ngs=cfg.COMPLEXES, 
-                kstop=3, 
-                pcento=0.01, 
-                peps=0.1
+                kstop=cfg.KSTOP, 
+                pcento=cfg.PCENTO, 
+                peps=cfg.PEPS,
             )
             logger.info(f'Calibration of reservoir {grand_id} successfully finished')
         except RuntimeError:
@@ -179,20 +182,21 @@ def main():
 
             # declare the reservoir with optimal parameters
             res = get_model(cfg.MODEL, **calibrated_attrs)
+            # if cfg.MODEL == 'camaflood':
+            #     res.k = parameters['k']
 
             # export calibrated parameters
             with open(cfg.PATH_CALIB / f'{grand_id}_optimal_parameters.yml', 'w') as file:
                 yaml.dump(res.get_params(), file)
 
             # simulate the reservoir
-            # sim_cfg = {} if cfg.MODEL == 'camaflood' else cal_cfg
+            Vo = ts.storage.iloc[0]
             sim_cal = res.simulate(
                 inflow=inflow,
-                Vo=ts.storage.iloc[0],
+                Vo=None if pd.isna(Vo) else Vo,
                 precipitation=precipitation,
                 evaporation=evaporation,
                 demand=demand,
-                # **sim_cfg
             )
             sim_cal.to_csv(cfg.PATH_CALIB / f'{grand_id}_simulation.csv', float_format='%.3f')
             

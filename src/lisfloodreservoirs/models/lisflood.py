@@ -46,6 +46,8 @@ class Lisflood(Reservoir):
             Normal outflow (m3/s)
         Qf: float
             Non-damaging outflow (m3/s)
+        k: float
+            Flood release factor. It allows for releases k times the inflow, i.e., larger than the inflow
         Atot: integer (optional)
             Reservoir area (m2) at maximum capacity
         timestep: int
@@ -269,6 +271,7 @@ class Lisflood(Reservoir):
             'k': self.k,
             'Atot': self.Atot
         }
-        params = {key: float(value) for key, value in params.items()}
+        # params = {key: float(value) for key, value in params.items()}
+        params = {key: float(value) if value is not None else None for key, value in params.items()}
 
         return params

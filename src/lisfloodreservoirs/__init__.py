@@ -1,8 +1,17 @@
 import yaml
 from pathlib import Path
-from typing import Union, Optional, List, Dict
+from typing import Union, Optional, List, Dict, TypedDict, Literal
 import pandas as pd
 from tqdm.auto import tqdm
+
+
+class ParamRange(TypedDict):
+    low: float
+    high: float
+
+
+ParameterName = Literal['alpha', 'beta', 'gamma', 'delta', 'epsilon', 'k']
+ParametersConfig = Dict[ParameterName, ParamRange]
 
 
 class Config:
@@ -29,17 +38,26 @@ class Config:
         self.SPINUP = self.cfg['simulation'].get('spinup', 0)
         
         # calibration
-        self.TARGET = self.cfg['calibration']['target']
-        self.MAX_ITER = self.cfg['calibration']['SCEUA'].get('max_iter', 1000)
-        self.COMPLEXES = self.cfg['calibration']['SCEUA'].get('COMPLEXES', 4)
-        path_calib = path_results / self.MODEL / 'calibration'
-        if len(self.TARGET) == 1:
-            self.PATH_CALIB = path_calib / 'univariate' / self.TARGET[0]
-        elif len(self.TARGET) == 2:
-            self.PATH_CALIB = path_calib / 'bivariate'
-        else:
-            raise ValueError('ERROR. Only univariate or bivariate calibrations are supported')
-        self.PATH_CALIB.mkdir(parents=True, exist_ok=True)
+        cfg_cal = self.cfg.get('calibration', None)
+        if cfg_cal is not None:
+            # targets
+            self.TARGET = cfg_cal.get('target', ['storage'])
+            # parameters
+            self.PARAMETERS: ParametersConfig = cfg_cal.get('parameters', None)
+            # optimization
+            self.MAX_ITER = cfg_cal['SCEUA'].get('max_iter', 2000)
+            self.COMPLEXES = cfg_cal['SCEUA'].get('complexes', 8)
+            self.KSTOP = cfg_cal['SCEUA'].get('kstop', 5)
+            self.PEPS = cfg_cal['SCEUA'].get('peps', 0.01)
+            self.PCENTO = cfg_cal['SCEUA'].get('pcento', 0.001)
+            path_calib = path_results / self.MODEL / 'calibration'
+            if len(self.TARGET) == 1:
+                self.PATH_CALIB = path_calib / 'univariate' / self.TARGET[0]
+            elif len(self.TARGET) == 2:
+                self.PATH_CALIB = path_calib / 'bivariate'
+            else:
+                raise ValueError('ERROR. Only univariate or bivariate calibrations are supported')
+            self.PATH_CALIB.mkdir(parents=True, exist_ok=True)
         
         
 def read_attributes(
@@ -104,12 +122,12 @@ def read_timeseries(
     timeseries: dictionary
         It contains the timeseries of the selected reservoirs as pandas.DataFrame
     """
-    
-    if variables is None:
-        variables = ['inflow', 'storage', 'outflow', 'elevation']
-    
+
     if reservoirs is None:
         reservoirs = [int(file.stem) for file in path_ts.glob('*.csv')]
+
+    # if variables is None:
+    #     variables = ['inflow', 'storage', 'outflow', 'elevation']
         
     # read time series
     timeseries = {}
@@ -123,17 +141,29 @@ def read_timeseries(
         else:
             print(f"File {file} doesn't exist")
             continue
-        
+
+        # select study period
         try:
-            # select study period
             if periods is not None:
                 start, end = [periods[str(ID)][f'{x}_dates'][0] for x in ['start', 'end']]
-                ts = ts.loc[start:end, variables]
+                ts = ts.loc[start:end, :]
+        except Exception as e:
+            print(f'Error while trimming to the study period the time series for ID {ID}:\m{e}')
 
-            # convert storage to m3
+        # select varibles
+        try:
+            if variables is not None:
+                missing_vars = set(variables).difference(ts.columns)
+                if len(missing_vars) > 0:
+                    print(f'Time series for ID {ID} is missing variables: {missing_vars}')
+                ts = ts[ts.columns.intersection(variables)]
+            # convert storage variables to m3
             ts.iloc[:, ts.columns.str.contains('storage')] *= 1e6
+        except Exception as e:
+            print(f'Error while selecting variables from the time series for ID {ID}:\m{e}')
 
-            # save time series
+        # save time series
+        try:
             timeseries[ID] = ts
         except Exception as e:
             print(f'Time series for ID {ID} could not be saved:\n{e}')

@@ -8,9 +8,10 @@ logger = logging.getLogger(__name__)
 
 from .basecalibrator import Calibrator
 from ..models import get_model
+from .. import ParametersConfig
 
 
-class mHM_calibrator(Calibrator):
+class MhmCalibrator(Calibrator):
     """This class allows for calibrating 5 parameters in the mHM reservoir routine, 3 related to the storage limits, 2 to the outflow limits and the last one to the relation between inflow and outflow.
     
     w:       Dimensionless parameter that controls the demand hedging. Calibration range [0, 1]
@@ -20,15 +21,9 @@ class mHM_calibrator(Calibrator):
     lambda_: Dimensionless parameter that further controls the hedging in relation to the current reservoir filling. Calibration range [0.25, 3]
     """
     
-    seed = 0
-    w = Uniform(name='w', low=0.0, high=1.0)
-    alpha = Uniform(name='alpha', low=0.0, high=5.0)
-    beta = Uniform(name='beta', low=0.5, high=3.0)
-    gamma = Uniform(name='gamma', low=0.0, high=1.0)
-    lambda_ = Uniform(name='lambda_', low=0.25, high=3.0)
-    
     def __init__(
         self,
+        parameters: ParametersConfig,
         inflow: pd.Series,
         demand: pd.Series,
         storage: pd.Series, 
@@ -46,6 +41,9 @@ class mHM_calibrator(Calibrator):
         """
         Parameters:
         -----------
+        parametes: typed dictionary
+            A dictionary that defines the parameters to be calibrated, together with the 'low' and 'high' values in
+            the search range
         inflow: pd.Series
             Inflow time seris used to force the model (m3/s)
         demand: pandas.Series
@@ -73,8 +71,18 @@ class mHM_calibrator(Calibrator):
         """
         
         super().__init__(inflow, storage, outflow, Vmin, Vtot, Qmin, precipitation, evaporation, demand, Atot, target, obj_func, spinup)
+
+        # define parameter distributions and names
+        self.parameters = [
+            Uniform(name=key, low=val['low'], high=val['high'])
+            for key, val in parameters.items()
+        ]
+        self.param_names = list(parameters.keys())
                 
-    def pars2attrs(self, pars: List) -> Dict:
+    def pars2attrs(
+        self, 
+        pars: List
+    ) -> Dict:
         """It converts a list of model parameters into reservoir attributes to be used to declare a reservoir with `model.get_model()`
         
         Parameters:
@@ -87,6 +95,9 @@ class mHM_calibrator(Calibrator):
         attributes: dictionary
             Reservoir attributes needed to declare a reservoir using the function `models.get_model()`
         """
+
+        # map parameter names and values
+        param_dict = dict(zip(self.param_names, pars))
         
         attributes = {
             'Vmin': self.Vmin,
@@ -94,11 +105,11 @@ class mHM_calibrator(Calibrator):
             'Qmin': self.Qmin,
             'avg_inflow': self.inflow.mean(),
             'avg_demand': self.demand.mean(),
-            'w': pars[0],
-            'alpha': pars[1],
-            'beta': pars[2],
-            'gamma': pars[3],
-            'lambda_': pars[4],
+            'w': param_dict.get('w', 0.1),
+            'alpha': param_dict.get('alpha', 0.5),
+            'beta': param_dict.get('beta', 1),
+            'gamma': param_dict.get('gamma', 0.85),
+            'lambda_': param_dict.get('lambda', 1),
             'Atot': self.Atot
         }
 
