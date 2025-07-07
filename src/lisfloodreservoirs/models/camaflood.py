@@ -63,6 +63,50 @@ class Camaflood(Reservoir):
         
         # release coefficient
         # self.k = max(1 - (Vtot - Vf) / (catchment * .2), 0)
+
+    def weighing(
+        self,
+        I: Union[float, np.ndarray],
+        factor: float = 0.2
+    ) -> Union[float, np.ndarray]:
+        """
+        Computes a sigmoid-based weight to smoothly transition between 
+        'normal' and 'flood' reservoir release regimes based on inflow.
+    
+        This function returns a value between ~0 and ~1 that increases 
+        smoothly as inflow (I) approaches and exceeds the flood threshold (Qf). 
+        The transition replaces sharp mode switching with a smooth blending.
+    
+        Parameters
+        ----------
+        I : float or array-like
+            Inflow to the reservoir at the current timestep.
+        factor : float, optional (default=0.2)
+            Controls the width of the sigmoid transition as a fraction of Qf. 
+            A smaller factor makes the transition sharper; a larger factor 
+            makes it smoother.
+    
+        Returns
+        -------
+        weight : float or ndarray
+            A smooth weight in the [0, 1] range that can be used to blend 
+            between normal and flood release equations.
+        """
+        
+        eps = 5e-3
+
+        if factor <= 1e-2:
+            weight = 0 if I < self.Qf else 1
+        else:
+            # estimate the value of alpha based on the width
+            half_width = factor * self.Qf
+            alpha = np.log((1 - eps) / eps) / half_width
+        
+            # compute weight
+            Q = self.Qf - half_width
+            weight = 1 / (1 + np.exp(-alpha * (I - Q)))
+        
+        return weight
         
     def step(
         self,
@@ -95,6 +139,9 @@ class Camaflood(Reservoir):
         Q, V: List[float]
             Outflow (m3/s) and updated storage (m3)
         """
+
+        # release coefficient
+        self.k = max(1 - (self.Vtot - V) / (self.catchment * .2), 0)
         
         # estimate reservoir area at the beginning of the time step
         if P or E:
@@ -117,24 +164,24 @@ class Camaflood(Reservoir):
         # ouflow depending on the inflow and storage level
         if V < self.Vmin:
             Q = V / self.Vf * self.Qn
-        elif V < self.Vf:
-            if I < self.Qf:
-                Q = self.Vmin / self.Vf * self.Qn + ((V - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
-            elif I >= self.Qf:
-                Q = self.Vmin / self.Vf * self.Qn + (V - self.Vmin) / (self.Vf - self.Vmin) * (self.Qf - self.Vmin / self.Vf * self.Qn)
-        elif V < self.Ve:
-            if I < self.Qf:
-                Q = self.Vmin / self.Vf * self.Qn + ((V - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
-            elif I >= self.Qf:
-                Q = self.Qf + self.k * (V - self.Vf) / (self.Ve - self.Vf) * (I - self.Qf)
-        elif self.Ve <= V:
-            if I < self.Qf:
-                Q = self.Qf
-            elif I >= self.Qf:
-                Q = I
-            if verbose:
-                if V > self.Vtot:
-                    print(f'{V} m3 is greater than the reservoir capacity of {self.Vtot} m3')
+        else:
+            # Qlow: when inflow is lower than Qf
+            # Qhigh: when inflow is greater or equal than Qf
+            if V < self.Vf:
+                Qlow = self.Vmin / self.Vf * self.Qn + ((V - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
+                Qhigh = self.Vmin / self.Vf * self.Qn + (V - self.Vmin) / (self.Vf - self.Vmin) * (self.Qf - self.Vmin / self.Vf * self.Qn)
+            elif V < self.Ve:
+                Qlow = self.Vmin / self.Vf * self.Qn + ((V - self.Vmin) / (self.Ve - self.Vmin))**2 * (self.Qf - self.Vmin / self.Vf * self.Qn)
+                Qhigh = self.Qf + self.k * (V - self.Vf) / (self.Ve - self.Vf) * (I - self.Qf)
+            elif self.Ve <= V:
+                Qlow = self.Qf
+                Qhigh = I
+                if verbose:
+                    if V > self.Vtot:
+                        print(f'{V} m3 is greater than the reservoir capacity of {self.Vtot} m3')
+            # compute release as a weighed sum of the "normal" and "flood" mode
+            w = self.weighing(I, factor=1e-2)
+            Q = (1 - w) * Qlow + w * Qhigh
 
         # limit outflow so the final storage is between 0 and 1
         eps = 1e-3
@@ -183,8 +230,8 @@ class Camaflood(Reservoir):
             assert I >= 0, '"I" must be a positive value'
             I = pd.Series(I, index=V.index)
 
-        # release coefficient
-        self.k = max(1 - (self.Vtot - V) / (self.catchment * .2), 0)
+        # # release coefficient
+        # self.k = max(1 - (self.Vtot - V) / (self.catchment * .2), 0)
         
         maskI = I < self.Qf
         maskV1 = V < self.Vmin
@@ -294,7 +341,7 @@ class Camaflood(Reservoir):
             'Vtot': self.Vtot,
             'Qn': self.Qn,
             'Qf': self.Qf,
-            'k': self.k,
+            # 'k': self.k,
             'Atot': self.Atot
         }
         # params = {key: float(value) for key, value in params.items()}
