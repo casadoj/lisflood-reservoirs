@@ -57,12 +57,12 @@ class Camaflood(Reservoir):
         
         # outflow limits
         self.Qn = Qn
+
+        # catchment area
+        self.catchment = catchment
         
         # release coefficient
-        self.k = max(1 - (Vtot - Vf) / (catchment * .2), 0)
-        # self.k = max(1 - (Vtot - Vf) / (catchment * .2), .1)
-        # self.k = max(1 - (Vtot - Vf) / (catchment * .2), .5)
-        # self.k = 1
+        # self.k = max(1 - (Vtot - Vf) / (catchment * .2), 0)
         
     def step(
         self,
@@ -183,6 +183,9 @@ class Camaflood(Reservoir):
             assert I >= 0, '"I" must be a positive value'
             I = pd.Series(I, index=V.index)
 
+        # release coefficient
+        self.k = max(1 - (self.Vtot - V) / (self.catchment * .2), 0)
+        
         maskI = I < self.Qf
         maskV1 = V < self.Vmin
         maskV2 = (self.Vmin <= V) & (V < self.Vf)
