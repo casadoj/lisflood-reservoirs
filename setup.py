@@ -19,6 +19,7 @@ setup(
         'cartopy',
         # 'cfgrib',
         'dask',
+        'lxml',
         'matplotlib',
         'mpi4py',
         'netcdf4',
