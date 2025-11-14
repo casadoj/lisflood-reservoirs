@@ -1,13 +1,14 @@
 import numpy as np
 import pandas as pd
 from scipy.interpolate import interp1d, PchipInterpolator
-from typing import Literal
+from typing import Literal, Union
 
 
 def bin_data(
     elevation: pd.Series, 
-    storage: pd.Series, 
-    bin_size: float = 0.1
+    target: Union[pd.Series, pd.DataFrame], 
+    agg: Literal['median', 'mean'] = 'median',
+    bin_size: float = 0.5,
     ) -> pd.Series:
     """
     Bins reservoir elevation and corresponding storage data into regular elevation intervals
@@ -17,8 +18,10 @@ def bin_data(
     ----------
     elevation : pd.Series
         Series of elevation values (in meters), typically from time series data.
-    storage : pd.Series
-        Series of storage values (in cubic meters), corresponding to the elevation series.
+    target: Union[pd.Series, pd.DataFrame]
+        Series of storage, area or other variable corresponding to the elevation series.
+    agg: Literal['median', 'mean']
+        Statistic used to bin the input data
     bin_size : float, optional
         The elevation bin size (in meters) to aggregate the data, default is 0.1 m.
 
@@ -29,24 +32,25 @@ def bin_data(
         The index represents the center of each elevation bin.
     """
 
-    df = pd.concat([elevation, storage], axis=1)
-    df.columns = ['elevation', 'storage']
+    if isinstance(target, pd.Series):
+        target_df = pd.DataFrame(target)
+    else:
+        target_df = target.copy()
+    df = pd.concat([elevation.rename('elevation'), target_df], axis=1).dropna()
     df.sort_values('elevation', inplace=True)
     df.reset_index(drop=True, inplace=True)
 
-    # Define bins: from min to max elevation, spaced every 0.01 m
+    # Define bins: from min to max elevation, spaced every bin_size
     min_elev = np.round(np.floor(df.elevation.min() / bin_size) * bin_size - bin_size / 2, 3)
     max_elev = np.round(np.ceil(df.elevation.max() / bin_size) * bin_size + bin_size / 2, 3)
-    bins = np.arange(min_elev, max_elev, bin_size)
+    bins = np.round(np.arange(min_elev, max_elev, bin_size), 3)
         
     # bin the elevation values
     df['elev_bin'] = pd.cut(df.elevation, bins, include_lowest=False)
     
     # group by bin and compute mean storage (and optionally elevation)
-    binned = df.groupby('elev_bin', observed=False).agg({
-        # 'elevation': 'mean',
-        'storage': 'mean'
-    })
+    agg_dict = {col: agg for col in target_df.columns}
+    binned = df.groupby('elev_bin', observed=False).agg(agg_dict)
 
     # replace bin labels with bin centers
     binned.index = np.mean([bins[:-1], bins[1:]], axis=0)
@@ -54,12 +58,16 @@ def bin_data(
 
     # remove bins with no data
     binned.dropna(how='any', inplace=True)
+        
+    if any(binned.diff().min() < 0):
+        print('WARNING. The binned data is not monotonically increasing')
 
     return binned.squeeze()
 
     
 def fit_reservoir_curve(
-    binned: pd.Series, 
+    x_binned: pd.Series,
+    y_binned: pd.Series, 
     method: Literal['poly1d', 'interp1d', 'pchip'] = 'pchip',
     degree: int = 2
 ):
@@ -73,9 +81,10 @@ def fit_reservoir_curve(
 
     Parameters
     ----------
-    binned : pd.Series
-        A pandas Series where the index represents elevation (in meters) and 
-        the values represent average storage (in cubic meters) for each elevation bin.
+    x_binned : pd.Series
+        A pandas Series representing the explanatory variable in the reservoir curve (e.g. elevation)
+    y_binned: pd.Series
+        A pandas Series representing the variable to be inferred with the reservoir curve (e.g. storage)
     method : {'poly1d', 'interp1d', 'pchip'}, optional
         The fitting method to use:
         - 'poly1d' fits a polynomial of specified degree (e.g., quadratic).
@@ -101,20 +110,20 @@ def fit_reservoir_curve(
     """
 
     if method.lower() == 'poly1d':
-        coefficients = np.polyfit(binned.index, binned.values, degree)
+        coefficients = np.polyfit(x_binned, y_binned, degree)
         reservoir_curve = np.poly1d(coefficients)
     elif method.lower() == 'interp1d':
         reservoir_curve = interp1d(
-            x=binned.index,
-            y=binned.values,
+            x=x_binned,
+            y=y_binned,
             kind='linear',
             fill_value='extrapolate',
             assume_sorted=True
             )
     elif method.lower() == 'pchip':
         reservoir_curve = PchipInterpolator(
-            x=binned.index,
-            y=binned.values
+            x=x_binned,
+            y=y_binned
         )
     else:
         raise ValueError(f'"method" must be either "interp1d" or "pchip": {method} was provided')
@@ -123,31 +132,33 @@ def fit_reservoir_curve(
 
 
 def storage_from_elevation(
-    reservoir_curve: np.poly1d,
-    elevation: pd.Series
-) -> pd.Series:
+    reservoir_curve: callable,
+    elevation: Union[pd.Series, np.ndarray]
+) -> Union[pd.Series, np.ndarray]:
     """
     Produces a time series of reservoir storage given the reservoir curve and an elevation time series.
 
     Parameters:
     -----------
-    reservoir_curve: numpy.poly1d
+    reservoir_curve: callable
         A NumPy polynomial object representing a fitted reservoir curve (storage vs elevation)
-    elevation: pandas.Series
-        A pandas Series containing elevation data.
+    elevation: pandas.Series or numpy.ndarray
+        Reservoir elevation data
 
     Returns:
     --------
-    storage: pandas.Series
-        A pandas Series containing corresponding reservoir storage data.
+    storage: pandas.Series or numpy.ndarray
+        Estimated reservoir storage data.
     """
 
     # estimate storage
-    storage = pd.Series(
-        data=reservoir_curve(elevation),
-        index=elevation.index,
-        name='storage'
-        )
+    storage = reservoir_curve(elevation)
+    if isinstance(elevation, pd.Series):
+        storage = pd.Series(
+            data=storage,
+            index=elevation.index,
+            name='storage'
+            )
 
     return storage
 
@@ -211,10 +222,17 @@ def area_from_elevation(
     """
 
     # estimate area
-    area = pd.Series(
-        data=reservoir_curve.deriv()(elevation),
-        index=elevation.index,
-        name='area'
+    try:
+        area = pd.Series(
+            data=reservoir_curve.deriv()(elevation),
+            index=elevation.index,
+            name='area'
+            )
+    except:
+        area = pd.Series(
+            data=reservoir_curve.derivative()(elevation),
+            index=elevation.index,
+            name='area'
         )
-
+        
     return area
