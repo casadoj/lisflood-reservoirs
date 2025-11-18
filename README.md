@@ -1,7 +1,8 @@
 <!-- <img src="./images/logo.png" alt="lisflood-reservoirs logo" width="100" align="center"> -->
 <img src="./images/copernicus_logo.png" alt="Logo Copernicus" width="280" align="center"><img src="./images/copernicus_emergency_management.png" alt="Logo CEMS" width="200" align="center">
 
-![Python_3.11](https://img.shields.io/badge/Python-%3E%3D3.11-blue?labelColor=343b41)
+![Python_3.11](https://img.shields.io/badge/Python-%3E%3D3.11-blue?labelColor=343b41) &nbsp; [![License: GPL v3](https://img.shields.io/badge/License-GPLv3-blue.svg)](https://www.gnu.org/licenses/gpl-3.0) &nbsp; [![Docs](https://img.shields.io/badge/docs-online-blue.svg)](https://github.com/casadoj/lisflood-reservoirs/wiki)
+
 
 # LISFLOOD reservoirs
 
@@ -142,3 +143,9 @@ options:
   -w, --overwrite
                           Overwrite existing simulation files. Default: False
 ```
+
+## Datasets
+
+Casado Rodríguez, J., Disperati, J., & Salamon, P. (2025). ResOpsUS+CARS: Reservoir Operations US and CAtchment and Reservoir Static attributes (1.0) [Data set]. European Commission - Joint Research Centre. https://doi.org/10.5281/zenodo.15978041
+
+Casado Rodríguez, J., Disperati, J., & Salamon, P. (2025). ResOpsBR+CARS: Reservoir Operations Brazil and CAtchment and Reservoir Static attributes (1.0) [Data set]. European Commission - Joint Research Centre. https://doi.org/10.5281/zenodo.16096623
