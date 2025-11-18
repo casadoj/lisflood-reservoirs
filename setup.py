@@ -20,6 +20,7 @@ setup(
         # 'cfgrib',
         'dask',
         'gwwapi',
+        'lxml',
         'matplotlib',
         'mpi4py',
         'netcdf4',
