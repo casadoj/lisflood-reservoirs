@@ -4,6 +4,8 @@ from scipy.interpolate import interp1d, PchipInterpolator
 from scipy.stats import gaussian_kde
 from typing import Literal, Union, Optional
 import matplotlib.pyplot as plt
+import pickle
+from pathlib import Path
 
 
 def bin_data(
@@ -160,6 +162,8 @@ class ReservoirCurve(pd.DataFrame):
         curve_zv (callable): Fitted interpolator for Elevation -> Storage (set by .fit()).
         curve_vz (callable): Fitted interpolator for Storage -> Elevation (set by .fit()).
     """
+
+    _metadata = ['z_min', 'z_max', 'v_min', 'v_max', 'curve_zv', 'curve_vz']
     
     def __init__(self, lookup_table: pd.DataFrame, *args, **kwargs):
         """
@@ -416,7 +420,7 @@ class ReservoirCurve(pd.DataFrame):
     
         aux_props = dict(ls='--', lw=.5, c='k', zorder=0)
         obs_props = dict(cmap=cmap, s=size, alpha=alpha, zorder=1)
-        lookup_props = dict(s=size, c='k', alpha=1, zorder=2)
+        lookup_props = dict(s=size * 2, lw=.6, c='k', marker='+', alpha=1, zorder=2)
         curve_props = dict(lw=1, c='k', zorder=3)
         
         for j, var_x in enumerate(['elevation', 'area']):
@@ -429,7 +433,7 @@ class ReservoirCurve(pd.DataFrame):
                 # lookup table
                 if (var_x in self.columns) and (var_y in self.columns):
                     label = 'reservoir_curve' if (i == 0 and j == 0) else None
-                    ax.scatter(self[var_x], self[var_y], **curve_props, label=label)
+                    ax.scatter(self[var_x], self[var_y], **lookup_props, label=label)
                 
                 # fitted curves
                 if self.curve_zv is not None:
@@ -701,3 +705,28 @@ def plot_reservoir_curves(
                 ax.set_ylabel(var_props[var_y]['label'])
 
     return fig, axes
+
+
+def save_curve(instance: 'ReservoirCurve', file_path: Union[str, Path]):
+    """Saves a fitted ReservoirCurve instance to a pickle file."""
+    try:
+        if isinstance(file_path, str):
+            file_path = Path(file_path)
+
+        # Create directory if it doesn't exist
+        file_path.parent.mkdir(parents=True, exist_ok=True)
+        
+        with open(file_path, 'wb') as f:
+            pickle.dump(instance, f)
+        print(f"Successfully saved ReservoirCurve to {file_path}")
+    except Exception as e:
+        print(f"Error saving file: {e}")
+
+
+def load_curve(file_path: Union[str, Path]) -> 'ReservoirCurve':
+    """Loads a fitted ReservoirCurve instance from a pickle file."""
+    with open(file_path, 'rb') as f:
+        instance = pickle.load(f)
+    print(f"Successfully loaded ReservoirCurve from {file_path}")
+    
+    return instance
