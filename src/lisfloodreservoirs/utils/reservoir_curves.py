@@ -49,11 +49,10 @@ def bin_data(
     min_elev = np.ceil(df.elevation.min() / bin_size) * bin_size
     max_elev = np.floor(df.elevation.max() / bin_size) * bin_size
     bins = np.round(np.arange(min_elev, max_elev + bin_size / 10, bin_size), 3)
-    #bins = np.append(np.append(df.elevation.min(), bins), df.elevation.max())
         
     if agg == 'closest':
         # add minimum and maximum observed elevation
-        bins = np.append(np.append(df.elevation.min(), bins), df.elevation.max())
+        #bins = np.append(np.append(df.elevation.min(), bins), df.elevation.max())
         
         # keep only the closest observation to each bin
         diff_matrix = np.abs(bins[:, np.newaxis] - df.elevation.values)
@@ -185,23 +184,161 @@ class ReservoirCurve(pd.DataFrame):
             are not monotonically increasing with elevation, or if observed data
             exceeds user-defined limits.
         """
-        super().__init__(lookup_table, *args, **kwargs)
 
-        # check monotonicity
+        super().__init__(lookup_table, *args, **kwargs)
         self.sort_values('elevation', inplace=True)
         self.reset_index(inplace=True, drop=True)
+
+        # check monotonicity in the storage values
         if not self['storage'].is_monotonic_increasing:
             raise ValueError("The 'storage' column must be monotonically increasing with 'elevation'. Check data quality.")
+        
+        # estimate area
+        if 'area' not in lookup_table.columns:
+            self['area'] = self._lookup_area()
+        # check monotonicity in the area values
+        if not self['area'].is_monotonic_increasing:
+            raise ValueError("The 'area' column must be monotonically increasing with 'elevation'. Check data quality.")
 
         # define curve limits
         self.z_min = self['elevation'].min()
         self.z_max = self['elevation'].max()
         self.v_min = self['storage'].min()
         self.v_max = self['storage'].max()
+        self.a_min = self['area'].min()
+        self.a_max = self['area'].max()
 
         # initialize empty curves
         self.curve_zv = None
         self.curve_vz = None
+        self.curve_za = None
+        self.curve_az = None
+        self.curve_av = None
+        self.curve_va = None
+
+    def _check_range(self, data: Union[pd.Series, np.ndarray], variable: Literal['elevation', 'storage']) -> Union[pd.Series, np.ndarray]:
+        """Converts into NaN values outside the reservoir curve range to avoid extrapolation problems
+
+        Parameters:
+        -----------
+        data: pandas.Series or numpy.ndarray
+            Values to be checked
+        variable: string
+            Defines the variable of "data"
+
+        Returns:
+        --------
+        np.ndarray
+            The input data with out-of-range values set to NaN.
+        """
+        array = np.array(data)
+        
+        if variable == 'elevation':
+            min_value, max_value = self.z_min, self.z_max
+        elif variable == 'storage':
+            min_value, max_value = self.v_min, self.v_max
+        elif variable == 'area':
+            min_value, max_value = self.a_min, self.a_max
+        else:
+            raise ValueError(f'"variable" must be either "elevation", "storage" or "area": {variable} was provided')
+        
+        mask = (array < min_value) | (array > max_value)
+        if mask.sum() > 0:
+            array[mask] = np.nan
+            print(f'WARNING. {mask.sum()} {variable} values were removed because they were outside of the range [{min_value:.3f},{max_value:.3f}]')
+
+        return array
+    
+    def _convert(
+        self, 
+        input: Union[pd.Series, np.ndarray], 
+        curve_attr: str,
+        input_var: Literal['elevation', 'storage', 'area'], 
+        output_var: Literal['elevation', 'storage', 'area']
+    ) -> Union[pd.Series, np.ndarray]:
+        """Generic method to convert a time series using a fitted curve."""
+        
+        # check input data is within the allowed range
+        input = input.copy()
+        self._check_range(input, variable=input_var)
+
+        # get the fitted curve
+        curve = getattr(self, curve_attr)
+        if curve is None:
+             raise ValueError(f"The curve '{curve_attr}' has not been fitted. Call .fit() first.")
+
+        # convert data and check range
+        output = curve(input)
+        self._check_range(output, variable=output_var)
+        if isinstance(input, pd.Series):
+            output = pd.Series(data=output, index=input.index, name=output_var)
+        
+        return output
+    
+    def _fit(self, x, y, method: Literal['poly', 'interp1d', 'pchip'] = 'pchip', degree: int = 2):
+        """
+        Fits a curve (e.g., a reservoir elevation-storage curve) using the provided data.
+
+        It supports polynomial fitting, linear interpolation, 
+        and shape-preserving cubic Hermite interpolation (PCHIP).
+    
+        Parameters
+        ----------
+        x : array_like
+            The independent variable data (e.g., elevation values).
+        y : array_like
+            The dependent variable data (e.g., storage values).
+        method : {'poly', 'interp1d', 'pchip'}, optional
+            The fitting method to use:
+            - 'poly' fits a polynomial of specified degree (e.g., quadratic).
+            - 'interp1d' performs linear interpolation.
+            - 'pchip' uses shape-preserving cubic Hermite interpolation (default).
+        degree : int, optional
+            Degree of the polynomial if `method='poly'`. Ignored for other methods. 
+            Default is 2.
+    
+        Returns
+        -------
+        callable
+            A function (or object with a call method) that takes input values (x) 
+            and returns estimated output values (y). The return type depends on the method:
+            - `np.Polynomial` for polynomial fitting,
+            - `scipy.interpolate.interp1d` for linear interpolation,
+            - `scipy.interpolate.PchipInterpolator` for PCHIP.
+        """
+    
+        if method.lower() == 'poly':
+            coefficients_zv = np.polyfit(x, y, degree)
+            curve = np.Polynomial(coefficients_zv[::-1])
+        elif method.lower() == 'interp1d':
+            curve = interp1d(x=x, y=y, kind='linear', assume_sorted=True)
+        elif method.lower() == 'pchip':
+            curve = PchipInterpolator(x=x, y=y)
+        else:
+            raise ValueError(f'"method" must be either "poly", "interp1d" or "pchip": {method} was provided')
+        
+        return curve
+    
+    def _lookup_area(self):
+        """
+        Estimates the area values for the lookup table
+
+        Returns:
+        --------
+        numpy.ndarray:
+            Area values associated to the elevation values in the lookup table
+        """
+        # mean values of area and elevation in each bin
+        area_avg = (self['storage'].diff() / self['elevation'].diff()).dropna().values
+        elev_avg = (self['elevation'].iloc[:-1].values + self['elevation'].iloc[1:].values) / 2
+
+        # fit a curve to the mean area-elevation pairs
+        curve_za = self._fit(elev_avg, area_avg, method='pchip')
+
+        # estimate area values for the elevation bins
+        area = curve_za(self.elevation)
+
+        return area
 
     def fit(self, method: Literal['poly', 'interp1d', 'pchip'] = 'pchip', degree: int = 2):
         """
@@ -236,69 +373,24 @@ class ReservoirCurve(pd.DataFrame):
         ValueError
             If an unsupported fitting method is specified.
         """
-    
-        if method.lower() == 'poly':
-            # elevation-storage curve
-            coefficients_zv = np.polyfit(self.elevation, self.storage, degree)
-            self.curve_zv = np.Polynomial(coefficients_zv[::-1])
-            # storage-elevation curve
-            coefficients_vz = np.polyfit(self.storage, self.elevation, degree)
-            self.curve_vz = np.Polynomial(coefficients_vz[::-1])
-        elif method.lower() == 'interp1d':
-            # elevation-storage curve
-            self.curve_zv = interp1d(
-                x=self.elevation,
-                y=self.storage,
-                kind='linear',
-                #fill_value='extrapolate',
-                assume_sorted=True
-                )
-            # storage-elevation curve
-            self.curve_vz = interp1d(
-                x=self.storage,
-                y=self.elevation,
-                kind='linear',
-                #fill_value='extrapolate',
-                assume_sorted=True
-            )
-        elif method.lower() == 'pchip':
-            # elevation-storage curve
-            self.curve_zv = PchipInterpolator(x=self.elevation, y=self.storage)
-            # storage-elevation curve
-            self.curve_vz = PchipInterpolator(x=self.storage, y=self.elevation)
-        else:
+
+        if method not in ['poly', 'interp1d', 'pchip']:
             raise ValueError(f'"method" must be either "poly", "interp1d" or "pchip": {method} was provided')
-
-    def _check_range(self, data: Union[pd.Series, np.ndarray], variable: Literal['elevation', 'storage']) -> Union[pd.Series, np.ndarray]:
-        """Converts into NaN values outside the reservoir curve range to avoid extrapolation problems
-
-        Parameters:
-        -----------
-        data: pandas.Series or numpy.ndarray
-            Values to be checked
-        variable: string
-            Defines the variable of "data"
-
-        Returns:
-        --------
-        np.ndarray
-            The input data with out-of-range values set to NaN.
-        """
-        array = np.array(data)
         
-        if variable == 'elevation':
-            min_value, max_value = self.z_min, self.z_max
-        elif variable == 'storage':
-            min_value, max_value = self.v_min, self.v_max
-        else:
-            raise ValueError(f'"variable" must be either "elevation" or "storage": {variable} was provided')
-        
-        mask = (data < min_value) | (data > max_value)
-        if mask.sum() > 0:
-            data[mask] = np.nan
-            print(f'WARNING. {mask.sum()} {variable} values were removed because they were outside of the range [{min_value:.3f},{max_value:.3f}]')
+        specs = dict(method=method, degree=degree)
 
-        return data
+        # Elevation-Storage and viceversa
+        self.curve_zv = self._fit(self['elevation'], self['storage'], **specs)
+        self.curve_vz = self._fit(self['storage'], self['elevation'], **specs)
+
+        if 'area' in self.columns:
+            # Elevation-Area and viceversa
+            self.curve_za = self._fit(self['elevation'], self['area'], **specs)
+            self.curve_az = self._fit(self['area'], self['elevation'], **specs)
+
+            # Area-Storage and viceversa
+            self.curve_av = self._fit(self['area'], self['storage'], **specs)
+            self.curve_va = self._fit(self['storage'], self['area'], **specs)
         
     def storage_from_elevation(self, elevation: Union[pd.Series, np.ndarray]) -> Union[pd.Series, np.ndarray]:
         """
@@ -314,16 +406,12 @@ class ReservoirCurve(pd.DataFrame):
         storage: pandas.Series or numpy.ndarray
             Estimated reservoir storage data
         """
-        # check values within the curve's elevation range
-        elevation = elevation.copy()
-        self._check_range(elevation, variable='elevation')
-        
-        # estimate storage
-        storage = self.curve_zv(elevation)
-        self._check_range(storage, variable='storage')
-        if isinstance(elevation, pd.Series):
-            storage = pd.Series(data=storage, index=elevation.index, name='storage')
-        return storage
+        return self._convert(
+            input=elevation, 
+            curve_attr='curve_zv', 
+            input_var='elevation', 
+            output_var='storage'
+            )
 
     def elevation_from_storage(self, storage: Union[pd.Series, np.ndarray]) -> Union[pd.Series, np.ndarray]:
         """
@@ -339,18 +427,96 @@ class ReservoirCurve(pd.DataFrame):
         elevation: pandas.Series or numpy.ndarray
             Estimated reservoir elevation data
         """
+        return self._convert(
+            input=storage,
+            curve_attr='curve_vz',
+            input_var='storage',
+            output_var='elevation'
+        )
     
-        # check values within the curve's elevation range
-        storage = storage.copy()
-        storage = self._check_range(storage, variable='storage')     
-        
-        # estimate elevation
-        elevation = self.curve_vz(storage)
-        elevation = self._check_range(elevation, variable='elevation')
-        if isinstance(storage, pd.Series):
-            elevation = pd.Series(data=elevation, index=storage.index, name='elevation')
-
-        return elevation
+    def area_from_elevation(self, elevation: Union[pd.Series, np.ndarray]) -> Union[pd.Series, np.ndarray]:
+        """
+        Produces a time series of reservoir area given an elevation time series.
+    
+        Parameters:
+        -----------
+        elevation: pandas.Series or numpy.ndarray
+            Reservoir elevation data
+    
+        Returns:
+        --------
+        area: pandas.Series or numpy.ndarray
+            Estimated reservoir area data
+        """
+        return self._convert(
+            input=elevation,
+            curve_attr='curve_za',
+            input_var='elevation',
+            output_var='area'
+        )
+    
+    def elevation_from_area(self, area: Union[pd.Series, np.ndarray]) -> Union[pd.Series, np.ndarray]:
+        """
+        Produces a time series of reservoir elevation given an area time series.
+    
+        Parameters:
+        -----------
+        area: pandas.Series or numpy.ndarray
+            Estimated reservoir area data
+    
+        Returns:
+        --------
+        elevation: pandas.Series or numpy.ndarray
+            Reservoir elevation data
+        """
+        return self._convert(
+            input=area,
+            curve_attr='curve_az',
+            input_var='area',
+            output_var='elevation'
+        )
+    
+    def storage_from_area(self, area: Union[pd.Series, np.ndarray]) -> Union[pd.Series, np.ndarray]:
+        """
+        Produces a time series of reservoir storage given an area time series.
+    
+        Parameters:
+        -----------
+        area: pandas.Series or numpy.ndarray
+            Estimated reservoir area data
+    
+        Returns:
+        --------
+        storage: pandas.Series or numpy.ndarray
+            Reservoir storage data
+        """
+        return self._convert(
+            input=area,
+            curve_attr='curve_av',
+            input_var='area',
+            output_var='storage'
+        )
+    
+    def area_from_storage(self, area: Union[pd.Series, np.ndarray]) -> Union[pd.Series, np.ndarray]:
+        """
+        Produces a time series of reservoir area given a storage time series.
+    
+        Parameters:
+        -----------
+        storage: pandas.Series or numpy.ndarray
+            Reservoir storage data
+    
+        Returns:
+        --------
+        area: pandas.Series or numpy.ndarray
+            Estimated reservoir area data
+        """
+        return self._convert(
+            input=storage,
+            curve_attr='curve_va',
+            input_var='storage',
+            output_var='area'
+        )
 
     def plot(
         self,
@@ -394,205 +560,30 @@ class ReservoirCurve(pd.DataFrame):
             - fig (matplotlib.figure.Figure): The main Matplotlib figure object.
             - axes (np.ndarray): A 2x2 array of Matplotlib axes objects.
         """
-        alpha = kwargs.get('alpha', 0.3)
-        cmap = kwargs.get('cmap', 'coolwarm')
-        figsize = kwargs.get('figsize', (10, 10))
-        size = kwargs.get('size', 4)
-        
-        fig, axes = plt.subplots(ncols=2, nrows=2, figsize=figsize, sharex='col', sharey='row')
-    
-        if attrs is not None:
-            dam_hgt_m, elev_masl, cap_mcm, area_skm = attrs.loc[['DAM_HGT_M', 'ELEV_MASL', 'CAP_MCM', 'AREA_SKM']]
-        var_props = {
-            'elevation': {
-                'label': 'elevation (masl)',
-                'ref': [elev_masl - dam_hgt_m, elev_masl] if attrs is not None else []
-            },
-            'area': {
-                'label': 'area (km2)',
-                'ref': [0, area_skm] if attrs is not None else [0]
-            },
-            'storage': {
-                'label': 'volume (hm3)',
-                'ref': [0, cap_mcm] if attrs is not None else [0]
-            }
+        fitted_curves = {
+            'z_min': self.z_min,
+            'z_max': self.z_max,
+            'a_min': self.a_min,
+            'a_max': self.a_max,
+            'curve_zv': self.curve_zv,
+            'curve_za': self.curve_za,
+            'curve_av': self.curve_av
         }
-    
-        aux_props = dict(ls='--', lw=.5, c='k', zorder=0)
-        obs_props = dict(cmap=cmap, s=size, alpha=alpha, zorder=1)
-        lookup_props = dict(s=size * 2, lw=.6, c='k', marker='+', alpha=1, zorder=2)
-        curve_props = dict(lw=1, c='k', zorder=3)
         
-        for j, var_x in enumerate(['elevation', 'area']):
-            for i, var_y in enumerate(['storage', 'area']):
-                ax = axes[i,j]
-                if i == 1 & j == 1:
-                    ax.axis('off')
-                    continue
-
-                # lookup table
-                if (var_x in self.columns) and (var_y in self.columns):
-                    label = 'reservoir_curve' if (i == 0 and j == 0) else None
-                    ax.scatter(self[var_x], self[var_y], **lookup_props, label=label)
-                
-                # fitted curves
-                if self.curve_zv is not None:
-                    if var_x == 'elevation':
-                        x_values = np.linspace(self.z_min, self.z_max, 100)
-                        if var_y == 'storage':
-                            ax.plot(x_values, self.curve_zv(x_values), **curve_props, label='reseroir curve')
-                        #if var_y == 'area':
-                            #ax.plot(x_values, self.curve_za(x_values), **curve_props)
-                    #elif var_x == 'area':
-                        #x_values = np.linspace(self.a_min, self.a_max, 100)
-                        #if var_y == 'storage':
-                            #ax.plot(x_values, self.curve_av(x_values), **curve_props)
-    
-                # scatter plot of observed data
-                if obs is not None and all(col in obs.columns for col in [var_x, var_y]):
-                    label = 'observations' if (i == 0 and j == 0) else None
-                    ax.scatter(obs[var_x], obs[var_y], c=obs.index, **obs_props, label=label)
-                    
-                for x in var_props[var_x]['ref']:
-                    ax.axvline(x, **aux_props)
-                for y in var_props[var_y]['ref']:
-                    ax.axhline(y, **aux_props)
-    
-                if (i == 1) | (j == 1):
-                    ax.set_xlabel(var_props[var_x]['label'])
-                if j == 0:
-                    ax.set_ylabel(var_props[var_y]['label'])
+        fig, axes = plot_reservoir_curves(
+            lookup_table=self,
+            fitted_curves=fitted_curves,
+            attrs=attrs,
+            obs=obs,
+            **kwargs
+        )
     
         return fig, axes
 
 
-def area_from_elevation(
-    reservoir_curve: np.poly1d,
-    elevation: pd.Series
-) -> pd.Series:
-    """
-    Produces a time series of reservoir area given the reservoir curve and an elevation time series.
-
-    The derivatie of the reservoir curve (storage-elevation) is the area-elevation curve:
-
-            V = f(Z)
-
-            A = dV / dZ = f'(Z)
-
-    Parameters:
-    -----------
-    reservoir_curve: numpy.poly1d
-        A NumPy polynomial object representing a fitted reservoir curve (storage vs elevation)
-    elevation: pandas.Series
-        A pandas Series containing elevation data.
-
-    Returns:
-    --------
-    area: pandas.Series
-        A pandas Series containing corresponding reservoir area data.
-    """
-
-    # estimate area
-    try:
-        area = pd.Series(
-            data=reservoir_curve.deriv()(elevation),
-            index=elevation.index,
-            name='area'
-            )
-    except:
-        area = pd.Series(
-            data=reservoir_curve.derivative()(elevation),
-            index=elevation.index,
-            name='area'
-        )
-        
-    return area
-
-
-def elevation_sequence(
-    z_min: float, 
-    z_max: float, 
-    method: Literal['linear', 'cosine', 'arctanh'] = 'linear', 
-    step: int = 1, 
-    N: int = 25, 
-    alpha: float = .95
-) -> np.ndarray:
-    """
-    Generates a sequence of elevation values within a specified range 
-    using various spacing methods to control point density.
-
-    Args:
-        z_min (float): The minimum elevation value.
-        z_max (float): The maximum elevation valu (end of the sequence).
-        method (Literal['linear', 'cosine', 'arctanh'], optional): The method
-            used for spacing the points:
-            - 'linear': Uniform spacing defined by 'step'.
-            - 'cosine': Clusters points at the **extremes** (z_min and z_max).
-            - 'arctanh': Clusters points in the **middle** of the range.
-            Defaults to 'linear'.
-        step (int, optional): The step size used when `method` is 'linear'. 
-            Ignored for 'cosine' and 'arctanh' methods. Defaults to 1.
-        N (int, optional): The total number of points in the generated sequence
-            when `method` is 'cosine' or 'arctanh'. Ignored for 'linear'. 
-            Defaults to 25.
-        alpha (float, optional): The clustering factor for the 'arctanh' method. 
-            Must be less than 1 (e.g., 0.9 to 0.999). A higher value creates 
-            tighter clustering (smaller steps) in the center. Ignored for 
-            'linear' and 'cosine'. Defaults to 0.95.
-
-    Returns:
-        np.ndarray: A strictly increasing array of elevation values.
-
-    Raises:
-        ValueError: If an unrecognized string is passed to the 'method' parameter.
-    """
-    dam_hgt_m = z_max - z_min
-    if method == 'linear':
-        z_values = np.arange(z_min, z_max + step / 10, step)
-        if z_max not in z_values:
-            z_values = np.append(z_values, z_max)
-    elif method == 'cosine':
-        i = np.linspace(0, 1, N)
-        clustered = 0.5 * (1 - np.cos(np.pi * i))
-        z_values = z_min + dam_hgt_m * clustered
-    elif method == 'arctanh':
-        i = np.linspace(-1, 1, N)
-        clustered = np.arctanh(i * alpha)
-        z_values = z_min + dam_hgt_m * (clustered - clustered.min()) / (clustered.max() - clustered.min())
-    else:
-        raise ValueError(f"Method '{method}' not recognized. Must be 'linear', 'cosine', or 'arctanh'.")
-    return z_values
-
-
-def estimate_area_curve(
-        lookup_table: pd.DataFrame, 
-        elevation_col: str = 'elevation', 
-        storage_col: str = 'storage'
-    ) -> pd.Series:
-    """
-    Estimate area curve from elevation and storage data.
-    
-    Parameters:
-    - lookup_table: DataFrame with elevation and storage columns.
-    - elevation_col: Name of the elevation column.
-    - storage_col: Name of the storage column.
-    
-    Returns:
-    - Series of the area associated to the entries in the lookup table.
-    """
-    area = lookup_table[storage_col].diff() / lookup_table[elevation_col].diff()
-    if lookup_table[storage_col].iloc[0] == 0:
-        for i, idx in enumerate(lookup_table.index):
-            if i == 0:
-                area.loc[idx] = 0
-            else:
-                area.loc[idx] = 2 * area.iloc[i] - area.iloc[i - 1]
-
-    return area
-
-
 def plot_reservoir_curves(
-    reservoir_curve: Optional[pd.DataFrame] = None,
+    lookup_table: Optional[pd.DataFrame] = None,
+    fitted_curves: Optional[dict] = None,
     attrs: Optional[pd.Series] = None,
     obs: Optional[pd.DataFrame] = None,
     **kwargs
@@ -613,11 +604,13 @@ def plot_reservoir_curves(
     `cap_mcm`) that must be defined in the global or enclosing scope.
 
     Args:
-        reservoir_curve (pd.DataFrame, optional): A DataFrame containing the reservoir 
+        lookup_table (pd.DataFrame, optional): A DataFrame containing the reservoir 
             characteristic curve data. It must contain the following columns:
             - 'elevation' (float): Reservoir elevation (masl).
             - 'area' (float): Reservoir surface area (km2).
             - 'volume' or 'storage' (float): Reservoir storage volume (hm3).
+        fitted_curves: dictionary (optional)
+            Curves fitted to the lookup table data
         attrs (pd.Series, optional): An optional Series containing reservoir
             attributes from GRanD or GDW such as 'DAM_HGT_M', 'ELEV_MASL', 
             'AREA_SKM' or 'CAP_MCM' to draw reference lines on the plots. 
@@ -653,6 +646,11 @@ def plot_reservoir_curves(
 
     if attrs is not None:
         dam_hgt_m, elev_masl, cap_mcm, area_skm = attrs.loc[['DAM_HGT_M', 'ELEV_MASL', 'CAP_MCM', 'AREA_SKM']]
+
+    if fitted_curves:
+        z_min, z_max = fitted_curves.get('z_min', 0), fitted_curves.get('z_max', 1)
+        a_min, a_max = fitted_curves.get('a_min', 0), fitted_curves.get('a_max', 1)
+
     var_props = {
         'elevation': {
             'label': 'elevation (masl)',
@@ -670,28 +668,38 @@ def plot_reservoir_curves(
 
     aux_props = dict(ls='--', lw=.5, c='k', zorder=0)
     obs_props = dict(cmap=cmap, s=size, alpha=alpha, zorder=1)
+    lookup_props = dict(s=size * 2, lw=.6, c='k', marker='+', alpha=1, zorder=2)
     curve_props = dict(lw=1, c='k', zorder=2)
     
     for j, var_x in enumerate(['elevation', 'area']):
         for i, var_y in enumerate(['storage', 'area']):
             
             ax = axes[i,j]
-            if i == 1 & j == 1:
+            if i == 1 and j == 1:
                 ax.axis('off')
                 continue
                 
-            if reservoir_curve is not None:
+            # scatter plot of the lookup table
+            if lookup_table is not None and all(col in lookup_table.columns for col in [var_x, var_y]):
+                label = 'lookup data' if (i == 0 and j == 0) else None
+                ax.scatter(lookup_table[var_x], lookup_table[var_y], **lookup_props, label=label)
+
+            # line plot of the fitted curves
+            if fitted_curves is not None:
                 if var_x == 'elevation':
-                    if var_y == 'storage':
-                        ax.plot(reservoir_curve.elevation, reservoir_curve.storage, **curve_props, label='reseroir curve')
-                    if var_y == 'area':
-                        ax.plot(reservoir_curve.elevation, reservoir_curve.area, **curve_props)
+                    x_values = np.linspace(z_min, z_max, 100)
+                    if var_y == 'storage' and fitted_curves.get('curve_zv'):
+                        ax.plot(x_values, fitted_curves['curve_zv'](x_values), **curve_props, label='reservoir curve')
+                    if var_y == 'area' and fitted_curves.get('curve_za'):
+                        ax.plot(x_values, fitted_curves['curve_za'](x_values), **curve_props)
                 elif var_x == 'area':
-                    if var_y == 'storage':
-                        ax.plot(reservoir_curve.area, reservoir_curve.storage, **curve_props)
+                    x_values = np.linspace(a_min, a_max, 100)
+                    if var_y == 'storage' and fitted_curves.get('curve_av'):
+                        ax.plot(x_values, fitted_curves['curve_av'](x_values), **curve_props)
 
             # scatter plot of observed data
             if obs is not None and all(col in obs.columns for col in [var_x, var_y]):
+                label = 'observations' if (i == 0 and j == 0) else None
                 ax.scatter(obs[var_x], obs[var_y], c=obs.index, **obs_props, label='observations')
                 
             for x in var_props[var_x]['ref']:
@@ -703,6 +711,10 @@ def plot_reservoir_curves(
                 ax.set_xlabel(var_props[var_x]['label'])
             if j == 0:
                 ax.set_ylabel(var_props[var_y]['label'])
+
+    # legend
+    handles, labels = axes[0, 0].get_legend_handles_labels()
+    fig.legend(handles, labels, loc='center', bbox_to_anchor=(0.75, 0.25), frameon=False)
 
     return fig, axes
 
