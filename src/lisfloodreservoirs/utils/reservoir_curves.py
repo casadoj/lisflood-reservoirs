@@ -164,7 +164,16 @@ class ReservoirCurve(pd.DataFrame):
 
     _metadata = ['z_min', 'z_max', 'v_min', 'v_max', 'curve_zv', 'curve_vz']
     
-    def __init__(self, lookup_table: pd.DataFrame, *args, **kwargs):
+    def __init__(
+            self, 
+            lookup_table: pd.DataFrame,
+            z_min: Optional[float] = None,
+            z_max: Optional[float] = None,
+            v_min: Optional[float] = None,
+            v_max: Optional[float] = None,
+            *args, 
+            **kwargs
+            ):
         """
         Initializes the ReservoirCurve object.
 
@@ -195,18 +204,18 @@ class ReservoirCurve(pd.DataFrame):
         
         # estimate area
         if 'area' not in lookup_table.columns:
-            self['area'] = self._lookup_area()
+            self['area'], curve_za = self._lookup_area()
         # check monotonicity in the area values
         if not self['area'].is_monotonic_increasing:
             raise ValueError("The 'area' column must be monotonically increasing with 'elevation'. Check data quality.")
 
         # define curve limits
-        self.z_min = self['elevation'].min()
-        self.z_max = self['elevation'].max()
-        self.v_min = self['storage'].min()
-        self.v_max = self['storage'].max()
-        self.a_min = self['area'].min()
-        self.a_max = self['area'].max()
+        self.z_min = z_min if z_min is not None else self['elevation'].min()
+        self.z_max = z_max if z_max is not None else self['elevation'].max()
+        self.v_min = v_min if v_min is not None else self['storage'].min()
+        self.v_max = v_max if v_max is not None else self['storage'].max()
+        self.a_min = curve_za(self.z_min)
+        self.a_max = curve_za(self.z_max)
 
         # initialize empty curves
         self.curve_zv = None
@@ -327,6 +336,8 @@ class ReservoirCurve(pd.DataFrame):
         --------
         numpy.ndarray:
             Area values associated to the elevation values in the lookup table
+        callabel:
+            Preliminary Elevation-Area curve
         """
         # mean values of area and elevation in each bin
         area_avg = (self['storage'].diff() / self['elevation'].diff()).dropna().values
@@ -338,7 +349,7 @@ class ReservoirCurve(pd.DataFrame):
         # estimate area values for the elevation bins
         area = curve_za(self.elevation)
 
-        return area
+        return area, curve_za
 
     def fit(self, method: Literal['poly', 'interp1d', 'pchip'] = 'pchip', degree: int = 2):
         """
@@ -522,6 +533,7 @@ class ReservoirCurve(pd.DataFrame):
         self,
         attrs: Optional[pd.Series] = None,
         obs: Optional[pd.DataFrame] = None,
+        save: Optional[Union[str, Path]] = None,
         **kwargs
         ):
         """
@@ -577,8 +589,12 @@ class ReservoirCurve(pd.DataFrame):
             obs=obs,
             **kwargs
         )
-    
-        return fig, axes
+
+        if save:
+            plt.savefig(save, dpi=300, bbox_inches='tight')
+            plt.close(fig)
+        else:
+            return fig, axes
 
 
 def plot_reservoir_curves(
@@ -711,6 +727,9 @@ def plot_reservoir_curves(
                 ax.set_xlabel(var_props[var_x]['label'])
             if j == 0:
                 ax.set_ylabel(var_props[var_y]['label'])
+
+    if 'title' in kwargs:
+        fig.suptitle(kwargs['title'], y=.93)
 
     # legend
     handles, labels = axes[0, 0].get_legend_handles_labels()
