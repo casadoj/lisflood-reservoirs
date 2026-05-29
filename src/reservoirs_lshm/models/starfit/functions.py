@@ -86,8 +86,8 @@ def plot_release(
     ax1.scatter(st_release.index, st_release, c='k', s=s, alpha=alpha, label='observed')
     harmonic.plot(ax=ax1, c='steelblue', lw=lw, label='harmonic')
     if Qmin is not None or Qmax is not None:
-        ax1.hlines([Qmin, Qmax], 1, 52, color='steelblue', ls=':', lw=lw/2, label='min-max')
-    ax1.legend(loc='upper right', bbox_to_anchor=(1, 1), frameon=True, facecolor='white', edgecolor='none')
+        ax1.hlines([Qmin, Qmax], 1, 52, color='steelblue', ls='--', lw=lw/1.4, label='min-max')
+    ax1.legend(loc='center right', bbox_to_anchor=(1, 0.6), frameon=True, facecolor='white', edgecolor='none')
     ax1.set(xlim=(.6, 52.4),
            xlabel='Week',
            ylabel=r'Std. outflow, $\hat{Q}_t$ [-]')
