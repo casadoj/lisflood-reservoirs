@@ -166,3 +166,5 @@ notebook/HDMS_API.yml
 **/*~BROMIUM/
 
 *Zone.Identifier
+
+./datasets/
