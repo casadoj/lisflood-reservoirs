@@ -167,4 +167,6 @@ notebook/HDMS_API.yml
 
 *Zone.Identifier
 
-./datasets/
+datasets/
+
+./venv/
