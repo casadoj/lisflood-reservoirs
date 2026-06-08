@@ -1,3 +1,48 @@
 [build-system]
 requires = ["setuptools>=61.0.0", "wheel"]
 build-backend = "setuptools.build_meta"
+
+[project]
+name = "reservoirs-lshm"
+version = "1.2.3"
+description = "Package to simulate reservoir operations according to different modelling routines."
+readme = "README.md"
+authors = [
+    { name = "Jesús Casado Rodríguez", email = "chus.casado.88@gmail.com" }
+]
+keywords = ["hydrology", "reservoir", "simulation", "calibration"]
+requires-python = ">=3.10,<3.13"
+dependencies = [
+    "cartopy",
+    "dask",
+    "gwwapi",
+    "ipywidgets>=8.1.8",
+    "lxml",
+    "matplotlib",
+    "mpi4py",
+    "netcdf4",
+    "numpy",
+    "pandas",
+    "pyyaml",
+    "rioxarray",
+    "seaborn",
+    "spotpy",
+    "statsmodels",
+    "timezonefinder",
+    "tqdm",
+    "xarray",
+]
+
+[project.scripts]
+run_reservoir = "reservoirs_lshm.simulate:main"
+cal_reservoir = "reservoirs_lshm.calibrate:main"
+fit_starfit = "reservoirs_lshm.fit_starfit:main"
+run_starfit = "reservoirs_lshm.run_starfit:main"
+catchstats = "reservoirs_lshm.utils.catchstats:main"
+ncextract = "reservoirs_lshm.utils.ncextract:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
