@@ -169,5 +169,5 @@ notebook/HDMS_API.yml
 
 datasets/
 
-./venv/
-./vscode/
+.venv/
+.vscode/
