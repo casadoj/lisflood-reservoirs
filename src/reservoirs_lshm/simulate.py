@@ -11,12 +11,12 @@ import pandas as pd
 from tqdm.auto import tqdm
 from datetime import datetime
 
-from reservoirs_lshm import Config, read_attributes, read_timeseries, get_target_variable
-from reservoirs_lshm.models import get_model, default_attributes
-from reservoirs_lshm.utils.metrics import compute_performance
-from reservoirs_lshm.utils.timeseries import create_demand
-from reservoirs_lshm.utils.plots import plot_resops
-from reservoirs_lshm.utils.logging import setup_logger
+from . import Config, read_attributes, read_timeseries, get_target_variable
+from .models import get_model, default_attributes
+from .utils.metrics import compute_performance
+from .utils.timeseries import create_demand
+from .utils.plots import plot_resops
+from .utils.logging import setup_logger
 
 
 def main():
