@@ -82,7 +82,7 @@ class Reservoir:
     def simulate(
         self,
         inflow: pd.Series,
-        Vo: Optional[float ] = None,
+        Vo: Optional[float] = None,
         precipitation: Optional[pd.Series] = None,
         evaporation: Optional[pd.Series] = None,
         demand: Optional[pd.Series] = None,
@@ -100,7 +100,7 @@ class Reservoir:
         evaporation: pandas.Series (optional)
             Time series of open water evaporation from the reservoir (mm)
         demand: pandas.Series (optional)
-            Time series of total water demand (m3)
+            Time series of total water demand (m3/s)
             
         Returns:
         --------
@@ -108,33 +108,30 @@ class Reservoir:
             A table that concatenates the storage (m3), inflow (m3/s) and outflow (m3/s) time series.
         """
         
-        if Vo is None:
-            Vo = self.Vtot * .5
+        Vo = Vo if Vo is not None else (self.Vtot * .5)
             
-        if precipitation is not None and not isinstance(precipitation, pd.Series):
-            raise ValueError('"precipitation" must be a pandas.Series representing a time series of precipitation (mm) on the reservoir.')
-        if evaporation is not None and not isinstance(evaporation, pd.Series):
-            raise ValueError('"evaporation" must be a pandas.Series representing a time series of open water evaporation (mm) from the reservoir.')
-        if demand is not None and not isinstance(demand, pd.Series):
-            raise ValueError('"demand" must be a pandas.Series representing a time series of water demand (m3/s).')
+        for name, data in [('precipitation', precipitation), ('evaporation', evaporation), ('demand', demand)]:
+            if data is not None and not isinstance(data, pd.Series):
+                raise ValueError(f'"{name}" must be a pandas.Series')
         
         # compute outflow and storage
         inflow.name = 'inflow'
         storage = pd.Series(index=inflow.index, dtype=float, name='storage')
         outflow = pd.Series(index=inflow.index, dtype=float, name='outflow')
-        timesteps = tqdm(inflow.items(), total=len(inflow), desc='timesteps')
-        for ts, I in timesteps:
-            storage[ts] = Vo
-            Q, V = self.step(
-                I, 
-                Vo, 
-                P=precipitation[ts] if precipitation is not None else None, 
-                E=evaporation[ts] if evaporation is not None else None,
-                D=demand[ts] if demand is not None else None
-            )
-            outflow[ts] = Q
-            # update current storage
-            Vo = V
+
+        with tqdm(inflow.items(), total=len(inflow), desc='timesteps', leave=False) as timesteps:
+            for ts, I in timesteps:
+                storage[ts] = Vo
+                Q, V = self.step(
+                    I, 
+                    Vo, 
+                    P=precipitation[ts] if precipitation is not None else None, 
+                    E=evaporation[ts] if evaporation is not None else None,
+                    D=demand[ts] if demand is not None else None
+                )
+                outflow[ts] = Q
+                # update current storage
+                Vo = V
         
         return pd.concat((storage, inflow, outflow), axis=1)
     

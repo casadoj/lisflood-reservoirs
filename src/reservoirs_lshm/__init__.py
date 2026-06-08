@@ -148,7 +148,7 @@ def read_timeseries(
                 start, end = [periods[str(ID)][f'{x}_dates'][0] for x in ['start', 'end']]
                 ts = ts.loc[start:end, :]
         except Exception as e:
-            print(f'Error while trimming to the study period the time series for ID {ID}:\m{e}')
+            print(f'Error while trimming to the study period the time series for ID {ID}:n{e}')
 
         # select varibles
         try:
@@ -160,7 +160,7 @@ def read_timeseries(
             # convert storage variables to m3
             ts.iloc[:, ts.columns.str.contains('storage')] *= 1e6
         except Exception as e:
-            print(f'Error while selecting variables from the time series for ID {ID}:\m{e}')
+            print(f'Error while selecting variables from the time series for ID {ID}:\n{e}')
 
         # save time series
         try:
@@ -169,3 +169,14 @@ def read_timeseries(
             print(f'Time series for ID {ID} could not be saved:\n{e}')
         
     return timeseries
+
+
+def get_target_variable(cfg: Config, keyword: Literal['storage', 'outflow']) -> str:
+    "Finds the name of the target variable"
+
+    if keyword not in ['storage', 'outflow']:
+        raise ValueError(f"'keyword' must be either 'storage' or 'outflow': {keyword} was provided")
+    matches = [item for item in cfg.TARGET if keyword in item]
+    if len(matches) > 1:
+        raise ValueError(f"Ambiguous match. Found multiple items in cfg.TARGET for keyword {keyword}: {matches}")
+    return matches[0] if matches else keyword

@@ -125,6 +125,8 @@ class Lisflood(Reservoir):
                 Q = np.max([self.k * I, self.Qn])
         elif V > self.Vf:
             Q = np.max([(V - self.Vf) / self.timestep, np.min([self.Qf, np.max([self.k * I, self.Qn])])])
+        else:
+            logger.error(f"'Q' could not be defined. 'V'={V} m3")
         
         # limit outflow so the final storage is between 0 and 1
         # Q = np.max([np.min([Q, V / self.timestep]), (V - self.Vtot) / self.timestep])
