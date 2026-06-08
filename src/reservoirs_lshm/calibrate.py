@@ -1,6 +1,3 @@
-#!/usr/bin/env python3
-# -*- coding: utf-8 -*-
-
 import argparse
 import logging
 import yaml
@@ -8,11 +5,11 @@ import pickle
 from pathlib import Path
 
 import pandas as pd
-from tqdm import tqdm
+from tqdm.auto import tqdm
 import spotpy
 from datetime import datetime
 
-from . import Config, read_attributes, read_timeseries
+from . import Config, read_attributes, read_timeseries, get_target_variable
 from .models import get_model
 from .calibration import get_calibrator, read_results
 from .utils.metrics import KGEmod, compute_performance
@@ -69,6 +66,7 @@ def main():
     try:
         with open(cfg.PERIODS_FILE, 'rb') as file:
             periods = pickle.load(file)
+        periods = {ID: period for ID, period in periods.items() if int(ID) in reservoirs}
     except IOError:
         logger.exception(f'Failed to open {cfg.PERIODS_FILE}')
         raise
@@ -76,7 +74,9 @@ def main():
     # === read time series ===
     try:
         inputs = [var for var in [cfg.INFLOW, cfg.PRECIPITATION, cfg.EVAPORATION, cfg.DEMAND] if var]
-        outputs = ['storage', 'outflow']
+        storage_var = get_target_variable(cfg, 'storage')
+        outflow_var = get_target_variable(cfg, 'outflow')
+        outputs = [storage_var, outflow_var]
         timeseries = read_timeseries(
             path=cfg.PATH_DATA / 'time_series' / 'csv',
             reservoirs=attributes.index,
@@ -100,23 +100,25 @@ def main():
         
         # define input time series
         inflow = ts[cfg.INFLOW]
+        storage = ts[storage_var]
+        outflow = ts[outflow_var]
         precipitation = ts[cfg.PRECIPITATION] if cfg.PRECIPITATION in ts.columns else None
         evaporation = ts[cfg.EVAPORATION] if cfg.EVAPORATION in ts.columns else None
         demand = ts[cfg.DEMAND] if cfg.DEMAND in ts.columns else None
         if cfg.MODEL == 'mhm':
-            bias = ts.outflow.mean() / inflow.mean()
+            bias = outflow.mean() / inflow.mean()
             demand = create_demand(
-                ts.outflow,
+                outflow,
                 water_stress=min(1, bias),
                 window=28
             )
-            
+        
         # storage attributes (m3)
-        Vtot = max(attributes.loc[grand_id, 'CAP_MCM'].item() * 1e6, ts.storage.max())
+        Vtot = max(attributes.loc[grand_id, 'CAP_MCM'].item() * 1e6, storage.max())
         # Vtot = ts.storage.max()
-        Vmin = max(0, min(0.1 * Vtot, ts.storage.min()))
+        Vmin = max(0, min(0.1 * Vtot, storage.min()))
         # flow attributes (m3/s)
-        Qmin = max(0, ts.outflow.min())
+        Qmin = max(0, outflow.min())
         # catchment area (m2)
         catchment = int(attributes.loc[grand_id, 'CATCH_SKM'].item() * 1e6) if cfg.MODEL == 'camaflood' else None
         # reservoir area (m2)
@@ -135,8 +137,8 @@ def main():
                 cfg.MODEL,
                 parameters=cfg.PARAMETERS,
                 inflow=inflow,
-                storage=ts.storage,
-                outflow=ts.outflow,
+                storage=storage,
+                outflow=outflow,
                 precipitation=precipitation,
                 evaporation=evaporation,
                 demand=demand,
@@ -144,7 +146,7 @@ def main():
                 Vtot=Vtot,
                 Qmin=Qmin,
                 Atot=Atot,
-                target=cfg.TARGET,
+                target=[key for key in ['storage', 'outflow'] if any(key in target for target in cfg.TARGET)], #cfg.TARGET,
                 obj_func=KGEmod,
                 spinup=cfg.SPINUP,
                 **cal_cfg
@@ -190,7 +192,7 @@ def main():
                 yaml.dump(res.get_params(), file)
 
             # simulate the reservoir
-            Vo = ts.storage.iloc[0]
+            Vo = storage.iloc[0]
             sim_cal = res.simulate(
                 inflow=inflow,
                 Vo=None if pd.isna(Vo) else Vo,
@@ -205,12 +207,15 @@ def main():
         except RuntimeError:
             logger.exception(f'Calibrated reservoir {grand_id} could not be simulated')
             continue
-            
+
         # === Analyse results ===
         
+        # rename target variables
+        obs = ts.rename(columns={storage_var: 'storage', outflow_var: 'outflow'})
+
         # performance
         try:
-            performance_cal = compute_performance(ts.iloc[cfg.SPINUP:], sim_cal.iloc[cfg.SPINUP:])
+            performance_cal = compute_performance(obs.iloc[cfg.SPINUP:], sim_cal.iloc[cfg.SPINUP:])
             performance_cal.to_csv(cfg.PATH_CALIB / f'{grand_id}_performance.csv', float_format='%.3f')
             logger.info(f'Performance of reservoir {grand_id} has been computed')
         except IOError:
@@ -220,7 +225,7 @@ def main():
         try:
             res.scatter(
                 sim_cal,
-                ts,
+                obs,
                 spinup=cfg.SPINUP,
                 norm=False,
                 title=f'grand_id: {grand_id}',
@@ -243,7 +248,7 @@ def main():
                 sim = {'calibrated': sim_cal}
             res.lineplot(
                 sim,
-                ts,
+                obs,
                 spinup=cfg.SPINUP,
                 figsize=(12, 6),
                 save=cfg.PATH_CALIB / f'{grand_id}_line.jpg',
@@ -253,10 +258,12 @@ def main():
             logger.exception(f'The line plot of reservoir {grand_id} could not be generated')
             
         del res, calibrator, sim_cal, calibrated_attrs, performance_cal#, sim_cfg
+        
         try:
             del sceua
         except:
             pass
+
 
 if __name__ == "__main__":
     main()
