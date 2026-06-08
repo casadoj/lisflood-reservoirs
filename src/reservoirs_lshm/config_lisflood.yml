@@ -37,8 +37,8 @@ calibration:
             low: 0.001
             high: 0.999
         k:
-            high: 1
-            low: 5
+            low: 1
+            high: 5
     SCEUA:
         max_iter: # maximum number of interations. By default 5000
         complexes: # number of complexes. By default 8

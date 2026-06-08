@@ -19,7 +19,7 @@ simulation:
 calibration:
     target:
         - storage
-        # - outflow
+        - outflow
     SCEUA:
         max_iter: # maximum number of interations. By default 5000
         complexes: # number of complexes. By default 8
