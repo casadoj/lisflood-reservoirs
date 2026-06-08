@@ -99,7 +99,10 @@ class Lisflood(Reservoir):
             if self.Atot:
                 A = self.estimate_area(V)
             else:
-                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
+                raise ValueError(
+                    'To be able to model precipitation or evaporation, '
+                    'you must provide the maximum reservoir area ("Atot") in the reservoir declaration'
+                )
                 
         # update reservoir storage
         V += I * self.timestep
@@ -125,8 +128,10 @@ class Lisflood(Reservoir):
                 Q = np.max([self.k * I, self.Qn])
         elif V > self.Vf:
             Q = np.max([(V - self.Vf) / self.timestep, np.min([self.Qf, np.max([self.k * I, self.Qn])])])
-        else:
-            logger.error(f"'Q' could not be defined. 'V'={V} m3")
+            
+        # check that Q exists
+        if 'Q' not in locals():
+            raise RuntimeError(f"Calculation error: Outflow 'Q' was not defined for V={V:.2f} m³")
         
         # limit outflow so the final storage is between 0 and 1
         # Q = np.max([np.min([Q, V / self.timestep]), (V - self.Vtot) / self.timestep])

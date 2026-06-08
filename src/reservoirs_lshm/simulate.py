@@ -1,12 +1,7 @@
-# %load simulate.py
-#!/usr/bin/env python3
-
 import argparse
 import logging
 import yaml
 import pickle
-# from pathlib import Path
-
 import pandas as pd
 from tqdm.auto import tqdm
 from datetime import datetime
