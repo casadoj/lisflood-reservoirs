@@ -67,7 +67,7 @@ fit_starfit --config-file config.yml
 This tool simulates the reservoir module with default parameters. It is applicable to the **linear**, **LISFLOOD**, **Camaflood** and **mHM** models.
 
 ```
-usage: simulate.py [-h] -c CONFIG_FILE [-w]
+usage: simulate.py [-h] -c CONFIG_FILE [-o]
 
 Run the reservoir routine with default parameters
 
@@ -76,7 +76,7 @@ options:
                           Show this help message and exit
   -c CONFIG_FILE, --config-file CONFIG_FILE
                           Path to the configuration file
-  -w, --overwrite
+  -o, --overwrite
                           Overwrite existing simulation files. Default: False
 ```
 
@@ -85,7 +85,7 @@ options:
 This tool calibrates the reservoir model using the algorithm Shuffle Complex Evolution - University of Arizona (SCE-UA). It is applicable to the **linear**, **LISFLOOD**, **Camaflood** and **mHM** models, and it can calibrate the observed storage, outflow, or both at the same time. Eventually, the model is run with the optimised parameters.
 
 ```
-usage: calibrate.py [-h] -c CONFIG_FILE [-w]
+usage: calibrate.py [-h] -c CONFIG_FILE [-o]
 
 Run the calibration script with a specified configuration file.
 It calibrates the reservoir model parameters of the defined routine using the
@@ -99,7 +99,7 @@ options:
                           Show this help message and exit
   -c CONFIG_FILE, --config-file CONFIG_FILE
                           Path to the configuration file
-  -w, --overwrite
+  -o, --overwrite
                           Overwrite existing simulation files. Default: False
 ```
 
@@ -108,7 +108,7 @@ options:
 This tool fits the Starfit reservoir model to the observed data.
 
 ```
-usage: fit_starfit.py [-h] -c CONFIG_FILE [-w]
+usage: fit_starfit.py [-h] -c CONFIG_FILE [-o]
 
 Fit the storage and release rules for the Starfit reservoir routine.
 The fitted models are saved as Pickle files and plotted against the
@@ -119,7 +119,7 @@ options:
                           Show this help message and exit
   -c CONFIG_FILE, --config-file CONFIG_FILE
                           Path to the configuration file
-  -w, --overwrite
+  -o, --overwrite
                           Overwrite existing model. Default: False
 ```
 
@@ -128,7 +128,7 @@ options:
 This tool runs the Starfit reservoir model that was previously fitted with the tool [`fit_starfit`](#fit_starfit).
 
 ```
-usage: run_starfit.py [-h] -c CONFIG_FILE [-w]
+usage: run_starfit.py [-h] -c CONFIG_FILE [-o]
 
 Run Starfit simulation with the paremeter fitted using `fit_starfit`.
 The simulated time series are saved as CSV files. To analyse the results,
@@ -140,7 +140,7 @@ options:
                           Show this help message and exit
   -c CONFIG_FILE, --config-file CONFIG_FILE
                           Path to the configuration file
-  -w, --overwrite
+  -o, --overwrite
                           Overwrite existing simulation files. Default: False
 ```
 
