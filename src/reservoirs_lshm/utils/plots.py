@@ -1261,8 +1261,8 @@ def compare_attributes(
 
 def boxplot_comparison(
     performance: xr.Dataset,
-    ax_dim: str,
     col_dim: str,
+    box_dim: str,
     metric: str = 'KGE',
     save: Optional[Union[str, Path]] = None,
     **kwargs,
@@ -1274,12 +1274,12 @@ def boxplot_comparison(
     Parameters
     ----------
     performance : xr.Dataset
-        An xarray dataset containing performance scores. It must include the specified `ax_dim`, `col_dim`, 
+        An xarray dataset containing performance scores. It must include the specified `col_dim`, `box_dim`, 
         and a 'metric' dimension, with variables named 'storage' and 'outflow'.
-    ax_dim : str
+    col_dim : str
         Dimension of the dataset to map to different subplots (columns of subplots). Typically a grouping like 
         region or threshold.
-    col_dim : str
+    box_dim : str
         Dimension that identifies the groups within each boxplot (e.g., different models, scenarios, etc.).
     metric : str, optional
         Performance metric to be plotted (default is 'KGE'). This selects a slice from the 'metric' dimension.
@@ -1301,7 +1301,7 @@ def boxplot_comparison(
         1 - sqrt[(1 - storage)^2 + (1 - outflow)^2]
     This is included alongside the individual 'storage' and 'outflow' scores.
 
-    A color-coded legend is added automatically based on the values in `col_dim`.
+    A color-coded legend is added automatically based on the values in `box_dim`.
 
     Returns
     -------
@@ -1317,15 +1317,15 @@ def boxplot_comparison(
     yticks = kwargs.get('yticks', np.arange(ylim[0], ylim[1] + 1e-3, .5))
     
     colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivedrab']
-    colors = {str(key): color for key, color in zip(performance[col_dim].data, colors)}
+    colors = {str(key): color for key, color in zip(performance[box_dim].data, colors)}
     
-    n = len(performance[ax_dim])
+    n = len(performance[col_dim])
     fig, axes = plt.subplots(ncols=n, figsize=(figsize[0] * n, figsize[1]))#, sharey=True)
 
-    for ax, title in zip(axes, performance[ax_dim].data):
+    for ax, title in zip(axes, performance[col_dim].data):
     
-        perf = performance.sel({ax_dim: title, 'metric': metric})
-        perf = perf.dropna(col_dim, how='all')
+        perf = performance.sel({col_dim: title, 'metric': metric})
+        perf = perf.dropna(box_dim, how='all')
         
         perf_dct = {var: perf[var].to_pandas().transpose() for var in ['outflow', 'storage']}
         perf_dct['outflow &\nstorage'] = 1 - ((1 - perf_dct['outflow'])**2 + (1 - perf_dct['storage'])**2)**.5
@@ -1562,8 +1562,8 @@ def boxplot_comparison(
 
 def swarmplot_comparison(
     performance: xr.Dataset,
-    ax_dim: str,
     col_dim: str,
+    box_dim: str,
     kind: Literal['swarm', 'strip'] = 'swarm',
     metric: str = 'KGE',
     combined: bool = True,
@@ -1578,12 +1578,12 @@ def swarmplot_comparison(
     ----------
     performance : xr.Dataset
         An xarray dataset containing performance scores.
-        It must include the specified `ax_dim`, `col_dim`, and a 'metric' dimension.
+        It must include the specified `col_dim`, `box_dim`, and a 'metric' dimension.
         It should also contain variables named 'storage' and 'outflow'.
-    ax_dim : str
+    col_dim : str
         Dimension of the dataset to map to different subplots (columns of subplots).
         Typically a grouping like region or threshold, defining the individual plot columns.
-    col_dim : str
+    box_dim : str
         Dimension that identifies the groups within each plot, represented by different
         colors and plotted as individual point swarms/strips (e.g., different models, scenarios).
     kind : {'swarm', 'strip'}, default='swarm'
@@ -1609,19 +1609,19 @@ def swarmplot_comparison(
         - `size` (float, default=1.5): Size of the individual points in the swarmplot/stripplot.
         - `width` (float, default=0.5): Width of each box in the boxplot.
         - `width_ratio` (float, default=0.5): Ratio of the width of the empty space between
-          `ax_dim` groups compared to the width of a single subplot.
+          `col_dim` groups compared to the width of a single subplot.
         - `wspace` (float, default=0.25): Horizontal spacing between subplots.
         - `xlim` (tuple, default=(-1, 1)): Tuple specifying the x-axis limits.
         - `ylim` (tuple, default=(-1, 1)): Tuple specifying the y-axis limits.
 
     Notes
     -----
-    The function generates three types of performance visualizations for each `ax_dim` group:
+    The function generates three types of performance visualizations for each `col_dim` group:
     'outflow', 'storage', and a composite 'outflow & storage'. The composite metric is calculated as:
         1 - sqrt{(1 - outflow)^2 + (1 - storage)^2
 
     A color-coded legend is automatically added at the bottom of the figure,
-    based on the unique values found in the `col_dim` dimension.
+    based on the unique values found in the `box_dim` dimension.
 
     Returns
     -------
@@ -1633,14 +1633,14 @@ def swarmplot_comparison(
         raise ValueError(f'The attribute "kind" must be either "swarm" or "strip", but {kind} was provided')
 
     # number of axes, boxes and labels
-    n_ax = len(performance[ax_dim])
-    n_col = len(performance[col_dim])
-    labels = ['outflow', 'storage']
+    n_cols = len(performance[col_dim])
+    n_boxes = len(performance[box_dim])
+    variables = ['outflow', 'storage']
     if combined:
         var = 'outflow &\nstorage'
         performance[var] = 1 - ((1 - performance['outflow'])**2 + (1 - performance['storage'])**2)**.5
-        labels.append(var)
-    n_label = len(labels)
+        variables.append(var)
+    n_vars = len(variables)
 
     # extract keyword arguments
     figsize = kwargs.get('figsize', (20, 3))
@@ -1651,30 +1651,30 @@ def swarmplot_comparison(
     w = kwargs.get('width', .5)
     wratio = kwargs.get('width_ratio', .5)
     wspace = kwargs.get('wspace', 0.075)
-    xlim = kwargs.get('xlim', (-1, n_col))
+    xlim = kwargs.get('xlim', (-1, n_boxes))
     ylabel = kwargs.get('ylabel', metric)
     ylim = kwargs.get('ylim', (-1.05, 1.05))
     ybounds = tuple([int(y) for y in ylim])
     
     colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivedrab']
-    colors = {str(key): color for key, color in zip(performance[col_dim].data, colors)}
+    colors = {str(key): color for key, color in zip(performance[box_dim].data, colors)}
 
     # setup the axes
     fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(
         nrows=1, 
-        ncols=n_ax * (n_label + 1) - 1, 
-        width_ratios=(([1] * n_label + [wratio]) * n_ax)[:-1],
+        ncols=n_cols * (n_vars + 1) - 1, 
+        width_ratios=(([1] * n_vars + [wratio]) * n_cols)[:-1],
         wspace=wspace
     )
 
     pos = 0
-    for i, title in enumerate(performance[ax_dim].data):
+    for i, title in enumerate(performance[col_dim].data):
     
-        perf = performance.sel({ax_dim: title, 'metric': metric})
-        perf_dct = {var: perf[var].to_pandas().transpose() for var in labels}
+        perf = performance.sel({col_dim: title, 'metric': metric})
+        perf_dct = {var: perf[var].to_pandas().transpose() for var in variables}
         
-        for j, label in enumerate(labels):
+        for j, label in enumerate(variables):
             # extract data
             df = perf_dct[label]
 
@@ -1728,7 +1728,7 @@ def swarmplot_comparison(
             )
             ax.spines[['top', 'right', 'bottom']].set_visible(False)
             ax.spines['left'].set_bounds(*ybounds)
-            if j % n_label == 0:
+            if j % n_vars == 0:
                 ax.set_ylabel(ylabel)
                 ax.text(-.55, 1.1, f'{chr(97 + i)})', transform=ax.transAxes)
             else:
@@ -1737,7 +1737,7 @@ def swarmplot_comparison(
                     yticks=[],
                 )
                 ax.spines['left'].set_visible(False)
-            if j == n_label % 2:
+            if j == n_vars % 2:
                 ax.set_title(title)
         
         pos += 1
@@ -1747,13 +1747,204 @@ def swarmplot_comparison(
     fig.legend(
         handles=legend_handles, 
         frameon=False, 
-        ncol=n_col, 
+        ncol=n_boxes, 
         loc='lower center', 
         bbox_to_anchor=[.3, -0.25, .4, 0.1]
     )
 
     if save is not None:
         plt.savefig(save, dpi=300, bbox_inches='tight');
+
+
+def swarmplot_components(
+    performance: xr.Dataset,
+    col_dim: str,
+    box_dim: str,
+    kind: Literal['swarm', 'strip'] = 'swarm',
+    save: Optional[Union[str, Path]] = None,
+    **kwargs,
+):
+    """
+    Generate side-by-side plots (swarmplot or stripplot) comparing model performance
+    across different metrics, storage/outflow components, and categories (e.g., model types).
+
+    Parameters
+    ----------
+    performance : xr.Dataset
+        An xarray dataset containing performance scores.
+        It must include the specified `col_dim`, `box_dim`, and a 'metric' dimension.
+        It should also contain variables named 'storage' and 'outflow'.
+    col_dim : str
+        Dimension of the dataset to map to different subplots (columns of subplots).
+        Typically a grouping like region or threshold, defining the individual plot columns.
+    box_dim : str
+        Dimension that identifies the groups within each plot, represented by different
+        colors and plotted as individual point swarms/strips (e.g., different models, scenarios).
+    kind : {'swarm', 'strip'}, default='swarm'
+        Type of plot to generate.
+        - 'swarm': Uses `seaborn.swarmplot` to ensure points do not overlap.
+        - 'strip': Uses `seaborn.stripplot` which allows jittering to prevent overlap.
+    metric : str, default='KGE'
+        Performance metric to be plotted (e.g., 'KGE', 'NSE', 'RMSE').
+        This selects a specific slice from the 'metric' dimension in the dataset.
+    combined: bool, default=True
+        Whether to include a combined performance metric that aggregates 'outflow' and 'storage'.
+    save : str or Path, optional
+        Path where the generated figure will be saved. If `None` (default), the plot
+        is displayed but not saved to a file.
+    **kwargs : dict, optional
+        Additional plot customization options that are passed to the function:
+        - `figsize` (tuple, default=(20, 3)): Size of the overall figure in inches.
+        - `alpha` (float, default=1): Transparency of the swarmplot/stripplot points.
+        - `jitter` (float or bool, default=True): Only applicable if `kind='strip'`.
+          Determines the amount of jittering applied to points. `True` for default jitter,
+          `False` for no jitter, or a float for a specific amount.
+        - `linewidth` (float, default=1): Line width for boxplot elements (edges, whiskers, median).
+        - `size` (float, default=1.5): Size of the individual points in the swarmplot/stripplot.
+        - `width` (float, default=0.5): Width of each box in the boxplot.
+        - `width_ratio` (float, default=0.5): Ratio of the width of the empty space between
+          `col_dim` groups compared to the width of a single subplot.
+        - `wspace` (float, default=0.25): Horizontal spacing between subplots.
+        - `xlim` (tuple, default=(-1, 1)): Tuple specifying the x-axis limits.
+        - `ylim` (tuple, default=(-1, 1)): Tuple specifying the y-axis limits.
+
+    Returns
+    -------
+    None
+        The function displays the plot and optionally saves it to the specified file path.
+    """
+
+    if kind not in ['swarm', 'strip']:
+        raise ValueError(f'The attribute "kind" must be either "swarm" or "strip", but {kind} was provided')
+
+    # number of axes, boxes and labels
+    n_rows = len(performance['metric'])
+    n_cols = len(performance[col_dim])
+    n_boxes = len(performance[box_dim])
+    variables = list(performance)
+    n_vars = len(variables)
+
+    # extract keyword arguments
+    figsize = kwargs.get('figsize', (20, 10))
+    alpha = kwargs.get('alpha', 1)
+    jitter = kwargs.get('jitter', True)
+    lw = kwargs.get('linewidth', 1)
+    s = kwargs.get('size', 2)
+    w = kwargs.get('width', .5)
+    wratio = kwargs.get('width_ratio', .5)
+    wspace = kwargs.get('wspace', 0.075)
+    xlim = kwargs.get('xlim', (-1, n_boxes))
+    fs = plt.rcParams['font.size']
+    
+    ylims = {
+        'alpha': (-.05, 2.05),
+        'beta': (-.05, 2.05),
+        'rho': (-1.05, 1.05),
+        'KGE': (-1.05, 1.05),
+    }
+    ylabels = {
+        'alpha': r'$\alpha$',
+        'beta': r'$\beta$',
+        'rho': r'$\rho$',
+        'KGE': r'KGE',
+    }
+
+    colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivedrab']
+    colors = {str(key): color for key, color in zip(performance[box_dim].data, colors)}
+
+    # setup the axes
+    fig = plt.figure(figsize=figsize)
+    gs = gridspec.GridSpec(
+        nrows=n_rows, 
+        ncols=n_cols * (n_vars + 1) - 1, 
+        width_ratios=(([1] * n_vars + [wratio]) * n_cols)[:-1],
+        wspace=wspace,
+        hspace=.25
+    )
+
+    for i, metric in enumerate(performance['metric'].data):
+        for j, col in enumerate(performance[col_dim].data):
+            perf = performance.sel({'metric': metric, col_dim: col})
+            perf_dct = {var: perf[var].to_pandas().transpose() for var in variables}
+            for k, var in enumerate(variables):
+                
+                # create axis
+                pos = j * (n_vars + 1) + k
+                ax = plt.subplot(gs[i, pos])
+
+                # boxplot
+                box = sns.boxplot(
+                    perf_dct[var],
+                    width=w,
+                    showcaps=False,
+                    showfliers=False,
+                    boxprops=dict(facecolor='none', edgecolor='k', linewidth=lw),
+                    whiskerprops=dict(color='k', linewidth=lw),
+                    medianprops=dict(color='k', linewidth=lw * 1.5),
+                    zorder=1,
+                    ax=ax
+                )
+                    
+                # swarmplot
+                if kind == 'swarm':
+                    swarm = sns.swarmplot(
+                        perf_dct[var],
+                        order=colors.keys(),
+                        palette=colors.values(),
+                        size=s,
+                        alpha=alpha,
+                        zorder=0,
+                        ax=ax
+                    )
+                elif kind == 'strip':
+                    strip = sns.stripplot(
+                        perf_dct[var],
+                        order=colors.keys(),
+                        palette=colors.values(),
+                        jitter=jitter,
+                        size=s,
+                        alpha=alpha,
+                        zorder=0,
+                        ax=ax
+                    )
+                
+                # axis setup
+                ax.tick_params(axis='x', length=0)
+                ax.set(
+                    xlim=xlim,
+                    xlabel=None,
+                    xticks=[],
+                    ylim=ylims[metric],                
+                )
+                ax.spines[['top', 'right', 'bottom']].set_visible(False)
+                ax.spines['left'].set_bounds(*tuple([int(y) for y in ylims[metric]]))
+                if k == 0:
+                    ax.text(-.45, 1.05, f'{chr(97 + i * n_cols + j)})', transform=ax.transAxes)
+                else:
+                    ax.set(
+                        ylabel=None,
+                        yticks=[],
+                    )
+                    ax.spines['left'].set_visible(False)
+                if (i == 0) and (k == 0):
+                    ax.text(1.1, 1.3, col, fontsize=fs + 1, transform=ax.transAxes, ha='center', va='center')
+                if i == (n_rows - 1):
+                    ax.set_xlabel(var)
+                if (pos == 0):
+                    ax.text(-0.6, 0.5, ylabels[metric], fontsize=fs + 1, transform=ax.transAxes, ha='center', va='center', rotation=90)
+        
+    # Add legend
+    legend_handles = [Patch(facecolor=c, edgecolor='none', alpha=.7, label=col) for col, c in colors.items()]
+    fig.legend(
+        handles=legend_handles, 
+        frameon=False, 
+        ncol=n_boxes, 
+        loc='lower center', 
+        bbox_to_anchor=[.3, -0.0, .4, 0.1]
+    )
+
+    if save is not None:
+        plt.savefig(save, dpi=300, bbox_inches='tight')
 
 
 def plot_timeseries(
