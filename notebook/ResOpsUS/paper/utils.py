@@ -83,15 +83,17 @@ def map_reservoirs(
         alpha=1, 
         vmin=-100,
         vmax=4000,
-        zorder=0
-        )
+        zorder=0,
+        **kwargs_map
+    )
     uparea.plot(
         cmap='Greys_r', 
         alpha=.3, 
         vmin=-22 * 1e9,
         vmax=22* 1e9,
-        zorder=1
-        )
+        zorder=1,
+        **kwargs_map
+    )
         
     # reservoirs
     scatter = ax.scatter(
@@ -153,6 +155,179 @@ def map_reservoirs(
         plt.savefig(save, dpi=300, bbox_inches='tight')
 
 
+def map_reservoir_use(
+        geometry,
+        main_use: pd.Series,
+        regulation: pd.Series,
+        elevation: xr.DataArray,
+        uparea: xr.DataArray,
+        proj = ccrs.PlateCarree(),
+        save: Union[str, Path] = None,
+        **kwargs
+    ):
+    """
+    Generate a spatial visualization of reservoirs with elevation and drainage basemaps.
+
+    The function creates a map where reservoir locations are represented by bubbles. 
+    The bubble size indicates storage volume, and the bubble color indicates the 
+    catchment area. It includes two legends for interpretation.
+
+    Parameters
+    ----------
+    geometry : GeoDataFrame or similar
+        Geospatial data containing the reservoir locations (expects .geometry.x/y).
+    volume : pd.Series
+        Storage volume data indexed to match the reservoirs. 
+        Scaled by sqrt(volume) * 1.5 for marker size.
+    area : pd.Series
+        Catchment area data indexed to match the reservoirs.
+        Scaled by area^0.25 for marker color.
+    elevation : xr.DataArray
+        Digital Elevation Model (DEM) for the background, plotted in grayscale.
+    uparea : xr.DataArray
+        Upstream drainage area (accumulation) for highlighting river networks.
+    proj : cartopy.crs.Projection or str, optional
+        The map projection to use. Can be a Cartopy CRS object or a string 
+        identifiable by pyproj. Defaults to ccrs.PlateCarree().
+    save : Union[str, Path], optional
+        Path where the resulting figure will be saved. If None, the figure 
+        is not saved. Defaults to None.
+    **kwargs : dict, optional
+        Additional configuration for the plot:
+        * extent : list of float
+            The [lon_min, lon_max, lat_min, lat_max] of the map. 
+            Default [-125, -66, 25, 50] (CONUS).
+        * figsize : tuple of int
+            The width and height of the figure in inches. Default (16, 8).
+        * scale : float
+            Factor to scale the catchment area colors. Default 1e-3.
+
+    Returns
+    -------
+    None
+        The function renders the plot to the current Matplotlib backend and 
+        optionally saves to disk.
+    """
+    
+    alpha = kwargs.get('alpha', .8)
+    cmap = kwargs.get('cmap', 'viridis')
+    extent = kwargs.get('extent', None)
+    figsize = kwargs.get('figsize', (20, 8))
+    xlim = kwargs.get('xlim', (0, 80))
+
+    rename_use = {
+        'ELEC': 'Hydropower',
+        'FCON': 'Flood control',
+        'IRRI': 'Irrigation',
+        'NAVI': 'Navigation',
+        'RECR': 'Recreation',
+        'SUPP': 'Water supply',
+    }
+
+    if isinstance(proj, str):
+        proj = ccrs.Projection(pyproj.CRS(proj))
+    transform = None if proj == ccrs.PlateCarree() else ccrs.PlateCarree()
+        
+    fig = plt.figure(figsize=figsize)
+    gs = fig.add_gridspec(
+        nrows=3,
+        ncols=2,
+        width_ratios=[0.2, 0.8],
+        height_ratios=[0.15, 0.7, 0.15],
+        wspace=0.0,
+        hspace=0.0,
+    )
+
+    # 3. Add subplots individually with different keywords
+    ax0 = fig.add_subplot(gs[1, 0])
+    ax1 = fig.add_subplot(gs[:, 1], projection=proj)
+
+    main_use_counts = main_use.value_counts().sort_values(ascending=False)
+    vmax = np.ceil(main_use_counts.max() / 10) * 10
+    palette = [plt.get_cmap(cmap)(i) for i in np.linspace(0, 1, len(main_use_counts))]
+    color_mapping = dict(zip(main_use_counts.index, palette))
+    reservoir_colors = main_use.map(color_mapping)
+
+    # 3. Plot the barplot using the sorted data and the palette
+    sns.barplot(
+        y=main_use_counts.index.map(rename_use),
+        x=main_use_counts.values,
+        palette=palette,
+        hue=main_use_counts.index,
+        legend=False, 
+        errorbar=None,
+        ax=ax0,
+        alpha=alpha
+    )
+    ax0.spines[['top', 'left', 'right']].set_visible(False)
+    ax0.tick_params(axis="y", length=0)
+    ax0.set(
+        xlim=kwargs.get('xlim', (0, vmax)),
+        xlabel='No. reservoirs',
+        ylabel=None,
+    )
+    ax0.set_ylabel(None)
+
+    # base layers
+    kwargs_map = {'ax': ax1, 'rasterized': True, 'add_colorbar': False, 'transform': transform}
+    elevation.plot(
+        cmap='Greys', 
+        alpha=1, 
+        vmin=-100,
+        vmax=4000,
+        zorder=0,
+        **kwargs_map
+    )
+    uparea.plot(
+        cmap='Greys_r', 
+        alpha=.3, 
+        vmin=-22 * 1e9,
+        vmax=22* 1e9,
+        zorder=1,
+        **kwargs_map
+    )
+        
+    # reservoirs
+    scatter = ax1.scatter(
+        geometry.x,
+        geometry.y,
+        transform=transform,
+        c=reservoir_colors,
+        s=np.sqrt(regulation) * 8,
+        alpha=alpha,
+        edgecolor='w',
+        lw=.5,
+        zorder=10
+    )
+
+    # size legend
+    labels2 = [10, 20, 50, 100, 200, 500]
+    handles2, foo = scatter.legend_elements(
+        prop='sizes', 
+        num=list(np.sqrt(labels2) * 8),
+        alpha=alpha
+    )
+    legend2 = ax1.legend(
+        handles2,
+        labels2,
+        title='Degre of Regulation\n[%]', 
+        loc='upper left',
+        bbox_to_anchor=[1, .3, .1, .35], 
+        frameon=False
+    )
+    fig.add_artist(legend2)
+
+    if extent is not None:
+        ax1.set_extent(extent, crs=ccrs.PlateCarree())
+    ax1.set_title(None)
+    ax1.set_aspect('equal')
+    ax1.axis('off')
+
+    # save
+    if save is not None:
+        plt.savefig(save, dpi=300, bbox_inches='tight')
+
+        
 def map_performance(
     reservoirs: gpd.GeoDataFrame,
     volume: str,
