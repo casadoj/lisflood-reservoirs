@@ -18,25 +18,32 @@ Five different reservoir routines are implemented in this repository:
 
 Apart from the tools to train and fit these reservoir routines, it contains multiple Jupyter Notebooks to create datasets of reservoir attributes and observed time series in several countries: [US](notebook/ResOpsUS/), [Mexico](./notebook/ResOpsMX/), [Brazil](./notebook/ResOpsBR/), [Spain](./notebook/ResOpsUS/)... These datasets have the same structure as the [CARAVAN](https://github.com/kratzert/Caravan) dataset, and are meant not only as the input data for the reservoir routines in this repository, but also to be used as input for deep learning models.
 
+
 ## Installation
 
-Get a local copy of the repository. You can either download it from GitHub or clone it with Git:
+This project uses [`uv`](https://docs.astral.sh/uv/) for Python package and project management.
+
+### 1. Prerequisites
+
+Ensure you have `uv` installed. If not, you can install it via:
 
 ```Bash
-git clone https://github.com/casadoj/lisflood-reservoirs.git
+curl -LsSf https://astral.sh/uv/install.sh | sh
 ```
 
-Move to the root directory of the repository you've just copied:
+### 2. Clone and Install
+
+Clone the repository and install the dependencies. The `uv sync` command will automatically create a virtual environment in `.venv` and install the exact versions from the lockfile.
 
 ```Bash
-cd <YOUR_PATH>/lisflood-reservoirs/
+# Clone the repository
+git clone https://github.com/casadoj/reservoirs-LSHM.git
+cd reservoirs-LSHM
+
+# Install environment and dependencies
+uv sync
 ```
 
-Install the package with PiP:
-
-```Bash
-pip install .
-```
 
 ## Quick start
 
@@ -56,10 +63,11 @@ The configuration file has three sections dedicated to data, simulation, and cal
 
 ### Tools
 
-To run the tools from the command prompt, the instruction is always the same only changing the name of the tools. For instance, to fit the Starfit model:
+To run the scripts within the project environment, prefix the commands with `uv run`. For instance:
 
 ```Bash
-fit_starfit --config-file config.yml
+# fit the STARTIF model
+uv run fit_starfit --config_file config.yml
 ```
 
 #### [`run_reservoir`](./src/reservoirs_lshm/simulate.py)
@@ -144,7 +152,13 @@ options:
                           Overwrite existing simulation files. Default: False
 ```
 
-## Datasets
+## Citation
+
+### Preprint
+
+Casado-Rodríguez, J., Disperati, J., Grimaldi, S., and Salamon, P.: Benchmarking reservoir operation schemes for large-scale hydrological models, EGUsphere [preprint], https://doi.org/10.5194/egusphere-2026-904, 2026. 
+
+### Datasets
 
 Casado Rodríguez, J., Disperati, J., & Salamon, P. (2025). ResOpsUS+CARS: Reservoir Operations US and CAtchment and Reservoir Static attributes (1.0) [Data set]. European Commission - Joint Research Centre. https://doi.org/10.5281/zenodo.15978041
 
