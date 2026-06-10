@@ -1,5 +1,5 @@
-import os
-os.environ['USE_PYGEOS'] = '0'
+# import os
+# os.environ['USE_PYGEOS'] = '0'
 import matplotlib as mpl
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
@@ -1291,6 +1291,9 @@ def boxplot_comparison(
         - width (float): Width of each boxplot group (default: 0.15)
         - figsize (tuple): Size of the figure in inches (default: (6, 3))
         - alpha (float): Transparency of the boxplot fill (default: 0.7)
+        - ylabel (str): Label for the Y-axis (default: metric name)
+        - ylim (tuple): Limits for the Y-axis (default: (-1, 1
+        - yticks (list): Y-axis tick values (default: np.arange(ylim[0], ylim[1] + 1e-3, 0.5))
 
     Notes
     -----
@@ -1310,6 +1313,8 @@ def boxplot_comparison(
     figsize = kwargs.get('figsize', (6, 3))
     alpha = kwargs.get('alpha', .7)
     ylabel = kwargs.get('ylabel', metric)
+    ylim = kwargs.get('ylim', (-1, 1))
+    yticks = kwargs.get('yticks', np.arange(ylim[0], ylim[1] + 1e-3, .5))
     
     colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivedrab']
     colors = {str(key): color for key, color in zip(performance[col_dim].data, colors)}
@@ -1345,14 +1350,14 @@ def boxplot_comparison(
                 )
         ax.tick_params(axis='x', length=0)
         ax.set(
-            ylim=(-1, 1),
+            ylim=ylim,
             ylabel=ylabel,
             title=title
         )
         ax.spines[['top', 'right', 'bottom']].set_visible(False)
         ax.set_xticks(list(ticks_labels.keys()))
         ax.set_xticklabels(list(ticks_labels.values()))
-        ax.set_yticks([-1, -.5, 0, .5, 1])
+        ax.set_yticks(yticks)
         
     # Add legend
     legend_handles = [Patch(facecolor=c, edgecolor='none', alpha=.7, label=col) for col, c in colors.items()]
@@ -1362,12 +1367,206 @@ def boxplot_comparison(
         plt.savefig(save, dpi=300, bbox_inches='tight');
 
 
+# def swarmplot_comparison(
+#     performance: xr.Dataset,
+#     ax_dim: str,
+#     col_dim: str,
+#     kind: Literal['swarm', 'strip'] = 'swarm',
+#     metric: str = 'KGE',
+#     combined: bool = True,
+#     save: Optional[Union[str, Path]] = None,
+#     **kwargs,
+# ):
+#     """
+#     Generate side-by-side plots (swarmplot or stripplot) comparing model performance
+#     across different metrics, storage/outflow components, and categories (e.g., model types).
+
+#     Parameters
+#     ----------
+#     performance : xr.Dataset
+#         An xarray dataset containing performance scores.
+#         It must include the specified `ax_dim`, `col_dim`, and a 'metric' dimension.
+#         It should also contain variables named 'storage' and 'outflow'.
+#     ax_dim : str
+#         Dimension of the dataset to map to different subplots (columns of subplots).
+#         Typically a grouping like region or threshold, defining the individual plot columns.
+#     col_dim : str
+#         Dimension that identifies the groups within each plot, represented by different
+#         colors and plotted as individual point swarms/strips (e.g., different models, scenarios).
+#     kind : {'swarm', 'strip'}, default='swarm'
+#         Type of plot to generate.
+#         - 'swarm': Uses `seaborn.swarmplot` to ensure points do not overlap.
+#         - 'strip': Uses `seaborn.stripplot` which allows jittering to prevent overlap.
+#     metric : str, default='KGE'
+#         Performance metric to be plotted (e.g., 'KGE', 'NSE', 'RMSE').
+#         This selects a specific slice from the 'metric' dimension in the dataset.
+#     combined: bool, default=True
+#         Whether to include a combined performance metric that aggregates 'outflow' and 'storage'.
+#     save : str or Path, optional
+#         Path where the generated figure will be saved. If `None` (default), the plot
+#         is displayed but not saved to a file.
+#     **kwargs : dict, optional
+#         Additional plot customization options that are passed to the function:
+#         - `figsize` (tuple, default=(20, 3)): Size of the overall figure in inches.
+#         - `alpha` (float, default=1): Transparency of the swarmplot/stripplot points.
+#         - `jitter` (float or bool, default=True): Only applicable if `kind='strip'`.
+#           Determines the amount of jittering applied to points. `True` for default jitter,
+#           `False` for no jitter, or a float for a specific amount.
+#         - `linewidth` (float, default=1): Line width for boxplot elements (edges, whiskers, median).
+#         - `size` (float, default=1.5): Size of the individual points in the swarmplot/stripplot.
+#         - `width` (float, default=0.5): Width of each box in the boxplot.
+#         - `width_ratio` (float, default=0.5): Ratio of the width of the empty space between
+#           `ax_dim` groups compared to the width of a single subplot.
+#         - `wspace` (float, default=0.25): Horizontal spacing between subplots.
+#         - `xlim` (tuple, default=(-1, 1)): Tuple specifying the x-axis limits.
+#         - `ylim` (tuple, default=(-1, 1)): Tuple specifying the y-axis limits.
+
+#     Notes
+#     -----
+#     The function generates three types of performance visualizations for each `ax_dim` group:
+#     'outflow', 'storage', and a composite 'outflow & storage'. The composite metric is calculated as:
+#         1 - sqrt{(1 - outflow)^2 + (1 - storage)^2}
+
+#     A color-coded legend is automatically added at the bottom of the figure,
+#     based on the unique values found in the `col_dim` dimension.
+
+#     Returns
+#     -------
+#     None
+#         The function displays the plot and optionally saves it to the specified file path.
+#     """
+
+#     if kind not in ['swarm', 'strip']:
+#         raise ValueError(f'The attribute "kind" must be either "swarm" or "strip", but {kind} was provided')
+
+#     # extract keyword arguments
+#     figsize = kwargs.get('figsize', (20, 3))
+#     alpha = kwargs.get('alpha', 1)
+#     jitter = kwargs.get('jitter', True)
+#     lw = kwargs.get('linewidth', 1)
+#     s = kwargs.get('size', 2)
+#     w = kwargs.get('width', .5)
+#     wratio = kwargs.get('width_ratio', .5)
+#     wspace = kwargs.get('wspace', 0.075)
+#     xlim = kwargs.get('xlim', (-2, None))
+#     ylabel = kwargs.get('ylabel', metric)
+#     ylim = kwargs.get('ylim', (-1.05, 1.05))
+#     ybounds = tuple([int(y) for y in ylim])
+    
+#     colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivedrab']
+#     colors = {str(key): color for key, color in zip(performance[col_dim].data, colors)}
+
+#     # setup the axes
+#     n_ax = len(performance[ax_dim])
+#     n_label = len(performance[col_dim])
+#     n_col = 0
+#     fig = plt.figure(figsize=figsize)
+#     gs = gridspec.GridSpec(
+#         nrows=1, 
+#         ncols=n_ax * (n_label + 1) - 1, 
+#         width_ratios=(([1] * n_label + [wratio]) * n_ax)[:-1],
+#         wspace=wspace
+#     )
+
+#     for i, title in enumerate(performance[ax_dim].data):
+    
+#         perf = performance.sel({ax_dim: title, 'metric': metric})
+        
+#         perf_dct = {var: perf[var].to_pandas().transpose() for var in ['outflow', 'storage']}
+#         labels = ['outflow', 'storage']
+#         if combined:
+#             name = 'outflow &\nstorage'
+#             perf_dct[name] = 1 - ((1 - perf_dct['outflow'])**2 + (1 - perf_dct['storage'])**2)**.5
+#             labels.append(name)
+#         for j, label in enumerate(labels):
+
+#             # create axis
+#             pos = i * (n_ax + 1) + j
+#             ax = plt.subplot(gs[pos])
+
+#             # boxplot
+#             box = sns.boxplot(
+#                 perf_dct[label],
+#                 width=w,
+#                 showcaps=False,
+#                 showfliers=False,
+#                 boxprops=dict(facecolor='none', edgecolor='k', linewidth=lw),
+#                 whiskerprops=dict(color='k', linewidth=lw),
+#                 medianprops=dict(color='k', linewidth=lw * 1.5),
+#                 zorder=1,
+#                 ax=ax
+#             )
+                
+#             # swarmplot
+#             if kind == 'swarm':
+#                 swarm = sns.swarmplot(
+#                     perf_dct[label],
+#                     order=colors.keys(),
+#                     palette=colors.values(),
+#                     size=s,
+#                     alpha=alpha,
+#                     zorder=0,
+#                     ax=ax
+#                 )
+#             elif kind == 'strip':
+#                 strip = sns.stripplot(
+#                     perf_dct[label],
+#                     order=colors.keys(),
+#                     palette=colors.values(),
+#                     jitter=jitter,
+#                     size=s,
+#                     alpha=alpha,
+#                     zorder=0,
+#                     ax=ax
+#                 )
+
+#             n_col = max(n_col, perf_dct[label].shape[1])
+            
+#             # axis setup
+#             ax.tick_params(axis='x', length=0)
+#             ax.set(
+#                 xlim=xlim,
+#                 xlabel=label,
+#                 xticks=[],
+#                 ylim=ylim,                
+#             )
+#             ax.spines[['top', 'right', 'bottom']].set_visible(False)
+#             ax.spines['left'].set_bounds(*ybounds)
+#             if j % 3 == 0:
+#                 ax.set(
+#                     ylabel=ylabel,
+#                 )
+#                 ax.text(-.55, 1.1, f'{chr(97 + i)})', transform=ax.transAxes)
+#             else:
+#                 ax.set(
+#                     ylabel=None,
+#                     yticks=[],
+#                 )
+#                 ax.spines['left'].set_visible(False)
+#             if j == 1:
+#                 ax.set_title(title)
+        
+#     # Add legend
+#     legend_handles = [Patch(facecolor=c, edgecolor='none', alpha=.7, label=col) for col, c in colors.items()]
+#     fig.legend(
+#         handles=legend_handles, 
+#         frameon=False, 
+#         ncol=n_col, 
+#         loc='lower center', 
+#         bbox_to_anchor=[.3, -0.2, .4, 0.1]
+#     )
+
+#     if save is not None:
+#         plt.savefig(save, dpi=300, bbox_inches='tight');
+
+
 def swarmplot_comparison(
     performance: xr.Dataset,
     ax_dim: str,
     col_dim: str,
     kind: Literal['swarm', 'strip'] = 'swarm',
     metric: str = 'KGE',
+    combined: bool = True,
     save: Optional[Union[str, Path]] = None,
     **kwargs,
 ):
@@ -1394,6 +1593,8 @@ def swarmplot_comparison(
     metric : str, default='KGE'
         Performance metric to be plotted (e.g., 'KGE', 'NSE', 'RMSE').
         This selects a specific slice from the 'metric' dimension in the dataset.
+    combined: bool, default=True
+        Whether to include a combined performance metric that aggregates 'outflow' and 'storage'.
     save : str or Path, optional
         Path where the generated figure will be saved. If `None` (default), the plot
         is displayed but not saved to a file.
@@ -1431,51 +1632,59 @@ def swarmplot_comparison(
     if kind not in ['swarm', 'strip']:
         raise ValueError(f'The attribute "kind" must be either "swarm" or "strip", but {kind} was provided')
 
+    # number of axes, boxes and labels
+    n_ax = len(performance[ax_dim])
+    n_col = len(performance[col_dim])
+    labels = ['outflow', 'storage']
+    if combined:
+        var = 'outflow &\nstorage'
+        performance[var] = 1 - ((1 - performance['outflow'])**2 + (1 - performance['storage'])**2)**.5
+        labels.append(var)
+    n_label = len(labels)
+
     # extract keyword arguments
     figsize = kwargs.get('figsize', (20, 3))
     alpha = kwargs.get('alpha', 1)
     jitter = kwargs.get('jitter', True)
     lw = kwargs.get('linewidth', 1)
-    s = kwargs.get('size', 1.5)
+    s = kwargs.get('size', 2)
     w = kwargs.get('width', .5)
     wratio = kwargs.get('width_ratio', .5)
-    wspace = kwargs.get('wspace', 0.25)
-    xlim = kwargs.get('xlim', (-2, None))
+    wspace = kwargs.get('wspace', 0.075)
+    xlim = kwargs.get('xlim', (-1, n_col))
     ylabel = kwargs.get('ylabel', metric)
     ylim = kwargs.get('ylim', (-1.05, 1.05))
+    ybounds = tuple([int(y) for y in ylim])
     
     colors = ['grey', 'salmon', 'gold', 'steelblue', 'olivedrab']
     colors = {str(key): color for key, color in zip(performance[col_dim].data, colors)}
 
     # setup the axes
-    n_ax = len(performance[ax_dim])
-    n_label = 3
-    n_col = 0
     fig = plt.figure(figsize=figsize)
     gs = gridspec.GridSpec(
         nrows=1, 
         ncols=n_ax * (n_label + 1) - 1, 
-        width_ratios=(([1] * n_label + [wratio]) * n_ax)[:-1]
+        width_ratios=(([1] * n_label + [wratio]) * n_ax)[:-1],
+        wspace=wspace
     )
-    plt.subplots_adjust(wspace=wspace)
 
+    pos = 0
     for i, title in enumerate(performance[ax_dim].data):
     
         perf = performance.sel({ax_dim: title, 'metric': metric})
+        perf_dct = {var: perf[var].to_pandas().transpose() for var in labels}
         
-        perf_dct = {var: perf[var].to_pandas().transpose() for var in ['outflow', 'storage']}
-        perf_dct['outflow &\nstorage'] = 1 - ((1 - perf_dct['outflow'])**2 + (1 - perf_dct['storage'])**2)**.5
-    
-        labels = ['outflow', 'storage', 'outflow &\nstorage']
         for j, label in enumerate(labels):
+            # extract data
+            df = perf_dct[label]
 
             # create axis
-            pos = i * (n_ax + 1) + j
             ax = plt.subplot(gs[pos])
-
+            pos += 1
+            
             # boxplot
             box = sns.boxplot(
-                perf_dct[label],
+                df,
                 width=w,
                 showcaps=False,
                 showfliers=False,
@@ -1489,7 +1698,7 @@ def swarmplot_comparison(
             # swarmplot
             if kind == 'swarm':
                 swarm = sns.swarmplot(
-                    perf_dct[label],
+                    df,
                     order=colors.keys(),
                     palette=colors.values(),
                     size=s,
@@ -1499,7 +1708,7 @@ def swarmplot_comparison(
                 )
             elif kind == 'strip':
                 strip = sns.stripplot(
-                    perf_dct[label],
+                    df,
                     order=colors.keys(),
                     palette=colors.values(),
                     jitter=jitter,
@@ -1508,8 +1717,6 @@ def swarmplot_comparison(
                     zorder=0,
                     ax=ax
                 )
-
-            n_col = max(n_col, perf_dct[label].shape[1])
             
             # axis setup
             ax.tick_params(axis='x', length=0)
@@ -1520,21 +1727,20 @@ def swarmplot_comparison(
                 ylim=ylim,                
             )
             ax.spines[['top', 'right', 'bottom']].set_visible(False)
-            ax.spines['left'].set_bounds(-1, 1)
-            if j % 3 == 0:
-                ax.set(
-                    ylabel=ylabel,
-                    # yticks=[-1, -.5, 0, .5, 1],
-                )
-                ax.text(-.5, 1.1, f'{chr(97 + i)})', transform=ax.transAxes)
+            ax.spines['left'].set_bounds(*ybounds)
+            if j % n_label == 0:
+                ax.set_ylabel(ylabel)
+                ax.text(-.55, 1.1, f'{chr(97 + i)})', transform=ax.transAxes)
             else:
                 ax.set(
                     ylabel=None,
                     yticks=[],
                 )
                 ax.spines['left'].set_visible(False)
-            if j == 1:
+            if j == n_label % 2:
                 ax.set_title(title)
+        
+        pos += 1
         
     # Add legend
     legend_handles = [Patch(facecolor=c, edgecolor='none', alpha=.7, label=col) for col, c in colors.items()]
@@ -1543,7 +1749,7 @@ def swarmplot_comparison(
         frameon=False, 
         ncol=n_col, 
         loc='lower center', 
-        bbox_to_anchor=[.3, -0.175, .4, 0.1]
+        bbox_to_anchor=[.3, -0.25, .4, 0.1]
     )
 
     if save is not None:
