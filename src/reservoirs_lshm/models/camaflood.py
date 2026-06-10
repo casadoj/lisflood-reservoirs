@@ -145,7 +145,10 @@ class Camaflood(Reservoir):
             if self.Atot:
                 A = self.estimate_area(V)
             else:
-                raise ValueError('To be able to model precipitation or evaporation, you must provide the maximum reservoir area ("Atot") in the reservoir declaration')
+                raise ValueError(
+                    'To be able to model precipitation or evaporation, '
+                    'you must provide the maximum reservoir area ("Atot") in the reservoir declaration'
+                )
             
         # update reservoir storage
         V += I * self.timestep
@@ -176,7 +179,9 @@ class Camaflood(Reservoir):
         elif V >= self.Ve:
             Q = self.Qf if I < self.Qf else I
             
-            
+        # check that Q exists
+        if 'Q' not in locals():
+            raise RuntimeError(f"Calculation error: Outflow 'Q' was not defined for V={V:.2f} m³, I={I:.2f} m³/s")
 
         # limit outflow so the final storage is between 0 and 1
         eps = 1e-3

@@ -138,9 +138,10 @@ class MhmCalibrator(Calibrator):
         self.reservoir = res
         
         # simulate
+        Vo = self.observed['storage'].iloc[0]
         sim = res.simulate(
             inflow=self.inflow, 
-            Vo=self.observed['storage'].iloc[0],
+            Vo=None if pd.isna(Vo) else Vo,
             precipitation=self.precipitation,
             evaporation=self.evaporation,
             demand=self.demand

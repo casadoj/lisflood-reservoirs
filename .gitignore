@@ -164,3 +164,10 @@ notebook/HDMS_API.yml
 ./notebook/DAHITI/api_key.txt
 
 **/*~BROMIUM/
+
+*Zone.Identifier
+
+datasets/
+
+# debug files
+.vscode/
