@@ -22,6 +22,7 @@ dependencies = [
     "mpi4py",
     "netcdf4",
     "numpy",
+    "openpyxl>=3.1.5",
     "pandas",
     "pyyaml",
     "rioxarray",
