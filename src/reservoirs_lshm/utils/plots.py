@@ -1,5 +1,6 @@
-# import os
-# os.environ['USE_PYGEOS'] = '0'
+from pathlib import Path
+from typing import Union, Dict, List, Tuple, Optional, Literal
+
 import matplotlib as mpl
 from matplotlib.axes import Axes
 import matplotlib.pyplot as plt
@@ -12,8 +13,7 @@ import cartopy.feature as cf
 import numpy as np
 import pandas as pd
 import xarray as xr
-from pathlib import Path
-from typing import Union, Dict, List, Tuple, Optional, Literal
+
 from statsmodels.distributions.empirical_distribution import ECDF
 
 # from utils import Decomposition
@@ -1571,9 +1571,9 @@ def swarmplot_comparison(
     **kwargs,
 ):
     """
-    Generate side-by-side plots (swarmplot or stripplot) comparing model performance
+    Generates side-by-side plots (swarmplot or stripplot) comparing model performance
     across different metrics, storage/outflow components, and categories (e.g., model types).
-
+    
     Parameters
     ----------
     performance : xr.Dataset
@@ -1618,7 +1618,7 @@ def swarmplot_comparison(
     -----
     The function generates three types of performance visualizations for each `ax_dim` group:
     'outflow', 'storage', and a composite 'outflow & storage'. The composite metric is calculated as:
-    $1 - \sqrt{(1 - \text{outflow})^2 + (1 - \text{storage})^2}$
+        1 - sqrt{(1 - outflow)^2 + (1 - storage)^2
 
     A color-coded legend is automatically added at the bottom of the figure,
     based on the unique values found in the `col_dim` dimension.
