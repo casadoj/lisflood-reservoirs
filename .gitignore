@@ -169,4 +169,5 @@ notebook/HDMS_API.yml
 
 datasets/
 
+# debug files
 .vscode/
