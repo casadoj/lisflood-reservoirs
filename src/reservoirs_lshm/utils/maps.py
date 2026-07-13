@@ -310,7 +310,7 @@ def map_reservoir_use(
     legend2 = ax1.legend(
         handles2,
         labels2,
-        title='Degre of Regulation\n[%]', 
+        title='Degree of Regulation\n[%]', 
         loc='upper left',
         bbox_to_anchor=[1, .3, .1, .35], 
         frameon=False
