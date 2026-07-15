@@ -157,8 +157,12 @@ options:
 
 Casado-Rodríguez, J., Disperati, J., Grimaldi, S., and Salamon, P.: Benchmarking reservoir operation schemes for large-scale hydrological models, EGUsphere [preprint], https://doi.org/10.5194/egusphere-2026-904, 2026. 
 
+### Repository
+
+Casado-Rodríguez, J. (2026). casadoj/reservoirs-LSHM: Version used in the paper (Version v1.0.0) [Computer software]. Zenodo. https://doi.org/10.5281/zenodo.21370914
+
 ### Datasets
 
-Casado Rodríguez, J., Disperati, J., & Salamon, P. (2025). ResOpsUS+CARS: Reservoir Operations US and CAtchment and Reservoir Static attributes (1.0) [Data set]. European Commission - Joint Research Centre. https://doi.org/10.5281/zenodo.15978041
+Casado-Rodríguez, J., Disperati, J., & Salamon, P. (2025). ResOpsUS+CARS: Reservoir Operations US and CAtchment and Reservoir Static attributes (1.0) [Data set]. European Commission - Joint Research Centre. https://doi.org/10.5281/zenodo.15978041
 
-Casado Rodríguez, J., Disperati, J., & Salamon, P. (2025). ResOpsBR+CARS: Reservoir Operations Brazil and CAtchment and Reservoir Static attributes (1.0) [Data set]. European Commission - Joint Research Centre. https://doi.org/10.5281/zenodo.16096623
+Casado-Rodríguez, J., Disperati, J., & Salamon, P. (2025). ResOpsBR+CARS: Reservoir Operations Brazil and CAtchment and Reservoir Static attributes (1.0) [Data set]. European Commission - Joint Research Centre. https://doi.org/10.5281/zenodo.16096623
